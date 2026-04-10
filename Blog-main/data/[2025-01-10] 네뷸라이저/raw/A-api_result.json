@@ -1,0 +1,129 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EB%84%A4%EB%B7%B8%EB%9D%BC%EC%9D%B4%EC%A0%80&traceid=V0-163-71d7482b972e3f91&requestid=20250110120341397178916333",
+        "productData": [
+            {
+                "productId": 12722752,
+                "productName": "GC녹십자MS 로즈맥스 네블라이저 NA100",
+                "productPrice": 53900,
+                "productImage": "https://ads-partners.coupang.com/image1/WOFrybOn6nqn13xIWNIBvEssz4itHsuAXBtK0qx9JFNP2aF3wJkZk3yRtK_31A5_ku7AMPv633qQ6ae8vbUFZAmZZkI99vqcg2PhfwRTPnTF-254rSVbNXKqUsdEwXPCY1uvG5mnS4SAEkRGm5a4KMMi6guxH-qknCAPxLC0i4ijICVhVW-4bGvYVbeSS88RBHeA4XcK0QxZ_MjIwashs5UUn2ZN-jusxcxE2R9g0uSLhRone3moRK_Jq8LMbgs9M4sOA7FLeGzWzOZNJw49hWs4FP-64CJ-lNzJ0-C-SMDqD93HG1TjY_rfFtI9LvXJ7pOfPM6O0nhfktRshWauh40eMtPuWDvl",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=12722752&itemId=53812028&vendorItemId=91555388307&traceid=V0-153-98b4521ead584419&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "생활용품",
+                "keyword": "네뷸라이저",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 1249396321,
+                "productName": "GC녹십자MS 메쉬네블라이저 NB-810",
+                "productPrice": 63480,
+                "productImage": "https://ads-partners.coupang.com/image1/LczivPf0NM8cLE10LU14YkmlBPv9jwu4OV9iGzM34NIGAzaw3rX3cg5YqurbRIBcfSNVaM8Oc_lua0qgojhxPoHcO3bzxZ1rkTrrsXnjvwrTlBS-1R2MlxjvbmlTN8iL8She3Lecuai9_-rnaBZRInDaGmzS4S7AvOP9_MyDcixRZrWLWhiH063B_wNRFYYWifwi2X_mpJbZaifUxDh1G874SGMpYV2X9OkGKI0bFEUljHGQGx4pv-l0O2cTA4aQdMev7qvB9g4Gc9ymFNM0k3qh0N3sQKu3h_jGEpmI6kEnrYECARatti1MGlqmyQCrnt8MCbS5BxE=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=1249396321&itemId=2247912710&vendorItemId=70245309110&traceid=V0-153-69b814286a7c6554&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "생활용품",
+                "keyword": "네뷸라이저",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8486179300,
+                "productName": "[호흡기치료기]휴대용 초음파 흡입기 가정용네블라이저 N1-A86 WX006",
+                "productPrice": 56800,
+                "productImage": "https://ads-partners.coupang.com/image1/j8uczqYIC6y_vXuzj0VbEsDQnL7xh8qEJzGKNknInms00ICLmXWWeb6jcTFoVKw4qKDbsHoftY3xH1onxsc3JMyOYpc5L5zLx1CoeoRVDPhVldXgfbtMYCKVN7lJEC4aMbuY6qryGtz2nI4cpQy-T7ySOn0Yous6obojSaFn1BMvkr-VTWsWsAoJDe3y1rnKHsIAcxKOT1MgKXznGQL3pVlWLnxmoHsHc-YVeiTMsFcM25cC-j0VBtMNgWx_2xN9xuF5AyVfbxEXsMNu1XnUwqu3K3hq9fNO3jEfQL9sLt1QufY7KwFk_HmxIcWaMvQA321UMCv_KAjm3tH2zXF0tQ==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8486179300&itemId=24559476287&vendorItemId=91716762302&traceid=V0-153-9ff5e75c19a6eef3&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "생활용품",
+                "keyword": "네뷸라이저",
+                "rank": 3,
+                "isRocket": false,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 8370083582,
+                "productName": "맥스넵 강아지 고양이 동물용 접이식 네블라이저방 세트 108L(특대형) 국내 당일발송",
+                "productPrice": 98000,
+                "productImage": "https://ads-partners.coupang.com/image1/z7JL7L5jltxNhZC3z2AibaaHRc1qQzIop_OOyotAH5eEyuSWSmCoU7Akv5DiZg8x95GrEp5EHS4rLKFBFcZhxqQbwCi_YI-q6L47KHp4WCBevQ3ffeh3TN1XQUqKJ1LmVXlTRAsQAmzJfvXShzRNdH8n2PD8mUUxOXkayNY0ImFMz8oo9QsG3-EzNwQbrLbT18VM7XIIrxcrQzouD7IK5TR37fsCDKjzF8eLSD0-53ENBGKXGMAokSBpqw6zHZNcV6OKQvLEpmX0GF28XfewN-i7AsXrAp8NoE0C_v6_NDUSluZ4R2RfTtp_rj2tC1M_-bDAMcCEY0QDG-8pVFpvF30CFh7n",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8370083582&itemId=24186708594&vendorItemId=91286156048&traceid=V0-153-8a4ae4e37df589b9&clickBeacon=7f012ae0-ceff-11ef-a710-096b33d7d03e%7E3&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "반려동물용품",
+                "keyword": "네뷸라이저",
+                "rank": 4,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 230093915,
+                "productName": "오므론 휴대용 메쉬 네블라이저 NE U100",
+                "productPrice": 199000,
+                "productImage": "https://ads-partners.coupang.com/image1/U1g9ta-QiWufPYTMU4eyGdXazwTxuUfuUqzjlJlU-37kLXNrq0VdGn2EGeCD5gAnzbBjwB2KV0bYad0glBDPzh7yx5_v8zVEf-eXyvMbfkUMmUmefVXwb-QWxpavxPOy3NqFm21SHYCu4hV1FxDmmZiMmyFYFQ5HhV9O6FrjTGQf6-Iql9DEsfBS2mxkIzFBFKaGXKYo0rDMZC0hlIK1i1yeBxws2QgT7Aj7JYTaXm_q5BE3_4A3lei-NIoisbti4zkcd7F7eQTj7jSeNueNoga3th9o8I68H0pkueYxV4FmdI8h6dQtVvBqSzNgchsqQFf1Tw_IMw==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=230093915&itemId=729681759&vendorItemId=4845429488&traceid=V0-153-1eb4cf2b754123a9&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "생활용품",
+                "keyword": "네뷸라이저",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8394565842,
+                "productName": "에펫 반려동물 전용 네블라이저 초음파 흡입기 JM-06801B, 1개, 25ml",
+                "productPrice": 85000,
+                "productImage": "https://ads-partners.coupang.com/image1/6I9QcFyzbYERJIfa6OX9ol3_eEY_fe47fuBe53_oSLy_LEMQcTrjNaeLEEakcd4CcG7gpgwB-_oPXuHFsgUG81iDFWRs-CEdrv2I2_f53OUEBwt8fuNCaUn75czF1dFIupvbzUEbyCgKF3xtSTtt6rUToGgiN92JI0Js8X3dtdXbiPP8EAY3frDH_4XTmZTE06zHv22Q-D7mqLmQcVO6MuBbQhKzW46rNRvYNJ5DLj603VEz2ZrlW4Pf9m4d4ROwe90MqYipnW8oqihiIrD6wEgeKF6s9swUanxQ9Ye3sjRKmcRUBrlZGrGfeNahIr6Z3SRkN1PGBiJ0-FbmAIp7O_5mmzkR",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8394565842&itemId=24266084459&vendorItemId=91282652362&traceid=V0-153-115a284779775b48&clickBeacon=7f012ae0-ceff-11ef-b522-c00d733cf717%7E3&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "반려동물용품",
+                "keyword": "네뷸라이저",
+                "rank": 6,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 2209044259,
+                "productName": "카스 네블라이저 초음파흡입기 NB-152U",
+                "productPrice": 88990,
+                "productImage": "https://ads-partners.coupang.com/image1/HR7PF1szfbYd6ruPHQMkt77uz3u5iEOPRiaHLy4kNOH_7F5ZXvyD8_57aynI2Iz75bgIWSBjMSGBJ_f2UM1I8ZRYDsFETgvx8wUHegdQmui6RHDNrgP1rRQ7irJVhHJ5bz_Ch9yHuHNbezTs7XuRD7OJ3aNus8fX8gGj94ZSk9SJeu4C5bbWb8mdZWEuDOwmBXZdHvY0J1_dTfIT2sVU141T6T35K1l-h4JkXwxaoPdpG632We1mkGWkDLDLGMND3oq8VYS2xLspema5Rzvrf2Ca3buTGywKlquT3aUv0G1wAjd64Ptl3lN3C0KyDrQaeKsSq9dYwy9uhdNB7eK6qaeDymwPiKM=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=2209044259&itemId=3759416081&vendorItemId=71744513216&traceid=V0-153-7f04607eb9f659ba&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "생활용품",
+                "keyword": "네뷸라이저",
+                "rank": 7,
+                "isRocket": false,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 8394589658,
+                "productName": "에펫 산소방 네블라이저 박스 대형 88L 반려동물 전용 네블라이저 산소실 분무상자 가정용, 1개, 88L",
+                "productPrice": 59000,
+                "productImage": "https://ads-partners.coupang.com/image1/59rEesE3QBCw5duz51vQxGDDP4-jWXwipWuTugVGV_wsGGtRU3zScGHeT4nOkIXEhASdA6-Ytfi13fxK65uhl32MPMo4SAOeY1nHTMRPI9SSnK5I7TZ6FZ3CQEhvqagSU-SGjYlUCNgtnm9EgHtYJ6-9b6u2yJjPJKXj1hrdVOIwwy2hhjyofd3Ei3mjMyUtegD--l4p8L3vanMxCqB1EhCDCphMtqAGOBUT-Nv-0M3tGcME-wqSDG8YPio56Rjrik0JNcIYQqW4GLSV2kTqH7syDfrxio8OQ8SxeEpLxfuVY7Lk5iN2Ks4FiCy9yhISJWKQNdQdE2Nzk4oVqxzcY3ivLz4z",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8394589658&itemId=24266110899&vendorItemId=91282678792&traceid=V0-153-b2c857109a189492&clickBeacon=7f012ae0-ceff-11ef-b138-ffa303e74d30%7E3&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "반려동물용품",
+                "keyword": "네뷸라이저",
+                "rank": 8,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7634559305,
+                "productName": "메쉬넵2 네블라이저 HL-100A 1세트+사은품증정 초음파흡입기 저소음 네뷸라이저",
+                "productPrice": 96000,
+                "productImage": "https://ads-partners.coupang.com/image1/dY9tIbw7ZYWkcADZdSMOdnA53xPj1TIL1dqxRNx6wpmMYKM-xXZoyaZZjaSkBapBOs7PnX__XkOgaKH6mPxAGvjX1yd6IPOQFTgRwX0Z32WyDzcpK_CNkxpDCYcA7l_kbdUO-3Sf8a_OiUXbzxuNBUTRo7KvRCGm3ZCZYTDyvFzwx6qT6vsQlpnzRdFXBrD7VyWKwaou7Kw9sZiOuSLyCOl09IQ_rlhXSf5Kf1d1EmEP1h9S7yrcQWD31vzpLAskRy0lUPRSgqF2BWTEeUOBdXNZAXMd8lmxLfaKEHuqVJSSTdBvHusk5dG_MEJB639xb0BwYcNQhVFKd3rh0vCP8_GN7XnzEyA9",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7634559305&itemId=20270224426&vendorItemId=83791278593&traceid=V0-153-b7d267fa925f0738&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "생활용품",
+                "keyword": "네뷸라이저",
+                "rank": 9,
+                "isRocket": false,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 6871956427,
+                "productName": "[당일발송] 강아지 네블라이저 유로넵 고양이 네뷸라이저, 1세트",
+                "productPrice": 130000,
+                "productImage": "https://ads-partners.coupang.com/image1/0FuL42oKcUISP6Ch0OeUZowoieOQyzUn3nulo9v2Ik493kK5EnY7xJF859LsT6u0uCoIWEQiX07OMtP5zi9L4jGuFe4Reub_rHvBGgA6IrOAMyvv7HxwaQunMxfZPQvNYyc072Qope57rwWnsPwrR0pPymT97nFuUPVHa0Rtb0zcD_KlpjSn-70S6XX3kHSMYilrPNp73J8Qg_6JZHNOhMp5IHrYpfrCDPkW1eZDMgK4EDCFjzCG7SNmF3xd9Z2sW70BOcPl3_J7Pu7ZYOM7ltpM7ilrV6wEBxOfkiMuTx6opvMXRWHwRd2fDZNQwoFV6mxLJq3K4rU3kP0bPTjXW8hqJtVU",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=6871956427&itemId=16442624081&vendorItemId=83633333216&traceid=V0-153-be9a6c62c6568123&clickBeacon=7f012ae0-ceff-11ef-8d5f-c7f826daf760%7E3&requestid=20250110120341397178916333&token=31850C%7CMIXED",
+                "categoryName": "반려동물용품",
+                "keyword": "네뷸라이저",
+                "rank": 10,
+                "isRocket": false,
+                "isFreeShipping": true
+            }
+        ]
+    }
+}

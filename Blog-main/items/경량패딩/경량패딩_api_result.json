@@ -1,0 +1,81 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EA%B2%BD%EB%9F%89%ED%8C%A8%EB%94%A9&traceid=V0-163-5937c040b6a532c8&requestid=20241212124448473254961246",
+        "productData": [
+            {
+                "productId": 8452561295,
+                "productName": "어둑 남성 카라넥/후드넥 오리털 덕다운 오리털 경량 패딩",
+                "productPrice": 34800,
+                "productImage": "https://ads-partners.coupang.com/image1/u9AMYFu8IGBgN9kCu4caKU0in3zRpb5M1L-MkKCabhkLT9IEeHcxukit-jYyDAdOXBnSuLqR7bG4KYLszSEzdt9KMOI1HPw5CTyk32DU9MzxUa0RSCatmu5Kh9QNynQgWWWKyRofITgbrRl3Ekqb0LZBigaBowbyZtkpAbRKaggNwpXY1aPofV-yL2hlcUiJTiscuBVDWuCRByuZaet1aCjX12WsmjpzOogC-hR12xWPHcoHEXSwRKllVHwk4ljwT3QHN1uk5MOzGCitK0doiGJwShX_7f5T5QCdwywt0PP-rV3UxMy_7TIRd2JjJ9mvygS8Z4_SSBEp3CVQFIRRob65Pg==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8452561295&itemId=24456094469&vendorItemId=91538404710&traceid=V0-153-8a6b7c592dde0704&clickBeacon=6f801160-b83b-11ef-908d-8fc7cde2b82f%7E3&requestid=20241212124448473254961246&token=31850C%7CMIXED",
+                "categoryName": "남성패션",
+                "keyword": "경량패딩",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 6673869287,
+                "productName": "ELLE PARIS 여성 경량 덕다운 숏 자켓",
+                "productPrice": 21670,
+                "productImage": "https://ads-partners.coupang.com/image1/MrIvAW8hS6IuKg0wMpFsOfVEwOpVOsPYS6I1FjROIYRrq7fJtLA4camzGT0XOdLWpnzwv2hM3hkRYUsnheo_L7D28x80kLYljqlVQsOoZOQaBNU5Ppb-osF5Xs-ORRD3Mo-whYFxuBFFhp441IyXULEcpNGbf1n0TCi3evaBwnQlhKTiIR0TnxlmVzS0AbvP0Wolg_aIUUa5XQpD7tKFPoswkZgIeiaI_eGUVjAWksNCsb_rVh7mx5mfoY7aGmkIf3tKiQht98y1wDaHGamj74d35hf8ATs4L2xs2b39HnWWzHNGHL5GxAaW-q_aqZZOgSO8D-I=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=6673869287&itemId=15364398206&vendorItemId=82584581213&traceid=V0-153-1416eb450013da11&requestid=20241212124448473254961246&token=31850C%7CMIXED",
+                "categoryName": "패션의류",
+                "keyword": "경량패딩",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 2111546173,
+                "productName": "캐럿 남여공용 경량 범버 자켓",
+                "productPrice": 31580,
+                "productImage": "https://ads-partners.coupang.com/image1/thXieXEB1YsaVzLZtuGlD2b1p9sGpXJ2UttAYwVKXuQcK6q3sT6IYJER5rr9XObLUAr-iIJAUIFqdJEgPqNyV7DMQ4poFD_o7pcpGTxbs0Us04zYU63Iy5spIzM7NA0n-3gZ4mF5-x6xOg00lsDGUFHfCvmFF3zCh1VU_aKG2djWZnAK86ROl1Eke6w5A4WsG7y8sZRBK_ww3_S5XMRnV9m3w9PJJYryw6qn4qDfGiLQ9Jimxol-Q2JOAiuQzBn7sbxZEmjFEu4iizu00zmw4pFcMM7MnUdG_k5E9PD6PjbCcADhW_wkOK-F2euX8TGxrV6QH4Es",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=2111546173&itemId=3586762064&vendorItemId=71572557022&traceid=V0-153-5ea1e8d9e48af2e2&requestid=20241212124448473254961246&token=31850C%7CMIXED",
+                "categoryName": "패션의류",
+                "keyword": "경량패딩",
+                "rank": 3,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8412854615,
+                "productName": "이나슈나 남성 엠보싱 경량 패딩 자켓",
+                "productPrice": 34900,
+                "productImage": "https://ads-partners.coupang.com/image1/A-IILnDmtg1VzW5MA2issq0GF0H2GiK6bSTeGHUpIwbpyz3WBmg48dVFJPUBDTyu0psxtXOIPyXx9Jr-6LaPd2pdqr4o-XpQdLjc88umAvYtI0tS9UCEoGaEZVpfy_pH5bjNDsLN9vbBm2Coofaqf2txOmJVHsyu880Qef3qHUtls_bzcSVxcbNHC8suYq6cD94xS6vxSXjlIEPFqJt-_8Vj0Y84wUu9J1w83dpEp42qL7JDxRrhTdJLzrfxxJ-7DgZrXCzAVm9Qm71epmOuVahB1rMk_myP9X7nSFHHsaTE2TZEe7kD3NIPBuIbZte0Vn0YM85KFaWPPD0W-z4NKsqXi8NHTK4kBKE=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8412854615&itemId=24326164444&vendorItemId=91341850576&traceid=V0-153-092d079574a5e612&clickBeacon=6f801160-b83b-11ef-bd6e-7fca296a4c8e%7E3&requestid=20241212124448473254961246&token=31850C%7CMIXED",
+                "categoryName": "남성패션",
+                "keyword": "경량패딩",
+                "rank": 4,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8410993060,
+                "productName": "오샤레 여성 경량 누빔 패딩 점퍼",
+                "productPrice": 23000,
+                "productImage": "https://ads-partners.coupang.com/image1/xtzku_zTeLdWgV5gxuUuOBgL-D1grYhFjv-RbEjNMjB4M5_xn4CmbNEiK_4XTZY3ZCFq2mh1qZ1x7QmS-4fhx34T2hiuQsZUR9Vg2r6aD4BDZXxApWGbmI6iDWV4EVk4RRB_P89ff3EwVgBMNA23Qb5szHWOIxz9ixEMy7Oo0kZWM2AfW0zkvXKoqb2kRPcPtSPEdsPVnd30Hz_oWoI7QIqW49WWWxNln62w2ekz_McTdHcsuyK303gvsYp6MVbP6f3ZyZfozWKkkR28jpHGf61Vh_JYyoalAsJkPC6Dyzgp3srCLapykNANqGK4NDBM9jKKRBWXrXmcsvNZ-UUKZp2G0I-16WfbleM=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8410993060&itemId=24319476807&vendorItemId=91334539198&traceid=V0-153-21c9b5f9a1c81214&clickBeacon=6f801160-b83b-11ef-a870-3f94523c8a89%7E3&requestid=20241212124448473254961246&token=31850C%7CMIXED",
+                "categoryName": "여성패션",
+                "keyword": "경량패딩",
+                "rank": 6,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8390153606,
+                "productName": "브라운스튜디오 남성용 경량 패딩 자켓 BSJ-01",
+                "productPrice": 24400,
+                "productImage": "https://ads-partners.coupang.com/image1/DzQJLY-DOCCY57JOD2SlLbQMyFIj3wr5YgEzMvhACCDVJMZJ3g_KCv9QsbUAFjR0bBs1Gl1zp6a_ja-mj9ZuqBTkpFy47GAxuCoTMw_dTskzu17jsXc9Kofq_TGOas8o6kOm8OrPBo9e7lDbGCtWTse3xUPsW8NqSk-euHEMf0-0NLy_gEi0A1pGmGVctaGGAh08thxJLBghHKFSS9rMvBfYjAvcwbsyEWZCvkBpydLEy-4k32TB3-aVwl1LydN0f7QLMmU4v1zdy3YXlLE4XTcLKZO-mFpcPR0oR1JWnRwDf8_cgbSpJb8yVWEj6ITTF9UmwCGWR4Rmbg==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8390153606&itemId=24252210892&vendorItemId=91269112537&traceid=V0-153-2357fb584928a2c2&clickBeacon=6f801160-b83b-11ef-9bdb-bcf1f7b539f0%7E3&requestid=20241212124448473254961246&token=31850C%7CMIXED",
+                "categoryName": "남성패션",
+                "keyword": "경량패딩",
+                "rank": 8,
+                "isRocket": true,
+                "isFreeShipping": false
+            }
+        ]
+    }
+}

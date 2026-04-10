@@ -1,0 +1,69 @@
+{
+    "rCode": "0",
+    "rMessage": "일부 상품이 내부 정책에 의해 필터링 되었습니다. 게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EC%8B%A0%EC%83%9D%EC%95%84%20%EC%9A%B0%EC%A3%BC%EB%B3%B5&traceid=V0-163-23417cbf68dd172b&requestid=20250109020645595285884460",
+        "productData": [
+            {
+                "productId": 7716181395,
+                "productName": "북극곰 베이비 우주복 출산선물 아기패딩 신생아옷 백일선물 외출복 100일",
+                "productPrice": 32800,
+                "productImage": "https://ads-partners.coupang.com/image1/7iHbnHBV294PgxjN7h9HDw0AyNB6XnsVQR5-oPdOmv5J4zyDHfZAppOD97Em-tLVb9LiNNCUREoAvAxb0qb2Gfvgm0gO9C83xLpJSsvoCet9P65110njSzk4D5qcVsRhQs_f2zMnrY7L41-6XH3_cSFRyhSKu1lwhR10ksQGXE_dV9WKMu6WCVWUOxUoffOdVfgzzj_LVgyPES0QrwKvw0iPETlxKEXnNhGg4pknfp1LQLv0z6nKCvt8IAU-oAJ47AbGhjUCB5PZ64ILzbwHW6ibmKYVyvobn2-ZK8byX9Q8LeslnmCwJ7VZngenLD8k_NmwZbk7PTzTrfpRZ1CktNdT4WaKsE4=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7716181395&itemId=20696226939&vendorItemId=87767659852&traceid=V0-153-1cbadd40c9f029cd&requestid=20250109020645595285884460&token=31850C%7CGM",
+                "categoryName": "패션의류",
+                "keyword": "신생아 우주복",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 145013976,
+                "productName": "맘스케어 해피 베어 후드 우주복",
+                "productPrice": 29800,
+                "productImage": "https://ads-partners.coupang.com/image1/5R2MhuZCcXHDv5RW5ZSVUa1jcLXyM7rat6vL9d6CooJSY390LDMc-_WWUjtdeIubxUI-OB5LIxdQktKbr0Lbedv9qFMvBlnvXfFaZtktmeu0GrCaUZ62k6FmaT33OY2UXX_beBktjyGzt6Vn_kFv3j5E0t47cwWoHC-TxFqzMIca7ncu5O65D0LuDksDkG6ov9FuI-hE1Glx6aqUO9FBxG9YxqYC7VK0frck4iXLX_FVFkdeJLvvYNDX9XQrnv6WKpYo4Flurvu4EBl-zSYtwW0x-QewH6alQX61Ys1CG6orZ3QdyTx6PZvRuWROCrEr1g==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=145013976&itemId=420609118&vendorItemId=4034465719&traceid=V0-153-8f6f4a4902587ec5&requestid=20250109020645595285884460&token=31850C%7CGM",
+                "categoryName": "패션의류",
+                "keyword": "신생아 우주복",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8301426773,
+                "productName": "구름위에햇님 사계절 아기실내우주복 PF-2251022",
+                "productPrice": 14500,
+                "productImage": "https://ads-partners.coupang.com/image1/Uwx476crCqOHO78VU3Ei4Aa9wm2e9ZwdvgfOUfUr7kwVpXVhqZdHiXA3kSjF99Is3uxecHdm16JeHYD7vEgN4goixgX81LxQge0CqZ3I6sznpngk_JmlNTYHeb_EQExDQH3TktTrKL7ozmYFTSmotkCPU5WvOqrw06Tgga319YgmEaDMGdlBMDF90LwcvjJaKTcwBQvpb9YEvx6JOBHLZSakixdim0Muo02wQD96q7h6wkN3EjzPirqNMe26bdT27c_791_jXZcYJ1Y4s0p-3ApO6JyJSyZoP1x4Zbh_2aSxg7oKuz-QK57QSPBNnVRHyWNeJqMTnQ7CEP_Pom6tx4i_hx7BcpQ=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8301426773&itemId=23948629775&vendorItemId=90970367946&traceid=V0-153-830230f9fc770233&requestid=20250109020645595285884460&token=31850C%7CGM",
+                "categoryName": "패션의류",
+                "keyword": "신생아 우주복",
+                "rank": 3,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7854585845,
+                "productName": "구름위에햇님 봄/가을 아기외출우주복+모자세트 HY-2281317",
+                "productPrice": 21500,
+                "productImage": "https://ads-partners.coupang.com/image1/kChKonJeNH_BUqsBkFX1E5jkNaWbcOTK7Qdt0Lc8R3CoZKRqVM2NrKyKQdt8RqFe0kJbnj2Lj5ErmFXp3PpmVDoT3xnb5bhva759Vms5bX1mWqK6GynDtnLSlQexItgYPCDAoiCPkHeYdP4SYqn36V8AQPEQ8RhhhJR2zYvmsr-bSPPwbdXizvZoklt3WNT2McO1sP7CNWeix2aiPNsmaSNRrOJHcA3ttL4d1ImG95eH9RUEXAtYqlSVbB78Fxq7q49SxRqeQXYMQBkgeTybm2-iFUO2yfDnsDuCSz7J3i5EXoha1SJK-tubhVwl80w-5OG1ADsC6WsZ8DKFNrdKutIrfhAV1NY=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7854585845&itemId=21417987878&vendorItemId=88474224964&traceid=V0-153-9d27fb32dd31b44e&requestid=20250109020645595285884460&token=31850C%7CGM",
+                "categoryName": "패션의류",
+                "keyword": "신생아 우주복",
+                "rank": 4,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 145011055,
+                "productName": "맘스케어 유아용 아기양 후드 우주복",
+                "productPrice": 20710,
+                "productImage": "https://ads-partners.coupang.com/image1/u9z3GxbIjhLug81Nux8n4IjLRyWluXtd3shVBLutRJcytSF01lYPlUvx34y9TwAHPM4rJj4QRN-cmymtp0bTH6sruGNHEU9A5Babz4IDXiSJ98BelIQjv3659GixXn8xFAvZQGG0_YQYPPDzqsbGYQHeEiQt1vrf2BeP8bbjDQjRZ7OsUFfowYblDU6ixyr632jCYOOtXUbmyCoFL7dWI2ROzq428G-druT5RGEaNUi1kjRKFNL3MrxXBY_smUYTFnqc7ckTUnY-1eXPyXfEiKziLM3VDX0DZsvDyZt5qAPp9c-TayqOzLAXDXLz",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=145011055&itemId=420603307&vendorItemId=4034451764&traceid=V0-153-ad20e77c99387026&requestid=20250109020645595285884460&token=31850C%7CGM",
+                "categoryName": "패션의류",
+                "keyword": "신생아 우주복",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            }
+        ]
+    }
+}

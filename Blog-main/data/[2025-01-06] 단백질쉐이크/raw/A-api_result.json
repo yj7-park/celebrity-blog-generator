@@ -1,0 +1,69 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EB%8B%A8%EB%B0%B1%EC%A7%88%EC%89%90%EC%9D%B4%ED%81%AC&traceid=V0-163-b67e0b6e462c65f4&requestid=20250106180017122269867027",
+        "productData": [
+            {
+                "productId": 7663219847,
+                "productName": "뉴욕웨이 라이트 초코 곡물맛 2000g 단백질보충제 단백질쉐이크 프로틴, 2kg, 1개",
+                "productPrice": 37500,
+                "productImage": "https://ads-partners.coupang.com/image1/zfg0lMKaC-6aexhlzZSqtIawO6Myb3DYcah-yPUgiZPdk-8-P84HLO_JiuIrUZjLd-jCNKoNMtwlVrnNcsh3wZpzJSJeKAqyxv9OjRtk-sDvE0MbAloH5tEgzh-0tXt9Mf0HJaICa_Blx0IZLOBc8DntSXrYRo3DkUn6CUVeEW9zVwJKr8FzjQxENGEL6mBSR72-nyEdwxWEQyycpU4P73X_LGk_H05p97r3E88VDlxwW0Ui3iz4O3FD3X4wjRWjya2zh3271r4iG6rHQkW4V7_XDmucPzEc4xs4DIsoIJwlRQKAtOxh4BS_7aOULGMe84vsDPfFa5mHCb0YEQaJdxQwWbPy9tfEFcD8hg==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7663219847&itemId=20421596446&vendorItemId=86624554388&traceid=V0-153-22f952ac01dd2f69&clickBeacon=a62e70f0-cc0c-11ef-8ae8-a13ca0dad67f%7E3&requestid=20250106180017122269867027&token=31850C%7CMIXED",
+                "categoryName": "헬스/건강식품",
+                "keyword": "단백질쉐이크",
+                "rank": 1,
+                "isRocket": false,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 7411095382,
+                "productName": "더단백 드링크 초코",
+                "productPrice": 24500,
+                "productImage": "https://ads-partners.coupang.com/image1/ifcYDt8NPN-FVJ1hiVwjGiQf0dCLV0MpGFbwzDaFrRH4O6LE908zwL6LWON0l3_rp1mzK9MifUotlM4iN5dl8Oqet0-4okeZ_jDxxun5pfcPJcd7rNeAfV5QQoyLn4mfxs8tq21z4AjhvgpOkjH6aKbrCZX4CB3pxQ0XWZBBZ2H396cUQaevj6NhcXU7E-ybn0nhVPE3_0mdoePL-0-bn-XHqf5r593if3HDMVNuEdsrTyXj6R-tTh-eIHD3MzDzel842EYP0e5WywU7MX1k4JHb0i5_oaIWsJy0HtI5JPKObG1gjNauynobSf7Yq5e9-uuMVGiJ4hrw3liA8woau55LCLqEuWQdAoNBbJNaBbWw",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7411095382&itemId=13466502453&vendorItemId=76137436686&traceid=V0-153-7c91845f620a27ef&requestid=20250106180017122269867027&token=31850C%7CMIXED",
+                "categoryName": "식품",
+                "keyword": "단백질쉐이크",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7537043284,
+                "productName": "플라이밀 단백질 쉐이크 브라운 미숫가루맛 대용량",
+                "productPrice": 27900,
+                "productImage": "https://ads-partners.coupang.com/image1/tIZ2PwDsHFo1bgIptPugC2G3omUjNNUX5Le11Fb3mW80PVvkedp-mV5Cix_iWhdI1xhrSJb8BSAPeeRdwcQufKSzzam_0dC1wPLDz2YMTruFsPaMkh8GDbToen8pxPDPHPEqNQqO4AZXh49dusIrSp7gC8eC7qeNlAzdYLOEwdJPV9U-HEBS0E_8WFG0hauBkn0dmHZ8j1pKb_XU7Kw4LT4ElQHzPLvLk77G9vpOiU-AJF0nWSR_gqInrCwYo0hU2-wfOFpBfvVKBrH-428ILKyPyml0UKBi3Q9jOjGPtwenJQn7XPV2xqlz-KDSW-NHIDIq6wW1zV4OXc0oQKbgS-ZqyNiEUEo=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7537043284&itemId=23428822892&vendorItemId=91171049930&traceid=V0-153-ee0bda74326d0ac6&requestid=20250106180017122269867027&token=31850C%7CMIXED",
+                "categoryName": "식품",
+                "keyword": "단백질쉐이크",
+                "rank": 3,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7127545378,
+                "productName": "일동후디스 하이뮨 프로틴 밸런스, 304g, 3개",
+                "productPrice": 55460,
+                "productImage": "https://ads-partners.coupang.com/image1/zRSSNbdyKhTQGUB_zdrLadPoXfS_F3O9ZyGUgVzI7AgCQPY_q0RyCe7DAUuP37thAnvFm5Hrz2yacL8-tKaYnHQRjlFHFgtJ9KbXthfmlia08dc4_yPOexGlFOy8zFMNYDEtiSIEQ3Z3ES0QP7CHukv24w6TONnB6oC6nR8Yd_zZzzi8yBk1MYtTF59S6mrdBWaA-ZZ1ZdhqcneAdk7vaStdAEwtloL_dQhGcEzEwLPfRDuHZy-inJ9FDTdQW2FI0BNbjXDNshDra8Uxz-cq1zczgmePsPEy6A6o4KdVhvXJnivw2e0LuV3Vxvr_IWSOVtICwEg7Hebx6czbtaWe0EYo5M_x",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7127545378&itemId=3528624814&vendorItemId=79017774144&traceid=V0-153-16229ff84e1945ef&clickBeacon=a62e9800-cc0c-11ef-af8c-1bf00bdf126b%7E3&requestid=20250106180017122269867027&token=31850C%7CMIXED",
+                "categoryName": "헬스/건강식품",
+                "keyword": "단백질쉐이크",
+                "rank": 4,
+                "isRocket": false,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7473190074,
+                "productName": "플라이밀 단백질 쉐이크 초코라떼 대용량",
+                "productPrice": 27900,
+                "productImage": "https://ads-partners.coupang.com/image1/K8NyDTBN9RSc1yQPKyOJct6PqEW8HtcRv2_E76zBQALfDnMQkCHvZn-3-74ZG5xzbq1D4YadaAV9pttP1i430seB4eLcgYzOD6StXxEG6QNY046FmshmOIQCqda6-GCOByzlFbX0nokA3NDI9azS9CVRKlzVelS3lPQgMD-hRVpbRrK7J_BohjG6L6s2kVu61RmKz9CpoFIcue938WFG8msgCcX7FAOvfxAehNhLQNShfLJV8q-56O30ZWpoK9GmZLNgxlBm7KYrSGc3-j6hcZSdWOkwoMMaSrA4X9zprTTQrLXuTDG_v1KaK8GcCNBv_dYLNCg2jU0UrVlsNbxc0rJoaJlNzCg=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7473190074&itemId=23849700346&vendorItemId=91171055538&traceid=V0-153-1487e794b6bfff9e&requestid=20250106180017122269867027&token=31850C%7CMIXED",
+                "categoryName": "식품",
+                "keyword": "단백질쉐이크",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            }
+        ]
+    }
+}

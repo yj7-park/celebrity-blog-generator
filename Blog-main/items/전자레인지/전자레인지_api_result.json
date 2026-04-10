@@ -1,0 +1,105 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EC%A0%84%EC%9E%90%EB%A0%88%EC%9D%B8%EC%A7%80&traceid=V0-163-14b9bac13330acd2&requestid=20241212032537359176385551",
+        "productData": [
+            {
+                "productId": 8072638913,
+                "productName": "쿠첸 전자레인지 다이얼식 20L CMW-N201W",
+                "productPrice": 79000,
+                "productImage": "https://ads-partners.coupang.com/image1/cWG2WUq5plGpP2mdcck0CH-1n5Mn_hWP8rXUQy3tXqMl_0kxVKn4f_HICQs_-twzzmtnjaSxlNb8DsBLHZNmZGZ4HwEm1feZ6bGOd-ti3U-1Z8qDWiacEIq0tOdyBI833wvTzXTp4vknPhE-1zjxKWEqIDeQvPkw-OCyOReiHQl_mEBwnrJS2pi_9LUvmX-xIHpIW10XLVIoFhHnHfnvV_NM0RXTC8bZL-Vu023O6ThChplzpnnsZqxVzeW4ydC3qQQvPC1JYBuOlHtjP5HOQv-y1LVPbwrDFoHo2ZOV4UCr3SkZLVl-MytMIDdAHly9hVyz",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8072638913&itemId=22729460449&vendorItemId=89764802993&traceid=V0-153-9b0dd6f38df2bf94&clickBeacon=51799770-b7ed-11ef-8f66-4fcd1b89f89e%7E3&requestid=20241212032537359176385551&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전자레인지",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7507705896,
+                "productName": "삼성전자 세라믹 전자레인지 다이얼식 23L",
+                "productPrice": 112800,
+                "productImage": "https://ads-partners.coupang.com/image1/XPsTucPi5Xr_HMXPXJMa0jcaOcRNuN7j5KKAilNnwP0sJnpNoibPCdxKm87Fqv2DnSm98ElXxOyjvR1ROMKxo_oP7emZoUj0Tyg77rpUsLzU5-dpnfiqUh-SBIPcW4lflpgLAA3JVxdy1hEA82d-8J-ryhReZd3XDhEbbsywDAZcZSZTXgw_RDtwbFFJwr6mwPSFeP6AihQ-zI6Zi2J6K6IXyVtXqkAwOtF90VPWkv28kyM08xNGonmwxEihdZ_nK-4ZpVlSxL0enk1bBwEo0oXDAorR0u0FfRFUzKxWJ7BoYbLqNZmmkkKNKK3GKfCrrVcNyQ1t11f_gCYMn4Np2-DFnHsP8NSHpDyYlTOx",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7507705896&itemId=19665760789&vendorItemId=86771432026&traceid=V0-153-a39718762dc501ec&requestid=20241212032537359176385551&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전자레인지",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 6784715012,
+                "productName": "쿠쿠 전자레인지 다이얼식 20L",
+                "productPrice": 58800,
+                "productImage": "https://ads-partners.coupang.com/image1/ZMYS8Zu3gZB1eZdCZD8xe1dCNh38Xf5Ef44aqBDRX45Ez9XzLW82mV-AwHv14R94GxafsFHQIny6RN2S_HMVpLk64WRdIEM_IqGgH6jPnAiB_PX2c3ZlWH_dCW99nGNc46djVeWGdJOU2KCklNsh8y7fQ2vo6rC2JR6RUgrEiOaDNF2BAarAAD8OD7ICljyVqymxMYKk8kHlPhmm_ERkrk0fJNkA-ytIVPCbem4NB-5offbszGDGzpNiDV1xcNzZi4ShobeugVMjxXdf7qE11zOW9ivdTvou2A74KZSjrkUHFiXKkpsB6GqD1ucx8HPp6zseZQo=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=6784715012&itemId=15967393537&vendorItemId=5493101444&traceid=V0-153-70e181a43b411328&requestid=20241212032537359176385551&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전자레인지",
+                "rank": 3,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 6696870778,
+                "productName": "LG전자 스마트 인버터 전자레인지 터치식 23L",
+                "productPrice": 128570,
+                "productImage": "https://ads-partners.coupang.com/image1/3YDPq6DfINpmIZug3eIupr93nK1duOqcovwl8YiD3jnl9eH6RGueSsR0mL4ois6BuQnQdSXfXWYoGZGi-UGnDa3VG8ZNJLVT1rr4Pzl4dB4eTBamyI9TRXhnqQI5th4RpFkESXn2M9oH1XnUH1dRycHqRRpf5wfdGB8ruvHkeJ3lqKxUakPB9aotFWkIXBVttgrNmE1zHm2IDqYO5fxwLz0g-fgurSxUV309p9M8Xrd9rw2F9zGofyCNufpD2dVkhC8_29zYl6QcDUMFZBRuE4o5XzzvRG3NnhOCGOZ5p_uAD1-C3CS1aZMSWInoDUsa83DSn6Dn",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=6696870778&itemId=15496737066&vendorItemId=82716075547&traceid=V0-153-fe8e2e2fa63396ad&requestid=20241212032537359176385551&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전자레인지",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7921035474,
+                "productName": "매직쉐프 무회전 전자레인지 25L  MMW-WC25TES",
+                "productPrice": 198000,
+                "productImage": "https://ads-partners.coupang.com/image1/PpDDXpaystGwHQuMPgxXS8oxtvNQvS9NwWOVCDr4rLHKanqGcGrBGWw3PyAzuWNH5KM1uW7YLFg4ulN6JAh7DKEi4SAenowQYmd02pVs5IG1Yd8mEHKLoTlA2ypDMSaS88fOOObkJ6DQYtEk9Qrf0FS8QuN8YFp8niHO-1lgDLoa_gucIGeW_GnZuZ38yq1_nMTk1mNfcjwYMjnwMNh8ZvBrzjp6DiDOuX6qjm93FPe8mUnk59fxOGilRm-RzLrIdZZqUyK1s1dYjwvpuPJ858SZGecz9f6pf4HJ5j78NIQAyNLnpf4MFn8Gqcv9LRJUT589bJfTkGCy8lQ6ZBzNR72EyH8HnEjhPa4_",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7921035474&itemId=21761280797&vendorItemId=91490322758&traceid=V0-153-7755f9211bce8612&clickBeacon=51799770-b7ed-11ef-9eee-b440687c1e55%7E3&requestid=20241212032537359176385551&token=31850C%7CMIXED",
+                "categoryName": "주방용품",
+                "keyword": "전자레인지",
+                "rank": 6,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 4882898698,
+                "productName": "홈플래닛 전자레인지 다이얼식 20L",
+                "productPrice": 49990,
+                "productImage": "https://ads-partners.coupang.com/image1/QQV3_4KmsqIRQkskQScq7HShpqPAbPn0TqYTfXIQZOV9nWcMCMC9ITQcGQ-4eSxKgPThLDRTF7jBQAK4GJom6Rn3Z2I0Ls1XPH_wku_sVEwIjZnSGRkbQgRVE1FT_N0Q9sdLilOGEk0AzVoRr9_wD7WXdBrEppBQ4R3_151ET0fuMTv8pIo41pQr5QcL-r2GhaDrY01cw3pxyUkD5lZIDHN6eXxbSTGyksOMiFIyHaR4GVv1nwrsfdOHIexJDf4ajzTizPTu0vVzC1kUobYrRfB1IovVPHuzH4yj4R0Yrlu368ZK0U9gh5tkx2WzvCP8eVOVO28-",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=4882898698&itemId=6359162576&vendorItemId=73654433799&traceid=V0-153-aab4e1886b533601&requestid=20241212032537359176385551&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전자레인지",
+                "rank": 7,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 6585337009,
+                "productName": "쿠잉전자 레트로 전자레인지 다이얼식 20L MC-RCR20A",
+                "productPrice": 83900,
+                "productImage": "https://ads-partners.coupang.com/image1/bMAfgBs4CLzmHM45bBJlpBDfjfNjwt5JkBrYf4aEMDyiQHSR2TiXPV6Tp1DRFNZXecay8qEGYNyyfUvZN_27MmA1HFMhAJn4I5gUyMGoBtahpZ7LRfJn3DAr_JsiJmsWwWzAod7wW-ubbo48ywa3weu9EmexMkAWOR0wuKHQ3p1CWBvazjflEp8Rnn2x31TL2vS3ihrd0CxT5fwbT1P7z8w03LFWRiOqjcGImLGh93FI_gZjLlJ3A3Nm-T6VMdAOBbgzjQvI9GjHDncFmFaA9j9x6KCBUM7f4XDYbk356kUXULN9Igcz5fOwjX_waXkkUlDtXW0-XuYtAzoSmGFwTFBd8TeK8YT14Fg1gA==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=6585337009&itemId=14836813838&vendorItemId=82076112778&traceid=V0-153-dd85afcd19b02301&clickBeacon=51799770-b7ed-11ef-9f67-dd615fd92446%7E3&requestid=20241212032537359176385551&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전자레인지",
+                "rank": 8,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7634815305,
+                "productName": "미디어 광파오븐 에어프라이어 23L MTO2300BL",
+                "productPrice": 134900,
+                "productImage": "https://ads-partners.coupang.com/image1/M7_GLjWG7RbPumAAM5BAZL_xpYM4NzKk46lJvPgb3Xx3K8jBJn9MvbrllanWAhETR0cu3sBL7QW3VCVi2PmcFOVKHuVd3Rce2tY6jpD0QYmSiExtK56kXGLmwDlTEhjgPj3_hMbNx5il_k2Mz2QGZxTjpVquuadAS5znoX-P9_pnvzi0aWSoHSWzduJFTkP7plZhg4XZJhNMMQJ6xz_wRhDxPugUuIGDGwNG9Jv3QcDcgrytAp6rzej9AyHbOzfP8QS6piqTMGR8uNLaX0yPkvPzFpTd4wuYtThyoVwKW6Bco-qYbUWdg3JC2hXOTctE_0mCePu9S7_L5jU=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7634815305&itemId=20271379965&vendorItemId=87358462246&traceid=V0-153-6e57abf217d5ac55&clickBeacon=51799770-b7ed-11ef-80c4-f2e594bb7159%7E3&requestid=20241212032537359176385551&token=31850C%7CMIXED",
+                "categoryName": "주방용품",
+                "keyword": "전자레인지",
+                "rank": 10,
+                "isRocket": true,
+                "isFreeShipping": false
+            }
+        ]
+    }
+}

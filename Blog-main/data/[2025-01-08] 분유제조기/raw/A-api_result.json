@@ -1,0 +1,129 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EB%B6%84%EC%9C%A0%EC%A0%9C%EC%A1%B0%EA%B8%B0&traceid=V0-163-7d97fd268ebfbb4f&requestid=20250108231842806227443243",
+        "productData": [
+            {
+                "productId": 4795877375,
+                "productName": "베이비브레짜 신형 자동 분유제조기 BRZFRP-1A",
+                "productPrice": 289000,
+                "productImage": "https://ads-partners.coupang.com/image1/QL5i6wpM6gT-QerxQFFogvaWlw2J7zTgOHtIg2k4nCQNQX7w585PBsR8sRBVH0cJykkgCl5kYBXUx0j412llbsrXSmfTpuG8daXIBPv5GSfqiBPRaEFnj5qeMaProZd55OARX9rff7GbljJdwPTgASa1B1vLcd3LPCFPid1loo1HbJTzDB30ceZXeU8uPtUC7HyqSFEfI3kCEumoIs8JM8zpNBWpmDiphqvpPoD6zeL183zJ9u9sFtVMDQuAMo8qt7HN8WobD24vNP3QNch8UTi6aTYxWwBMf_SokcrU-AUIvcn4rICE-BuTU99UHPNFGw==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=4795877375&itemId=6151244509&vendorItemId=73113099140&traceid=V0-153-5c0798b675443aa1&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "출산/유아",
+                "keyword": "분유제조기",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7702485266,
+                "productName": "꿈비 분유 쉐이커",
+                "productPrice": 42400,
+                "productImage": "https://ads-partners.coupang.com/image1/JvFeD3rPX6r1c02wJr8thF-7AguO_w0JUE9xWv0Lt-26JG_6RE8E3TGQUVM8wK08Yhf1breovA3ME4o5refa1bONAAFD_foLhNPcGA6J38cQpETgjOzH91MnO3RxBqCRh46z4NqOwWJ68NdecpqJH2ZQ8meBqv1ZKYLm-18NPPeoqh_leUl5RAa4AvApJtAYY_dP0jnXg2tqYVc9O3nbiw0Px8waOLmKdG0z09fSDQl6nbaOB6mmv-cRHbt2wOAmag84keG3MvrWDpYkT4nMQEfnYj2ZdX3gOspm3-yURuzAd2KSEP_IbIJ8ZUCfpoGMFHM6MYSQMQ==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7702485266&itemId=20626654916&vendorItemId=88994104088&traceid=V0-153-38c5ac56c10d7875&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "출산/유아",
+                "keyword": "분유제조기",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7368490136,
+                "productName": "바란 스마트 자동 출수형 분유포트, BR-MP102",
+                "productPrice": 59000,
+                "productImage": "https://ads-partners.coupang.com/image1/a2GSec0wTJ9yjj2dazQs6RNDpecLXRylCVU_Mey3M4E-SXs6vmA2Y4qGuUe64qrJz6bMu8brRzkTFLb2HH61iC0gIm7HLKfbNehIWStVJIMiA9uJ4sCawjRQjzOmUIH6jeqguCl9Ht_gRH_Bj27LM9WchhQGHJkrAolhMjnADLVo_cDgCmm7gdhQ3sDcBxCQRV2SSxvN42f6-xXIsfGsBs2cFlVzGcq-fSM3KCbKM69JalRDa-6K-meX29GyPR7oVJZX7HgKvE_VM-WUV8H4vEzXC9Fqe8vduE3qercDO5S8rCeOteW9NbjEMO5MsLtgFoFHh9N2HfbVwUCRn-dUoBheqtiY",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7368490136&itemId=19001680392&vendorItemId=91388473308&traceid=V0-153-8aeb6a3326bf5a1c&clickBeacon=76e37cd0-cdcb-11ef-b9da-dd127402beb7%7E3&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "출산/유아동",
+                "keyword": "분유제조기",
+                "rank": 3,
+                "isRocket": false,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8523979235,
+                "productName": "브라비 플러스 자동분유제조기",
+                "productPrice": 329000,
+                "productImage": "https://ads-partners.coupang.com/image1/1vjy1d9KKYFs-tYe1lkIP98dnfAIf9wqKu-JFIuFdnYMiB67QRZAX8gc6nnvwvNGMcKpEgC8lVbJPDg9gyrESPeNg2hWEFXyOSfPkN40AmfKdrkomJ8GNb8jz6GX1C62YXqI0KRubUx2XNfmq5ifaYENpOT2s4nAaHc0rXpYcDPuhngfgX5XgvtOimIA8kbId13m2-YdJDxadOtYAKZnXMHlGA9hS9hoHXXt-HJI8fQpCxGYMoD6CmzZgF5lgVGbGDvT7KDtJieL2eYu3qI1ZBOAg6RDGmYAjG-9qqVSguiEDaHKH3DJ8iJUW28_gRUjPgjMEDIMYgxgrWT7Pec11qzcz-cABkA=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8523979235&itemId=24678838800&vendorItemId=5541522217&traceid=V0-153-94830c97c1e3d418&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "분유제조기",
+                "rank": 4,
+                "isRocket": false,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 8490908700,
+                "productName": "베이비브레짜 분유제조기 BRZFRP-1A",
+                "productPrice": 319000,
+                "productImage": "https://ads-partners.coupang.com/image1/5fG_ZfYIZpBBo1si5dWIlD2Zo3qHkAEDloyoz4EKfb68JgBS9IGjTma92UQIxthyfadX-AAtA00IICUf85n7rKNJxZk-3T4bHhB-Yz4wt7GdgORjwc-JUddgdTOqPhj1U_UsTP878AW_NdrWvtnabG_v0cyBDv41G-8uy4KjwwaugCYpGeFqL3ejV7E_dk1BT0iQoEi9bx80haoQf03gAN3FjkDZqlSmSMjXdN7JDoMj-TgoQAn6e5Wa70iLgSq4meOj0P8WhczZZ06NSVSVHd-SQi37KvGCP8tMilfdZWcr0YqKOK8leA0dAx8Cir-q92FgosR7Bg==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8490908700&itemId=22932868348&vendorItemId=89967226829&traceid=V0-153-b97d5e464fa1278b&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "출산/유아",
+                "keyword": "분유제조기",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8261168537,
+                "productName": "맘앤리틀 에르제 분유포트 S1.5, BMM-3802",
+                "productPrice": 89000,
+                "productImage": "https://ads-partners.coupang.com/image1/777bTt1jS0-cgQWL79ReqCq8sCtIe5MPgfwa_nDJg78MyNhwS_AU1MNcB43EjcGwmVuyFOSfgpUlv-Lkn3ZIouKjT4oyW4yjtBcFMBi2RB1m3VVr0ZfJEvboD_LlqgljDaDr1WW2qU4EMWz2YWjZmuAN76PKNdIAlEVOAS2mBbq8fyJLwCtCzZSDDuGv6TBt_dYcbQ0nX5BLDM6nwNZ_-TNaMu_N-dNKplWFWV_g684QWTfBnwZ_MDrBOq3UV3cXc2lcwd4YDo8LGQiwbvW9vYnfX6xsunnk0d6q-qvX9RKO2NdrdMb5pSYVfSRRbmRWQQ45Bg==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8261168537&itemId=23798810968&vendorItemId=90822758567&traceid=V0-153-1151c2fa3dc48314&clickBeacon=76e37cd0-cdcb-11ef-bb32-77670420a9df%7E3&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "출산/유아동",
+                "keyword": "분유제조기",
+                "rank": 6,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7657464977,
+                "productName": "이오맘 스마트 자동출수 분유포트 보온 출산선물 분유제조기 신생아선물",
+                "productPrice": 89000,
+                "productImage": "https://ads-partners.coupang.com/image1/H5xXd0FwWwhys0y0H6jFQ-VaxCSLpvhT_kCfPRApJgbK6SXgjh0LehHRMgJASlA0JyddHy7kmYKrqiT9VN_A-HxTcEfPUKouW5SRswnKH-oie3wdXIVJ7lbWsa518a6mJ3FjVFDXDLo9c0Ojguvz6SPD3IvuTIqZBjDDnRNxe8BdInEq0gTlTsjd2kk0vvWES6AKqITip0wcthPAczLxweeLDGFELtnwBR-KGBAgiPFX604GE2cTVu9vhkGKhWtiSGfdHlu5Iflkkpgn6XurZkG4qWxEzhzlSmIfp7xaC7MmDVnHKXCxKQkhIilnJWPQsxiDAtIfXYM_wKKx1K4_Fw6YKEnGtfmu",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7657464977&itemId=20391531110&vendorItemId=89169609762&traceid=V0-153-adfa47c529d461be&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "분유제조기",
+                "rank": 7,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 2348678487,
+                "productName": "르젠 멀티 분유포트, LZK-T1200(그레이)",
+                "productPrice": 29800,
+                "productImage": "https://ads-partners.coupang.com/image1/j1CIZLr8VwMnHUbgj4RZMSR-gw6AGGxP-VLjcxBQLoMqWXFSaUZrCxHOj7uxW3wJjbPhSMre4c0lUmLbEUUo1WWTIDKYaFtW3ZkAlsZIXrcxZSO6I0m2Xq0Jvx08kzZ3fKsaG5sFpEzHO-bM-TIPa3Q0IUS47xGCuatQYJZb3tSZNwxO0mIfReB5G7M1g4m6RrtSgF2dGO-ng9ZAQsjUssf6gcm-tj46ks1-NMBg8X65kRZ44iTGlZ2QcdwaNjsO29-uoCporybZGN64yOkNv2PkaCH7_uydxsLP9WpuYFO_eYR7Xgj2lX2eEgJDtEYShK-yMrg=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=2348678487&itemId=4073002003&vendorItemId=72057055130&traceid=V0-153-97763d8501e91484&clickBeacon=76e3a3e0-cdcb-11ef-a1ae-7786f0a9cda4%7E3&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "출산/유아동",
+                "keyword": "분유제조기",
+                "rank": 8,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8187929305,
+                "productName": "허밍베베 자동분유제조기 스마트 앱 플러스 HBAF-2402W",
+                "productPrice": 248000,
+                "productImage": "https://ads-partners.coupang.com/image1/jNfZXckcXsEhx1w7jIXPrGCr20MlFTx-rd2aIj7G2e2Qk8d2rrEll1ouWGa3ePukJlqSfNHj25K4nE2ws9HGjQNu6tYT9zYC-JRSnJxUws75U-kEQ7hBIiOVylwcnkk3rJ1oZ9R-Ieu2GSc-eIuzDh6ExGCVjKOy2_VEyTGRxj-4NvL2c35LK7tb3_RQqrTnuwjhx242AYii-c1LIhf6brpAHp4OdmKRlnDnpL-lR6NLkKyyqN3udMDULFxsxuFaczD-X5ykZnSOJ82DgplGWlA0FAorMgrjc4oGm1b7SYvRkoSQcAriX9j4g4D9_J24-vzRhySZkSryHbUgwYvNDugC3haUm20=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8187929305&itemId=23420441523&vendorItemId=90447477030&traceid=V0-153-0ae6ccdbbf1468ab&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "출산/유아",
+                "keyword": "분유제조기",
+                "rank": 9,
+                "isRocket": false,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 7342144886,
+                "productName": "국민 분유포트 브라비 스마트 분유포트기",
+                "productPrice": 95000,
+                "productImage": "https://ads-partners.coupang.com/image1/-QjSXbbgyw2BM_c4-f-YT9WSjz_x1V7_JHisksWNzk53o1RRZELewLdQ9RcvSY676VuBv1U8TvBUy8lcXFLB2lKVAfQcMLCAa2YGUMKjb0w64FrV7NDxjyjJnAYzxubD81WXAXAMa-ReEtQyAyXtEsKka0EEvnM9GiJpKjyo2Pn45hE5Ug9UiUpwyq3yNYhjcx8pXpAsXnjxuYsNWVhyQsByLEFdugQwFzKbbXAd3AEgbzOtGEx5LSJEpci_rrXc-pZMcwLdgxNJH_J3rTpC8oEeQiwcDRPAZi3zOoKYOLa17pD384PlCLOZExWSPIrVZ2C1hek61ps05rQ4FT1BaePZvRBDFeAcVj52Ng==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7342144886&itemId=18873721104&vendorItemId=90859986711&traceid=V0-153-76abad8cdcf336b0&clickBeacon=76e3a3e0-cdcb-11ef-8eab-e6d825ba26e2%7E3&requestid=20250108231842806227443243&token=31850C%7CMIXED",
+                "categoryName": "출산/유아동",
+                "keyword": "분유제조기",
+                "rank": 10,
+                "isRocket": true,
+                "isFreeShipping": false
+            }
+        ]
+    }
+}

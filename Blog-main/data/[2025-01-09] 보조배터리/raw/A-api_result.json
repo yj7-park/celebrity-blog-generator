@@ -1,0 +1,129 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EB%B3%B4%EC%A1%B0%EB%B0%B0%ED%84%B0%EB%A6%AC&traceid=V0-163-d743e536b4519b24&requestid=20250109111126535176306450",
+        "productData": [
+            {
+                "productId": 8347782454,
+                "productName": "Toocki 툭키 대용량 맥세이프 마그네틱 무선 초고속 보조배터리 10000mAh, 불루",
+                "productPrice": 80000,
+                "productImage": "https://ads-partners.coupang.com/image1/6RhcVeG4JFiPCy5C6eFy67dI-sNm5p2zriBecUeed4w2jOkGw2uRmXSqzEi1o0QX312v0g8CKyRyz0dswTBFN5o5fbGveY57ClUOKCRtwMYFsOe3cCgjUeftrnMMEXoM3kx1nreuRs7RTTJMVXV8yriUxOB408iE1RikDA_hJzprLK1ojSqRpGYVF0OTMhpclgYjG6kdiZ4Z6csUPGhaz-q7fovh5cn-oEiN9GDASZEXG4TdrNfPMXMRGZkGsYptVbT0Htc-UNdPZVgbwqA5FlBrsr3_br4q4HjgDEbAOuqseaXoZEYNCri3Ew6VSozaDw3s-M370X_r4R5jAnKxwIzfWPdZ3g-4WU7oKw==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8347782454&itemId=24113521505&vendorItemId=91170999330&traceid=V0-153-92ece21f07b36a4e&clickBeacon=0815b5c0-ce2f-11ef-b4dc-8dc213667a06%7E3&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8366830499,
+                "productName": "YINTO 도킹형 보조배터리 고속충전 PD 20w 일체형 휴대용 미니 보조배터리",
+                "productPrice": 12900,
+                "productImage": "https://ads-partners.coupang.com/image1/LpVlE1Tudj5lriUGLp-IzvbmRzIvQwpkNGJ3xzSxf8qFF0-uZnF9-UW1ZuztOocjwEPeKy2eRapQI7k-icpcQX6C4XSkR6QEdzwP2mpb2mBJBBDNBKXKYp8is1B83Y2McfgDI70e2BTbG6efKBC5vq1M6z3oaDogo_RnThQZFAgTVClPxXgPc7LXcSz96MMCdjkfdO1c5nirkDAObecXT_mkM3VvcVmWignPQnYPAyxMyXIPV5ArwkYyKKLhChM5l4NUijuJW3xxg9gRE1OH3HTpfGnwA1UxXEQA7YP1ylsz_EOzvx7BlevmjDuVH9FtMn7OD5CocnLvZanrmkbPbQ==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8366830499&itemId=23627046124&vendorItemId=90663830164&traceid=V0-153-ee369c661022fdb7&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8366830499,
+                "productName": "YINTO 도킹형 보조배터리 고속충전 PD 20w 일체형 휴대용 미니 보조배터리",
+                "productPrice": 13900,
+                "productImage": "https://ads-partners.coupang.com/image1/NL8GqzC-zHw4qTfINMqSn7Ga6w3e51ZEm6u-Pw-whj35a3X0Q7q5oWFlJQ8WBSKfrstpof7nRF54JGzlrygvmEs2OLtOKYIaH8pULSrx71Mziv999PL33G3c3C8UDOsxge74lNddq_Ih0qUs0WtQgGC1_U0F1IXra4fBXAQk93LAyiScd3RQS2nRrvJb2C0MBEhS7-x4yGi6hUPavfEHvr6p38lgZKmAFlwpQV9qSeemmMvAxzaoNOeUopNu6__Fh4upBb4AiB_fX5xE_lOuZwuEssjYjnRpaIIs7Uyc4ERABh2EbZ1Ok-0bu4M6_rkCGUJ_9-I5iSDAp4yJIt6M_A==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8366830499&itemId=23627046116&vendorItemId=90663830171&traceid=V0-153-ee369c661022fdb7&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 3,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8352604399,
+                "productName": "WAPIK 일체형 고속충전 대용량 보조배터리 M1 20000mAh PD 22.5W QC3.0 잔량표시, 화이트",
+                "productPrice": 96900,
+                "productImage": "https://ads-partners.coupang.com/image1/VqAdyJdYYhTIhNIRVo3sLWMedo5L4JBXIU5ITREBI_faw6HyAZtf_qta6lxSX3tDXZr_NnglXPwIeXmQG91l11ygfeVCzrwERGaU23uduno8Wj14MFLt0xazj015K64i95XyEINxUZ4YTTphhumozYfM3G196WMY5HBZG0OwMyP7nuV-M2ADqPaA5lCIMgQzpL9OfFyIXXy7-IPBbeIRxcxAkzXaOUKc2M4DfPf8ZcvBuZMtbMUUEYVcAqKasywrrhaPLKSVePY2mWGvbh1BOpaJ4XFI7t4tW5inKTBmHZR0mPlN8IpJNHlBgNsq-Qq8_gV35o3zUaWAtTgCOzW4xjO4DBjU",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8352604399&itemId=24132369768&vendorItemId=91151350161&traceid=V0-153-f71547b87e47158c&clickBeacon=0815b5c0-ce2f-11ef-8a5d-7b3cb16a43b5%7E3&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 4,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7295770123,
+                "productName": "KLIFE 고속충전 대용량 보조배터리 20000mAh PD 22.5W QC3.0 잔량표시",
+                "productPrice": 21500,
+                "productImage": "https://ads-partners.coupang.com/image1/qYfCMyVPK20zKmxVqZTdWqBjvhn2zTtSZ-HGJbndFnJlktkKFnUAACTlCfdQ86Z-VCI2ypVIutBdyljK9FuvTmr5qE_r5XSByKgsANy4X_WbdZwgCOhI_ylVAJUT3QwHPtSKHtT_wsQFp_YI4I2P4_SKSQAgW3tpzKcySLFjJ4y5ps6dQxo1QwxtDXsyHvy6hRDiISZ6-wH1bnwADrFJg9CHKOhrowOn6ZXNBr6heioLeGIG_lGO_dU-WTN57GWP3TWJudwFPITfA11zSUvKdqqxF-JFODbVkkrfbG65dM9B0RPAgOUrGWm6s-BJcPals1yKDPDwMuKflZptKi7C71SMaSy-dxEt",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7295770123&itemId=18657342774&vendorItemId=86217114985&traceid=V0-153-82410855124843c2&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8019765127,
+                "productName": "바우아토 PD 22.5W 고속 입출력 케이블 일체형 미니 대용량 보조배터리 20000mah, 단일상품, 아이보리",
+                "productPrice": 37800,
+                "productImage": "https://ads-partners.coupang.com/image1/HcuuEddkY3Jyxh6iHftFFin5BWhm4pZXY0UCdhg1I1vPunHFyP7DhqcbMqTMMlo33dIWmF7XLYTF6ukEjszRmNC6CXLgaqrTvmvXaudvnhG4-w_1sxwjrlnDSrSxWmwlP0ccJwtgM_fyg50O7zmEUi3rxfs3vWRBbSS7HhEbSXuwaGw4S1TES4TgJluz8o47IeailfiZRHgJ8sIkdn1NAU5ETH7WyOg-DxJuqL1DJQElP8wQTJ1zHtsfWttAIZp3pvdLE_1hSZAO18EVgsLBoFYrnWp1AQN0piJ20owqe3Emub2CcwlngCr4qupScOAax-YwFuxPOaE8SJMVJzjSXxg7gztT",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8019765127&itemId=22408399382&vendorItemId=89453258434&traceid=V0-153-62442076086146d8&clickBeacon=0815b5c0-ce2f-11ef-bb1b-7b153b5e1c03%7E3&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 6,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8259885955,
+                "productName": "YINTO 대용량 보조배터리 고속충전 30000mAh PD 22.5W QC3.0 잔량표시",
+                "productPrice": 24900,
+                "productImage": "https://ads-partners.coupang.com/image1/ZvAu2ZHRAByb5UxvZnrxeVuFiuxwQpTePRuMa058wwRoGBOy47L10zvf6SZAP5E3UivfRJhiUqWg6rGQA3DSatCQ6vXG_7qatddDtJbgrPO2vQ9VQCY7bx4EhJq17Wl7_8Ql7lLRcADlHLGa3JdM_YsQ2aKZr4ytql5Pn3rFHAQ5cLDUbRxeNAUyz-D6MR8dTMvmfjddnXcXxOHJvBlsAQkNnZn0Dws9XHi6B8YxPpCYAx-oo4wUk6lqUCLB98s6jj1K-pg2Oo6lqNlgkovuFDM-tTBoTwSdQ-Ob2DZEeh0n2Jsp1P8ZsinpZhddTUn7meGn74t7ZI1D4qJBTHTkKg==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8259885955&itemId=23793211704&vendorItemId=90817223688&traceid=V0-153-897c2067183de961&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 7,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8352604399,
+                "productName": "WAPIK 일체형 고속충전 대용량 보조배터리 M1 20000mAh PD 22.5W QC3.0 잔량표시, 블랙",
+                "productPrice": 96900,
+                "productImage": "https://ads-partners.coupang.com/image1/jo7oYO7SdXfPgJbdjgvCp80_uo9wO19u-HdHMrdCvWOh-QhciMmKc7YGBmaRniUL87XTcrVqVZdq1ggYug3V1Vevkw95vFglZnx4RjyTG0v4PXYfzAq4lpyiOALU7u14-POrmONj96MSJIbKRJnasS8gUWMTfQC-O9zNlRvEwgv5cOLgwp5KbJHWR-8ZTUO2AEgWf_LHWSht0N7M7NPA1w7lHGmeX1uh5DO3j4o9ITObJsl9hBRZRZLKFj_pfmcJpI3x8KTFQf9nOeRzkFiHcjsSWj_dFdgFvs06mKpHzb94gzTtj-dil85_CoSK03wUPhUvQLNjzddacuzvSuo1zPjxB1AF7FAaRUugEg==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8352604399&itemId=24132369770&vendorItemId=91151350164&traceid=V0-153-f71547b87e47158c&clickBeacon=0815b5c0-ce2f-11ef-889b-56362940203e%7E3&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 8,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7925483056,
+                "productName": "팬톤 PD 22.5W 초고속충전 대용량 케이블 일체형 미러 보조배터리 10000mAh PGB-20",
+                "productPrice": 17900,
+                "productImage": "https://ads-partners.coupang.com/image1/hYDPkqgKlEmfOFQphR_t7wXQHaI5gCFF93KMwh6d6EwB98ZWcNV-riUQt6Wg6WJnydwpWRpfquTq85BoMi7SWujj6LEktVlVNkIp5qk0dxeUnxyvs1-lZMYKZE3ViMUqy12roB8RMM34HHzVO5hYHSuvpWLLUXtmVDRO7lk29l2s3ZptEHpJD7dl72vzbOMlvCMcrbtJaUmqjz-t3RDV7pk3sulSqfY5iHSUIHkQnQfKEoHWhxC_BlQp8G400wcd6h7eWm03Fmmhp1GCIlHTBJGTuUqV1ch6DegDW21Hsbt9IG26yCtLTbX4yz9NmBmSOkWJSnCaVnzd5O1vSpXADO9ep_9dRPo=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7925483056&itemId=21787007370&vendorItemId=88835705792&traceid=V0-153-f89728f61fd6871b&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 9,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7986826088,
+                "productName": "바우아토 PD 22.5W 고속 입출력 케이블 일체형 미니 보조배터리 10000mah, 아이보리",
+                "productPrice": 25600,
+                "productImage": "https://ads-partners.coupang.com/image1/u3z5CdwUK6sjwsG0u191RrSUZZwYu5EhMkoJvgAysMI97TeCeLaTrzy6MXLyAhFye7p-dDrPaPTQKiZ7ZTc7kK6g-UDPKDyHKqxyFCsaannZdG3ZtvfA3Ym4KLd1asyxM0_allVpdRiXojwp4wbx7oQLMf57tCNY1fgKwiIYgSCstrEhvBXPZnZ7EOIxkmgotKUlPQ8DPNPCo_fCr5Okx_VwVuUGvB5uC7xiwIat0JZ7PMUXtxMXblFTqwZr1BT4tjBwqwzoUX4DUMYyFvUUqUCjbHOG3kNI4WYvaHsngeEFjpWXV6w1sR0ZmdELq9HGvPLK1O49FEwy2k9nPB43Ssl7UjxM",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7986826088&itemId=22187256422&vendorItemId=89233523253&traceid=V0-153-8fb80392de87e7b2&clickBeacon=0815b5c0-ce2f-11ef-b937-ef47e0e89a49%7E3&requestid=20250109111126535176306450&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "보조배터리",
+                "rank": 10,
+                "isRocket": false,
+                "isFreeShipping": true
+            }
+        ]
+    }
+}

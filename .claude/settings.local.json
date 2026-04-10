@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ':*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('login'\\)\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python3 -m pip install requests --quiet)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "mcp__Kapture_Browser_Automation__screenshot",
+      "mcp__Kapture_Browser_Automation__list_tabs",
+      "mcp__Kapture_Browser_Automation__new_tab",
+      "Bash(npx vite:*)",
+      "Bash(curl -s http://localhost:5173)",
+      "mcp__Kapture_Browser_Automation__show",
+      "mcp__Kapture_Browser_Automation__navigate",
+      "mcp__kapture__screenshot",
+      "mcp__kapture__click",
+      "mcp__kapture__elements",
+      "Bash(python3 -m pip install requests beautifulsoup4 xmltodict lxml --quiet)",
+      "Bash(python3 collect_fixtures.py)",
+      "Bash(python3 debug_html.py)",
+      "Bash(python3 -m pip install openai --quiet)",
+      "Bash(python3 extract_items.py)",
+      "Bash(unzip -q -l Blog-main.zip)",
+      "Bash(unzip -q Blog-main.zip)",
+      "Bash(grep -E \"\\\\.py$|config|requirements\")",
+      "Bash(npm create:*)",
+      "Bash(npx create-vite:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls /c/Users/usejen_id/Documents/basecamp/ws2/frontend/src/*.d.ts)"
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+"https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=8448463926&itemId=24440432705&vendorItemId=91178595244&traceid=V0-153-4ab2f72626c3ef7f&requestid=20241128232233065016789325&token=31850C%7CGM"
+"https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=7798029074&itemId=21112707763&vendorItemId=87100149289&traceid=V0-153-52390adcd73d27d3&requestid=20241128232233065016789325&token=31850C%7CGM"
+"https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=7422063305&itemId=19255738606&vendorItemId=87187300093&traceid=V0-153-fadb64f3e5daeb90&requestid=20241128232233065016789325&token=31850C%7CGM"
+"https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=6137470273&itemId=11746886526&vendorItemId=79020759919&traceid=V0-153-67431f792675fbf8&requestid=20241128232233065016789325&token=31850C%7CGM"
+"https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=4545555534&itemId=5508610064&vendorItemId=75511465169&traceid=V0-153-27b9a32f92bcbb66&requestid=20241128232233065016789325&token=31850C%7CGM"

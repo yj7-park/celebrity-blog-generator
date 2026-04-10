@@ -1,0 +1,57 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EC%9D%8C%EC%8B%9D%EB%AC%BC%20%EC%B2%98%EB%A6%AC%EA%B8%B0&traceid=V0-163-a90149352d73b4be&requestid=20250103015426834167657559",
+        "productData": [
+            {
+                "productId": 8415433695,
+                "productName": "독일 프리미엄 음식물 처리기 100도 자동세척 분쇄기 2중 필터, (ETFT-8009)",
+                "productPrice": 419000,
+                "productImage": "https://ads-partners.coupang.com/image1/Qe7DV0igbgvyMoiEQbCtGM3rZHzETRS7aeYEuJL8BhnoOJZnxpqwbJQGAF1siK2mQJLQZnYRoVY0YPeOp2XT6Mp5PI16U_rv5q0m_gIY2S_PQKmtoAIZgABj-FC36Qgbxk7cuEnQgkBiLe8nMLtsypgpQsTOFJTvlnxYCfTPqf7vrkKErnRZ2KcWEBBGofpOZG_mxSRd6djCj2fLM2H1gJWr7eY6ci3Nd5mXWDuJRLOZJor66Pxu4bPZJ1BZ5SF6pQ4dhOlZ2vYdDSG5_KDQcyT7F8ZJyTtO_eyLM9eMhw-vINB2HUYKqi1qQIiYtAfZGz8cKjNumsZAo9OOMp8_yMcS1Qeg",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8415433695&itemId=24335613169&vendorItemId=91433760009&traceid=V0-153-10937dd76d91fb35&clickBeacon=39dfea80-c92a-11ef-a48d-f770c019a665%7E3&requestid=20250103015426834167657559&token=31850C%7CMIXED",
+                "categoryName": "주방용품",
+                "keyword": "음식물 처리기",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8314839655,
+                "productName": "미닉스 더 플렌더 음식물처리기 가정용",
+                "productPrice": 489000,
+                "productImage": "https://ads-partners.coupang.com/image1/REU_tUU1USvjpooyRE7fKv7QLgoPtza_-7VRLenRtUMAphYIueqyv469c2Y-qz6ZuDn7vTpyyKniH32FVMfpYOuMjVdJDhOJSGcaUXxM3Sh_VFB9WA7pK3lSAeeb6A18mQ4ShoHSpDJM5_L-HgTYTordNznfNYlcI-diZh-9ww94yuu0YWrQOKzNJntqXxtlIepcCiODnvdOXFvU6Itt48m7hPCDqz2kNhDnbQofaw9gD3t9lUFgFquN_-wJmQ1U-LIc2-TniFKaDzRmm_8lI-dbvEIEkBXGa5jq_BTrPQP1VYLdGNcMgqocFmLPuMLY",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8314839655&itemId=23995238579&vendorItemId=91016178338&traceid=V0-153-31fa6cf508b4d513&requestid=20250103015426834167657559&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "음식물 처리기",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7991867098,
+                "productName": "리쿡 음식물 처리기 가정용 건조 분쇄형 분리세척, 3세대 음식물 처리기, 단일색상",
+                "productPrice": 367000,
+                "productImage": "https://ads-partners.coupang.com/image1/-fs8xviSUL97Gzdt-dmSL3D_SNgx_JdKfb6Nnyh8yustWwWlborHXWSROF8Uvrmu4YuXbj3LYd3_9tasa_DFf8QdMeLml1Il2lJzsQSnSZUSy8aaimo1taRBsak37MlMGDMSTTM4A5A2RMw1u76VCUBtwBr56paUQCQsNwRzsmIyiHbyn-ctOBKTOmqLg14gOCSidWtZRqM01Cmp2Ir1nE4LQ1V-nZgsAd6bZFI-vw70lxnoYy7bRIrUorumqRX2A_S3KmuTX2vMVlY27hoOs-9ubNBUKe5vk4QqKHzJLdVKfIbhltDJOpnIiDxz3tv_pRIcHCcBl_vgAyU9ZoemuxrXrKgGG5roPVzR7g==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7991867098&itemId=22122126550&vendorItemId=91429826693&traceid=V0-153-5ad3ef9b1d16239a&clickBeacon=39dfea80-c92a-11ef-849f-f01cc48b43ac%7E3&requestid=20250103015426834167657559&token=31850C%7CMIXED",
+                "categoryName": "주방용품",
+                "keyword": "음식물 처리기",
+                "rank": 4,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8131595140,
+                "productName": "[쉘퍼본사] 쉘퍼 음식물처리기 4L 건조분쇄 필터",
+                "productPrice": 349000,
+                "productImage": "https://ads-partners.coupang.com/image1/wNaey4kKDYeoU9rBwJMROIgzZy4yKXfo5DAUc6g8xSAVT8gTqio8Na_Aee4t3DIJ2oVaNgecJnUYp1Fgbx32o_qUrW7G9fCeRJPjr7_TgIWMAxOZuPtXysZd6M7vUEgV8eMNHH5ywQtPSQE5Mh3l6ynCUfqsFXJ01fSRRfL0WAUkzD1PPrDvBi1Zpzm_cv3kEnJfGEJqOV_O4XpzLO_F_u3-sq6ySW5BC-58hQVQ4e88TguD1RgdGQrrRBnuevxctybQJOOJb9uPSuls19sirt-nNQ73QpG65pzWQ4qJM08we5ZjXqAU3paAS0km0guRS-6R7otPm2shN0PJ-oOmFbC2EAcb1g8=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8131595140&itemId=23093321964&vendorItemId=90448169046&traceid=V0-153-f1c0f2e0d7bdd927&requestid=20250103015426834167657559&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "음식물 처리기",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            }
+        ]
+    }
+}

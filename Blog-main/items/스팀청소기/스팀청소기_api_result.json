@@ -1,0 +1,69 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF3918361&pageKey=%EC%8A%A4%ED%8C%80%EC%B2%AD%EC%86%8C%EA%B8%B0&traceid=V0-163-b3c3f427484f63bd&requestid=20241128232233065016789325",
+        "productData": [
+            {
+                "productId": 8448463926,
+                "productName": "한경희생활과학 스팀청소기 HESM-D1300WT",
+                "productPrice": 98000,
+                "productImage": "https://ads-partners.coupang.com/image1/aeyYUiy5czFwP9tfaZ-jwpldQqeLUYnYqsqFRjLQ2QFqaiku3ZAqstmC1jOD7cmXm6DP_a6I4YV7Up9C9xyybYY0cpY175NWbxs2xVaO0h8u84W43MXTGMXOl3Bdx7gCzV13e9h8tqwUd95fp2p31955TJw9-Fu_6eDmeuJcV8wb8I42QqVeLCADda5jYH5jmX2VleYd370ckQZd4iXJSl7D1FBmQyBsGlSHqzXRptqr5WtGwO9WudTKPYo-lGG2OOz5ON14Iz2kRD5THdMWc8mV8KDoP3Na0H-NDyAxd1DNhClUicn6OBBOayYB9gMvDSh_Dqecfqf8CnnGojfMPQ==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=8448463926&itemId=24440432705&vendorItemId=91178595244&traceid=V0-153-4ab2f72626c3ef7f&requestid=20241128232233065016789325&token=31850C%7CGM",
+                "categoryName": "가전디지털",
+                "keyword": "스팀청소기",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7798029074,
+                "productName": "홈앤아트 퓨어 스팀청소기 AMS-200",
+                "productPrice": 164000,
+                "productImage": "https://ads-partners.coupang.com/image1/W6qJ9hPWi6XtREerWzRStAqaEuMcVeP9gNkWemjLkbl53rCO9kpr6f0aE2bjJUMqhD6vmJYEyCVSO_f20Rvxgd9LjA4audScmL2MovKosi8SWYbfVlXdkPi6TTlmblHqmY1_7Kug6PgDnrt_pOgGkxCW_8l-QvfeKwE3KrAoZDyqsG1WSdyl15f60d_CEdMHr5DCvf3THkvXQV84A78fV6x0_Q65KrG-xXQFiWpOTpYpB7IwXEblg1Bh7S3fcIBE5_icqvBBbYBJpBAWx9SeXN8o242iNUi3L2gsKk2537VkqmRTHm4_0WcZb763-zPxKvddzwV3Ccxr_9rgYg3yQNviktOTK1w=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=7798029074&itemId=21112707763&vendorItemId=87100149289&traceid=V0-153-52390adcd73d27d3&requestid=20241128232233065016789325&token=31850C%7CGM",
+                "categoryName": "가전디지털",
+                "keyword": "스팀청소기",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7422063305,
+                "productName": "한경희생활과학 올인원 살균 스팀청소기 HESM-D2200WT 빈대 빈대퇴치",
+                "productPrice": 139000,
+                "productImage": "https://ads-partners.coupang.com/image1/UVA-DZ-29nxCUS_4UekKVrqS9US-ke8spm9tq9ByBlOcjOQ4JJt7d1iBe8gKqP1eGCkfUtsZkHnDCXwA0rhf5lRsKuR4BRI1w-BM8r_ttRAwhof7qWenyV0EihTI0EHG7S0tsiHXEbJVaqeWqrig4x8AgTmVG5LnnZqG-ufrC2pgHrbdRSb3y7jL7xC0yM1qSuRyLQK0Ai6B3B6tHmZRCHV7RPv3Q9Us_WKyjaeDSaxPmoAv70QCP_N7bRs7LlE-CRFmRi9QfWA-5ov_0fPp9fI-EiikO1_lY9CmhNiP2tNahsXkPhGKl1sL_15cxHMBTfSa6NYcYLm7y7VqxnvET4czHz5fkomX",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=7422063305&itemId=19255738606&vendorItemId=87187300093&traceid=V0-153-fadb64f3e5daeb90&requestid=20241128232233065016789325&token=31850C%7CGM",
+                "categoryName": "가전디지털",
+                "keyword": "스팀청소기",
+                "rank": 3,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 6137470273,
+                "productName": "비쎌 스팀청소기 DELUXE 세트 (거치대 추가구성)",
+                "productPrice": 277900,
+                "productImage": "https://ads-partners.coupang.com/image1/svqero0mnEwBBu4kstlDs4d6RxxL8qrfeZQn-9KzHVv2wfqRIoBH-C9XKBdPO0XfjmwmBSr6JDHLGmKU4ZSwGqDlgsvNm3HPXE_L2y776qh8SEHA0IXmaiOxyGysybW-1MbXdU_apNRXKPi1fGy7yCAr1cijwWjVmLa9fWPrbmxn6PgwlOlYij8J2tDOc02tkhBv1SOiqZkSQY9rHVDRJhWxzAyVEHFRUd2WJgkS0suwuqYNnlGh176-lzi0Lhb_LTnreafAtjdlwc5V1i8J9peTjhsc4EIjSh1G5CGANmUl9gGj-x0a-Kj2VIuZiAi0J-cXIWDYo1EcHlsjfW2Wig==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=6137470273&itemId=11746886526&vendorItemId=79020759919&traceid=V0-153-67431f792675fbf8&requestid=20241128232233065016789325&token=31850C%7CGM",
+                "categoryName": "가전디지털",
+                "keyword": "스팀청소기",
+                "rank": 4,
+                "isRocket": false,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 4545555534,
+                "productName": "듀라이프 핸디 스팀 청소기 HB-105",
+                "productPrice": 46500,
+                "productImage": "https://ads-partners.coupang.com/image1/qTIOCGyweqYrLzneqXLUI0U-zox51hyIkBypJs2Fvghqf4N7xfEEhegqjvbXzBa7NaYEfEkjkxRnhccOj34wRB_5qyfomY4cUlb-NwDfoIlsAQTrl9mOO-gaJLOj25ZEsSZ8_5DJx_LxCl22FeGJUbT0q_7uHp9kkjPIDIvpDjC0CJ9vWTjwhxmssuAuI6df6HahSx5YENIQ8cmXzrBn8hNBY7HPjZhqRQ2zjGWi-yYhd_vbBFLXwJxtAvhm4bI3i7h9XDlzmuYEBryYqqWOY6zNG6oybdpnFD-VZ2_AuAiTNWkld3973A_ugcc8go8=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=4545555534&itemId=5508610064&vendorItemId=75511465169&traceid=V0-153-27b9a32f92bcbb66&requestid=20241128232233065016789325&token=31850C%7CGM",
+                "categoryName": "가전디지털",
+                "keyword": "스팀청소기",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            }
+        ]
+    }
+}

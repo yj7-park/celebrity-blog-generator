@@ -1,0 +1,93 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EA%B3%B5%EA%B8%B0%20%EC%B2%AD%EC%A0%95%EA%B8%B0&traceid=V0-163-b2f35d4f66296d2e&requestid=20241230202901473034130604",
+        "productData": [
+            {
+                "productId": 7473527911,
+                "productName": "삼성전자 블루스카이 3100 공기청정기 AX033B310GWD 33.1㎡",
+                "productPrice": 169000,
+                "productImage": "https://ads-partners.coupang.com/image1/DHOmLgv0WGTwzH95DIABZn44slyRShWxNMPmDBBrltd3vv7tEVb8W9FWX4fGyaI9pD4W3LAJNBD9xxJkk5v1MK44q2Vt6AsCL0OkNZpa4n4CzfhZP3ivs56SWLnIoY716dm-nt_3WeImSNzJPknaV14cBt4gvu9DKa2skx9pnLEKcYKDy2zPwKezlB55sUB6PlyAsWk0JksfIagVPYjCAiwfwcSHfsljx-xlSce9o4iU3_36NGzaQfUdAWyGAEkp_501WYGMyrDLAxsalRKkv_-4p-OlzIJs5mpZ4T8U1b0bUTj0A4LoTgFw82mFecCG5AR7qwMjDkTHHoYGccP3SZV-Zv11pz53Qwx53xvZhcA=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7473527911&itemId=19505730851&vendorItemId=86614734926&traceid=V0-153-9e16ae5d34648278&requestid=20241230202901473034130604&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "공기 청정기",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7496025056,
+                "productName": "샤오미 스마트 공기청정기 4 컴팩트 AC-M18-SC 27㎡",
+                "productPrice": 99800,
+                "productImage": "https://ads-partners.coupang.com/image1/rw1PlKErMngNOD6Er6GOR4Cm_yfcnu3PlcoeEM2prKJmOjAbHtEk4vIr8p3dfVhWDc7JivwNfMiinuCOeys6mlg1eogaOWJwvWdOHwReZl0RsrSrRWslIvsr-LmJS5jKluR1Vf4J1EE3qLHuJdr7MtQ3HuDkYPZ-ajdHlJ8eLoBdS4UzfA1MyhPHcUEdLfh5V9AGsWA5uVgMruAXtamdTE5I6Lb-zjynt7X-7zE0NKSL-wVmh6fDv5gao52X3qqRn12-bSiUENTAlEzp_mu3HATY1rSLO26q1S9zUTa5twl0gtCUAyHt1AnpO7NLWBPHzLHjQBsZx4jVn-9k1J1HmXSl9JnE_UUPp58eQ6bvRDc=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7496025056&itemId=19611759123&vendorItemId=86694699389&traceid=V0-153-9f2ec20d49b209cd&requestid=20241230202901473034130604&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "공기 청정기",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 2070313188,
+                "productName": "디디오랩 소형 공기청정기 DAP-J30SW 20.8㎡",
+                "productPrice": 39000,
+                "productImage": "https://ads-partners.coupang.com/image1/R17MWl90NlCMTSoiR16ZcSUbUAA0AP3af_MwsGvbn71i7L-49HSTHrfuQ-quJm12r_yNVhbN0k3o4IH8pcQ2o5xYAW0Xwr9YuelbA9RlJyOUp-N2rWbGp95cQpLivqebneKke5KR70ck8-JjDImtT1AXrIxSIGKHeeTRSqPoaJ8Wp4o181vRxKuYXUK_spnepHO354KHntN-WS2Y0RhK2ZYIBtsj87DdplXXxWCfKpGo8YcGvqLy3ijYvNImY7_BR1nbbErVZ9z76g6lTnv1Y7t75jTu_XI5CuuvGNFM-XhtO61v_8_mZWEf2wibHUxaxHbLeDShvXeejAaiY2p3Pw==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=2070313188&itemId=3517679703&vendorItemId=72979298412&traceid=V0-153-8302c6fb6e5596fe&requestid=20241230202901473034130604&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "공기 청정기",
+                "rank": 3,
+                "isRocket": false,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 7298125487,
+                "productName": "LG 퓨리케어 360도 공기청정기 Hit 화이트 AS183HWWA",
+                "productPrice": 369000,
+                "productImage": "https://ads-partners.coupang.com/image1/LhYg3m4hc4zJxmRxLpUzBzPw3_WcqOuLT1PC4oLsI_WHKVfqwuGXW7tNdLILZbh6QLTJp7zPArKJE9MgG5DWxZrU8xaabKzHbfrE7ALGt4wpujRiIuCSv4i3ZOPOPZ3hitpORKU9WhPBHMr3APQWdpGXjGUywaYLl6LLJjYNH4jZQjkA6n7bIbTZW5jZfd41QBaoZiXuiHB4PlqzJ3ty2tsWn_gpg5Nid9sW2DgIF_R1HAtX1sojQ5oGMUkmDFOF9CaR3wXhgdpivIfGzD3K3Uh4DIjg_9OvOIH3O_MCO-QcxT0dCiUxb_wXILxr_VJX87zBJnB82g==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7298125487&itemId=18668748683&vendorItemId=91652473068&traceid=V0-153-18e29e0ce2b36ab3&requestid=20241230202901473034130604&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "공기 청정기",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 2085897959,
+                "productName": "코웨이 에어 카트리지 공기청정기 AP-1019C 33㎡, AP-1019C, 포트네이비",
+                "productPrice": 165000,
+                "productImage": "https://ads-partners.coupang.com/image1/1o9SlV6NAsrjZiBu1j_5KZkwuI7g4bYvLLiBbByje8Er6t0hsNhCiOyU7cnRSZMWtIr3AVrOvyVvoNHmCTJASyqPynJhZhj9OYP9HB_e-KI-rb3G1uCCIM03c-Ub3DR3xY6GbDls3t0bOCNSucrFtK7VNOHIOyJqWFNSQHfz3ZQtVpN4zS59HJrZJn6wd486Y_csIgGSMUuL6-QwwVtnTKFNpiKZWO5QABUbp7MLldu4QUVLU0I9VWNjlYcCFW_lquQCkNSDalf-xyV3PJY0F1wlmsv9QtmKA7PwwKW-JQpFnGAmhPf2a1TMmr_AjDw1Ao32xhQh",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=2085897959&itemId=12853069756&vendorItemId=80118495310&traceid=V0-153-bff7b16cc4fe4acd&clickBeacon=449d2b80-c6a1-11ef-8896-581994195bad%7E3&requestid=20241230202901473034130604&token=31850C%7CMIXED",
+                "categoryName": "헬스/건강식품",
+                "keyword": "공기 청정기",
+                "rank": 6,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7052706234,
+                "productName": "쿠쿠 공기청정기 AC-35U20FWS 115.5㎡",
+                "productPrice": 305620,
+                "productImage": "https://ads-partners.coupang.com/image1/VhoU34Kq_7Z4udWzVsAWY_V18_Z5kJieip2E5OJfCPS8BkY5t1WQYSNv2ankziOmpuRiKamSBE9KKQlkb50ysIA9uyyrgdQGdY8LQmzK9OPXBKsYx79x4SE1cislFZR-ZMOorsZjuxrUapJKVnuUXVflLOHx0mbZmgYVKIUpC1IHPokm52Y1l2l9hgk4uxW5tmfecsfa-AoimCrLVLkozoG6Y0jvGrIU97hnmM9gvo_LkamB8agvVPrsoNJr4dq61MyQSng6onB87mG6Bdhpo4hUIoUBnblwnt9omhnTJkkEJaspV8Af3l3hmKWuzNwR",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7052706234&itemId=20269352517&vendorItemId=90921977358&traceid=V0-153-15163a95638d47f5&requestid=20241230202901473034130604&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "공기 청정기",
+                "rank": 7,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7802134472,
+                "productName": "위닉스 타워 엣지 공기청정기 AT8E430-MSK 43㎡",
+                "productPrice": 182070,
+                "productImage": "https://ads-partners.coupang.com/image1/In9o8NzmRRT36fOLIpMv6yo6Gu0Ba2FV0trpxoQ6IVAjcqltvFbgWzcZERJkqdsQc0o0Buv3VSw5UhVBAGZeKtfjK5SlraxBDYmpB73tYe8-uLz4j1d3lkCl-hgyCoIpVzO2Rd1Prfy-qchingNJR9qjEw9jaXIFaazHy8weEAd-LgXss49-fJWxY13tHBtTjVz8E2rnz0HJ4dTdFNvHmhL9IyN2fCx2o6yzOjItepM6oo_SX06R20KdaPexnXuiZ7vD2YptldiUr-3BvU8zrfYwJ8zg5kc0RwZrd21eAdKr2cQguDPyeGfNoZfrVpq8ClTxTgq3dg==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7802134472&itemId=21476069677&vendorItemId=90149292994&traceid=V0-153-741e60eb85dfd873&requestid=20241230202901473034130604&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "공기 청정기",
+                "rank": 9,
+                "isRocket": true,
+                "isFreeShipping": false
+            }
+        ]
+    }
+}

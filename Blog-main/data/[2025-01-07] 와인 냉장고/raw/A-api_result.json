@@ -1,0 +1,69 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF0616554&pageKey=%EC%99%80%EC%9D%B8%20%EB%83%89%EC%9E%A5%EA%B3%A0&traceid=V0-163-cddd5c493504924c&requestid=20250107024400053313392025",
+        "productData": [
+            {
+                "productId": 7709148845,
+                "productName": "LG전자 LG 디오스 와인셀러 미니 W087B 방문설치 8병",
+                "productPrice": 298150,
+                "productImage": "https://ads-partners.coupang.com/image1/PYZ-vnwoFtcuXtCkPYfiWaiXSytT-l0fnHROYnUFa51sN-FRwZ84JEQRzcyUA4kNSzQhdWxJ9dZBb6u0zj7l_KJtxnSnJlbz1u0R81ctG3g0JH1p7J9zMAnwA2ZmXgIChWYa17TURyi7vq7MW46b2LojVsMAKhsu1qylgx30a9AZSgeODoUZsWp-31tNoZO8W9RGmuQH-d5Dgw6dSsfmu5r1ZiXDmVMUviSBTxGaNKYStpBLlJWouxopvMnujf6_IhoA1bMQGiPAOlWBUloZETDyoJ0IulHy0KF1ZZV-kTHfy_k3hdyBIfE1CpX6EE05uPyaLPMfHM4y",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7709148845&itemId=20660238930&vendorItemId=74346101742&traceid=V0-153-e7e3026ee679cc77&requestid=20250107024400053313392025&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "와인 냉장고",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 7327208611,
+                "productName": "캐리어 와인셀러 베젤리스 CWP08LF1 8병 집들이 신혼가전",
+                "productPrice": 88150,
+                "productImage": "https://ads-partners.coupang.com/image1/3TEG9z60b92N8g1b3Y0vkhOU-okOd1_auI5xBM1pVwdCS3orXAUeMrmZPIS7DgS3fEgtKnJ0G1aC7CTPIgvngbwa_W88h1ixs_-ZRQcPv3vL9C4EmEPEkgcJJO11oO7ZNVCdO0rhLUqhkvnxXXMpKaGV_F87GE6Oei9lo9U-610kQDwIUXmSB2SKvQiNE6PLfpLmEp0bH0HJC6k0HgsiPvfEEIbV64zZeKqoU-nFYqzFw1lALRffvwOUjJaC6oem51wuAO25Fcmcu8mXasu1vtwN3eIE96N8S6X2IGzkp9qzId17kfNbdEHknLRgMFzHjwkHZndby2O3w2TSagqG5MTmT8P7JcE=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=7327208611&itemId=18804401670&vendorItemId=84150439631&traceid=V0-153-bda9ca636ed24681&requestid=20250107024400053313392025&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "와인 냉장고",
+                "rank": 2,
+                "isRocket": false,
+                "isFreeShipping": true
+            },
+            {
+                "productId": 13317301,
+                "productName": "캐리어 프리미엄 미니 와인셀러 미러형 CSR-35WM 자가설치 12병",
+                "productPrice": 230430,
+                "productImage": "https://ads-partners.coupang.com/image1/fKtI5JpDhrdJ-aJwfPKDnyXVLrAYCxv3O-4EO7JNk_4az14El0-N1W85z9hpIGWQLEQMWA00UoeUFHZGfC6KJPFgUXBnEujHzstasPDGUH-1FQ55Y4emfmKcbG5iw5OIJbBWqxIQgHXF_q4eTFi1EmSPUSLWQf5WafgjuzA0eqhqApfrqwlfJV4reAGOuX8vNup5zrg1F-L0bWScDrAm_fDUjgc4l0JLn7yeumgju81oJVenW1vdMl7N8R0kiRRmHKaczLWlkPiut6QSEPwxJ71YmBsLYMrDbrziM0dP_TIWE-qH0Lde6wXlsrGjEg2V",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=13317301&itemId=55622601&vendorItemId=3087286026&traceid=V0-153-dcd784fa387f2d3d&requestid=20250107024400053313392025&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "와인 냉장고",
+                "rank": 3,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8166701357,
+                "productName": "매직쉐프 와인냉장고 와인셀러 상하분리 24병 미니 MEW-HT24DB, 단일상품",
+                "productPrice": 398000,
+                "productImage": "https://ads-partners.coupang.com/image1/SLuK9eNMXOXTZLtCSBeUDshH4SxwPmlmyOJbxOSaNvoVNXQB4U3ro8VushMntoWn4_4F8-jaEk5je9R6pg260P1NVm7gviDkEJnW11OqJrlaV_r7VmeaTjTc2pJrKD1XL02pD92sUgm3cjdZdVNhuIGUi5c5z0-s-AS8mWOxo455uaxADolmGcqgNiwMidTDH9TI9oh3UeLSSXjEM2CxHF6ckyhlJ_5M1N42pt7kZUDqfSbg144LMCSsjiVQBXozaj1FZJNxtlpQuzlS-juZCazOP4q00g-3fNIpvg_1R3sPWYBOFauOt6O-qzwTrjeh6EoioT10eZTPzBp37hWtRbsUeOIsMYLudq7W5g==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=8166701357&itemId=23305178381&vendorItemId=90438191764&traceid=V0-153-48ad0f872606b44f&clickBeacon=cfb84060-cc55-11ef-9f94-250dadb21b3d%7E3&requestid=20250107024400053313392025&token=31850C%7CMIXED",
+                "categoryName": "주방용품",
+                "keyword": "와인 냉장고",
+                "rank": 4,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 6714218127,
+                "productName": "[공식]캐리어 와인셀러 10병 CSR-27WM 와인냉장고",
+                "productPrice": 109000,
+                "productImage": "https://ads-partners.coupang.com/image1/sxnDMlmssUnCOS26s3BOn3s9HkIuawr5paXPk57x-FWz3nAwmrsa1KZJDWOkGU2lh_r3BZIOh36A-yidfm6PHyi5vqWfMSu7g1bq9U19HmonMyHBVTN6aQ5e5yCkUJNFQnsE6CTveybrVsnCK8YEUOx4hq9iQYidlN00cNlUwMvXmpgTMiTfvYNZuZuFqAWPnBCBh8FVq06zzvTMRW7t3d-Al7rMIg4hctjUEhzqHnjIqBrpbbjvruP51Oj9i_UYjHi3Mf8cA8cg1it5LfZ-_KBkQae_OgYXKoarbb51wAmQznelQ812l4Fr00SzRyAfekDDBYrjoegPzePYQgXlXw==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF0616554&pageKey=6714218127&itemId=15597218739&vendorItemId=75700632833&traceid=V0-153-707f63d6251d8fc4&requestid=20250107024400053313392025&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "와인 냉장고",
+                "rank": 5,
+                "isRocket": false,
+                "isFreeShipping": true
+            }
+        ]
+    }
+}

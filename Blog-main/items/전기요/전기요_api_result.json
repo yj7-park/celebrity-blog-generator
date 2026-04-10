@@ -1,0 +1,69 @@
+{
+    "rCode": "0",
+    "rMessage": "게시글 작성 시, \"파트너스 활동을 통해 일정액의 수수료를 제공받을 수 있음\"을 기재하셔야 합니다",
+    "data": {
+        "landingUrl": "https://link.coupang.com/re/AFFSRP?lptag=AF3918361&pageKey=%EC%A0%84%EA%B8%B0%EC%9A%94&traceid=V0-163-1d5948482179bcc7&requestid=20241202233019272253851988",
+        "productData": [
+            {
+                "productId": 7742524430,
+                "productName": "보이로 전기요 4단 다크그레이 전자파없는 전기매트, 2인용 UB99 다크그레이",
+                "productPrice": 128000,
+                "productImage": "https://ads-partners.coupang.com/image1/7Hlf-775PVrfbJMg7LJgyit-ra50N87rmqng3kARKWiG46kKg9fCjv3U8E9bxfrkxgmOIM1ALmCzq_40fmEr72Y217KUHGrH42nFMPaew0nvFgGgmTLwcLwkibp_i3G65UsR0xYNCMIwxrHakk9AdvkrEVpx0BE0_mZIfqHnMvIxZDgCKZPAgaZjkrKR5_BykYpUKd-AtkKC1FpteNMgBjta_xmW76K0tVs_kYYGIWap9YY8AryLMZvTAQ7Wz5VXIZq0pCW4c0r9v8rpngLvpNmYoSRVE004zZh0IgqUHJxuOunCaiMkwVMCZtrkPML_YDXhORxNleOI-4FAPv1EtOc8ArAvWfohRNGTHuM=",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=7742524430&itemId=20834719162&vendorItemId=87902558494&traceid=V0-153-74790b8662ffeb02&clickBeacon=f4c03410-b0b9-11ef-9c87-7c01259dcb3e%7E3&requestid=20241202233019272253851988&token=31850C%7CMIXED",
+                "categoryName": "홈인테리어",
+                "keyword": "전기요",
+                "rank": 1,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8248318931,
+                "productName": "HanilMedical 탄소열선 고급전기요 HL-D205",
+                "productPrice": 32900,
+                "productImage": "https://ads-partners.coupang.com/image1/aSIL-Az7bnqneMwPacG4trSM7HSNqgHCgNKI1AyC9ckMGYR1sJIgVJE-q_vshQUSBX8HH1JIzSMps0XtHdQmcO3aoCY1yPT3ks3RIqiX4XIPlePN4a-Y2vcy7vZq-CdvET1h2qhunO41uD7T23l6s5oWEG3bvkQ8cn_xXrnVanTsKeX6IPYkXUbOReJImJgVmCYxmZySS-RaAYGArH-dVK5LQOV_f2Kjr7aNOAxglx0hIUR3uvaMNoG-S8i64N8zlhqYQ4pIShtVkxLTnR456WPj2JcHYKRUZFkx7yfb6LIt4NtvcyhHR4FWQb9J7lbqApvxkYqXpg==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=8248318931&itemId=23742820152&vendorItemId=70964612125&traceid=V0-153-8f34b772b5278c27&requestid=20241202233019272253851988&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전기요",
+                "rank": 2,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7621067463,
+                "productName": "듀플렉스 무자계 열선 전기요",
+                "productPrice": 54000,
+                "productImage": "https://ads-partners.coupang.com/image1/wVTD0Qzu7aBdYnoywY7BHR0d6skntkzKZGNB8SLtPqQRAX-9_eE2X_vbJS1tSl9XUyR8BirW1ScjHTuXQQ0UQjanZuSCii5tPYPsIxdyMn1hJua0L4shbtyJgUq9U8ICqbiDbU4rFnpEKgEwNGl3kB2R6hzWwpwX91B7uGx4cNEjpvwksCBxA3EvbYQriDmj2gaD_ryPSvriOHtTN85Juzh-Po5dmyPk7riC1miF3w3fwC2HYHOe93HqBfrCqw_ftXLXD68MmnClLxeH4S2uFdkgsYeULloZq--d1_dcfrhqjz1Y5yse3b9yOrH7jkmlbYlpNzAFwJAjc5iqjKfl6rR1ve8Q0-CSLw==",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=7621067463&itemId=20205500777&vendorItemId=87295841462&traceid=V0-153-27d108df8d0b81fa&requestid=20241202233019272253851988&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전기요",
+                "rank": 3,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 7595764409,
+                "productName": "보이로 전기요 6단 오키드플라워 1인용 UB04 전자파없는 전기매트",
+                "productPrice": 76600,
+                "productImage": "https://ads-partners.coupang.com/image1/7SczhMV8dwVPgInR7VtAo85gBc3zBEOKIADuLRB2vkfFSE-r9pi8HlgA7jF1Y0Gp_UUXjei-WbYv_gYPyEgPG56nXLxZqPxggE_Twl7LJnvsCQyJt7E7daf9tYXRPyenGV1F15oz0kUdLHfe_FIMzz7iZQsVGUz0mv8-8IU9rvSkysACde1ZUVYB_7uEXL7gQORD1QufV7BMBtSxrbEyN0vOgzmOuIh-OMP51OoqwQ1Q82DzcA_tS139zbzcsfZETgkuSnh5BsG5JMMnJF0by86-j7HwMh6utxcqVOjPSX_U6U6BE8HYjrM5lXo6klk_zylpN5jNUJPsMF5v9DNgHfNbCfdi",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=7595764409&itemId=20081476168&vendorItemId=87177052307&traceid=V0-153-64399b7ce3779dff&clickBeacon=f4c03410-b0b9-11ef-8156-db02be2b63d3%7E3&requestid=20241202233019272253851988&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전기요",
+                "rank": 4,
+                "isRocket": true,
+                "isFreeShipping": false
+            },
+            {
+                "productId": 8248318931,
+                "productName": "HanilMedical 탄소열선 고급전기요 HL-S205",
+                "productPrice": 31800,
+                "productImage": "https://ads-partners.coupang.com/image1/RmkZp3TKFvQQPthPRhM9A9Gp19M3l986nQkY4e-ySUVnqGQ6CiSw__6VElfZPql-tIYhV4R-zBSzxpq4YU-YzkGXlEpxy2s1zh8xmehJG81vZ00K0MbumHYY5CT8-w_g5OkFI1RUaWinJK4kQUDttrUFOYDygCXvOvRkiKZ-WT_goUKIokfcPRtuD9xOijDhLeZr44c4UYahVI1Srjaei87SFV3LGnOzIxrAqTlnQnvQBG_6oCHRMGfm1hSVhuV5sB_l0scvYrGUWOC3mKycRMomTkFmi3RLhfP6_rspNqqIZgfcIclRKH8zjQyI1kkX",
+                "productUrl": "https://link.coupang.com/re/AFFSDP?lptag=AF3918361&pageKey=8248318931&itemId=23742803694&vendorItemId=70964612078&traceid=V0-153-8f34b772b5278c27&requestid=20241202233019272253851988&token=31850C%7CMIXED",
+                "categoryName": "가전디지털",
+                "keyword": "전기요",
+                "rank": 5,
+                "isRocket": true,
+                "isFreeShipping": false
+            }
+        ]
+    }
+}

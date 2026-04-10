@@ -1,0 +1,114 @@
+from DescGenerator import DescGenerator
+import google.generativeai as genai
+import json
+
+
+class GeminiDescGenerator(DescGenerator):
+    # API key 정보
+    api_key = "AIzaSyDGxhUUAwg74F_LhnEOUU5o8mCcevBm7sE"
+
+    def __init__(self, item, root_dir, items):
+        super().__init__(item, root_dir, items)
+        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        genai.configure(api_key=self.api_key)
+
+    def _generate_desc(self, item, info):
+        prompt = f"""
+아래 제시된 ((제품명))과 ((제품 상세 정보))를 토대로 리뷰를 작성해줘. 문체는 아래 예시를 참조하도록 해. 반드시 한글로만 작성하도록 해. 줄바꿈은 하지 않도록 하고, 문단은 '\\n\\n'로, 문장은 '\\n'로 구분하도록 해.
+
+=== 예시 ===
+
+{{Question}} 
+((제품명))
+비쎌 다용도 습식청소기 스팟클린 프로히트 3698V   
+((제품 상세 정보))
+...
+        
+{{Answer}} 
+비쎌 스팟클린 프로히트는 패브릭 얼룩 제거에 특화된 다용도 습식 청소기에요!
+
+분사, 세척, 흡입의 3중 케어로 깊숙이 박힌 얼룩까지 깨끗하게 제거할 수 있고,
+275W의 강력한 진공 파워로 패브릭 속 깊은 곳의 찌든 때까지 효과적으로 제거할 수 있어요~
+
+히트웨이브라는 기술로, 청소 시 물 온도를 일정하게 유지해 묵은 때 제거가 더욱 쉽다고 해요.
+
+15cm로 업그레이드된 헤드 브러시로 넓은 면적을 빠르게 청소할 수 있구요,
+1.37m의 긴 호스 선으로 구석구석 쉽게 청소를 할 수 있을 것 같아요!
+
+물탱크와 배수탱크가 분리되어 있어 사용 후 오수 통 세척이 간편한 것도 특징이라고 하네요~
+소파, 카펫, 자동차 실내 등 다양한 패브릭 소재에 사용할 수 있다고 하니 참 편리하겠어요~~~
+        
+{{Question}}
+((제품명))
+삼성전자 BESPOKE 스팀 9600 로봇청소기 VR7MD96516G
+((제품 상세 정보))
+...
+        
+{{Answer}}
+삼성 비스포크 스팀 9600은 스마트한 청소 기능을 갖춘 프리미엄 로봇청소기예요.
+
+분당 170회 회전하는 강력한 물걸레로 바닥의 찌든 때까지 말끔하게 제거해주고,
+물이 부족하면 자동으로 스팀 청정스테이션으로 돌아가 물을 보충하고,
+기존 위치에서 청소를 이어가는 똑똑한 기능을 갖추고 있어요!
+
+스팀 청정스테이션에는 UV LED가 장착되어 있어서 먼지 봉투 속 세균 증식을 효과적으로 억제해준다고 하구요,
+5개의 센서로 바닥과 카펫을 구분해 최적의 청소 방법을 선택할 수 있다고 해요!!
+모래시계 모양의 엉킴 방지 브러시가 머리카락과 반려동물 털도 효과적으로 처리해준다고 하네요~~~~
+
+SmartThings 앱으로 4가지 청소 모드를 간편하게 설정할 수 있어서 더욱 편리하구요,
+먼지 흡입과 물걸레 청소를 동시에 하거나 각각 단독으로도 사용할 수 있어서
+상황에 맞게 유용하게 활용할 수 있을 것 같아요ㅎㅎ
+
+{{Question}}
+((제품명))
+브람스 올인 UP 안마의자, 브람스 (BRAMS-K7G778IBC)
+((제품 상세 정보))
+{info}
+
+{{Answer}}
+브람스 올인 UP 안마의자는 전신 케어에 특화된 제품이에요!
+
+125cm의 롱트랙 프레임으로 목부터 엉덩이까지 시원하게 마사지 해줘요.
+종아리 스크럽 기능으로 뭉친 근육을 풀어주고,
+자동 센서로 어깨 높이를 인식해 맞춤 마사지를 제공한답니다.
+
+무중력 모드로 편안하게 전신을 이완시켜주고,
+온열 기능으로 근육 이완을 도와 마사지 효과를 높여줘요ㅎㅎ
+
+직관적인 리모컨과 조그 다이얼로 누구나 쉽게 사용 가능하고,
+다양한 마사지 코스가 있어서 그날의 컨디션에 맞춰 선택할 수 있어요!
+특히 체형 인식 기능과 SL 프레임으로 안정적인 사용이 가능하답니다.
+
+방문 설치도 지원하니 편리하게 이용할 수 있겠네요~~
+
+{{Question}}
+((제품명))
+{item}
+((제품 상세 정보))
+{info}
+
+{{Answer}}
+"""
+        response = self.model.generate_content(prompt)
+        desc = response.text.replace("  ", " ")
+        if desc.count('\n\n') > 5:
+            desc = desc.replace('\n\n', '\n')
+        print(f'\n\n{desc.replace('\\n','\n')}\n\n')
+        return desc.replace("\n", "\\n")
+
+
+# main
+if __name__ == "__main__":
+    item = "습식 청소기"
+    items = [
+"[클렌하임 KLENHEIM 이너청소기] 패브릭 청소기 가정용 습식 패브릭 소파 매트리스 카페트 청소",
+"포쉬 워시젯 유선습식청소기 카페트러그청소기, 워시젯 All-in One Package(포뮬라 증정)",
+"비쎌 스팟클린 하이드로스팀 청소기 3791S",
+        ]
+    ai = GeminiDescGenerator(item, "./", items)
+    # ai.test()
+    # ai.generate_tag()
+    ai.generate_desc(overwrite=True)
+
+    # write blog post with multiple elements
+    # ai.write_blog_post()
