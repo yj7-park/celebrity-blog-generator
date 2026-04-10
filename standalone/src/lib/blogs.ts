@@ -1,0 +1,17 @@
+export const BLOGS: [string, string][] = [
+  ["bcf5qp11", "쇼핑"],
+  ["celubdigging", "파트너스활동으로 소정 수익발생"],
+  ["dalcome5", "◇궁금해◇"],
+  ["dehi61", "파트너스활동으로 소정 수익발생"],
+  ["fashionblog-", "방송·연예·패션"],
+  ["hkh443", "추천템"],
+  ["hprbel1097", "방송/패션"],
+  ["hsh6566", "방송아이템"],
+  ["jsodnfak", "방송정보"],
+  ["phd_choi93", "패션/코디 정보"],
+  ["pravas", "TV 속 상품 정보"],
+  ["skywhite369", "방송v패션v맛집v제품"],
+  ["lzheng", "방송그제품"],
+  ["unknown0998", "정보 생활"],
+  ["nemo-c", "방송제품정보"],
+];
