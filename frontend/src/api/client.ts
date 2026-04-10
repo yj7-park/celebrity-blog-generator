@@ -36,7 +36,8 @@ export type PipelineEvent =
   | { type: "error"; message: string }
   | { type: "done" };
 
-const BASE = "/api";
+// VITE_API_BASE_URL can be set as a GitHub Actions variable (e.g. https://your-backend.com)
+const BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
 export async function collectPosts(days: number): Promise<CollectResponse> {
   const res = await fetch(`${BASE}/collect`, {
