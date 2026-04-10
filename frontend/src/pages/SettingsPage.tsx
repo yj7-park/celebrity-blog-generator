@@ -1,0 +1,251 @@
+import { useState, useEffect } from "react";
+import { getSettings, saveSettings } from "../lib/api";
+import type { AppSettings } from "../lib/types";
+
+const inputStyle: React.CSSProperties = {
+  padding: "10px 14px",
+  border: "1px solid #d1d5db",
+  borderRadius: 10,
+  fontSize: 14,
+  outline: "none",
+  width: "100%",
+  boxSizing: "border-box",
+};
+
+const sectionStyle: React.CSSProperties = {
+  background: "#fff",
+  border: "1px solid #e5e7eb",
+  borderRadius: 16,
+  padding: "24px 28px",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+  marginBottom: 16,
+};
+
+const DEFAULT_SETTINGS: AppSettings = {
+  openai_api_key: "",
+  coupang_access_key: "",
+  coupang_secret_key: "",
+  coupang_domain: "",
+  naver_id: "",
+  naver_pw: "",
+  pipeline_days: 2,
+  pipeline_max_posts: 10,
+  pipeline_top_celebs: 3,
+  chrome_user_data_dir: "",
+};
+
+interface FieldProps {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}
+
+function Field({ label, hint, children }: FieldProps) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 5 }}>
+        {label}
+      </label>
+      {children}
+      {hint && (
+        <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{hint}</div>
+      )}
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  useEffect(() => {
+    getSettings()
+      .then((s) => setSettings({ ...DEFAULT_SETTINGS, ...s }))
+      .catch(() => {/* 설정 없으면 기본값 사용 */})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const update = (key: keyof AppSettings) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const value = e.target.type === "number" ? Number(e.target.value) : e.target.value;
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setToast(null);
+    try {
+      await saveSettings(settings);
+      setToast({ type: "success", msg: "설정이 저장되었습니다." });
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) {
+      setToast({ type: "error", msg: `저장 실패: ${e}` });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px", color: "#9ca3af", fontSize: 14 }}>
+        설정 불러오는 중...
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* 토스트 */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            top: 80,
+            right: 24,
+            zIndex: 1000,
+            padding: "12px 20px",
+            borderRadius: 10,
+            background: toast.type === "success" ? "#d1fae5" : "#fef2f2",
+            color: toast.type === "success" ? "#065f46" : "#dc2626",
+            border: `1px solid ${toast.type === "success" ? "#a7f3d0" : "#fecaca"}`,
+            fontSize: 14,
+            fontWeight: 600,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            transition: "all 0.3s",
+          }}
+        >
+          {toast.type === "success" ? "✅" : "⚠️"} {toast.msg}
+        </div>
+      )}
+
+      {/* OpenAI */}
+      <div style={sectionStyle}>
+        <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
+          OpenAI 설정
+        </h2>
+        <Field label="OpenAI API Key" hint="블로그 글 생성에 사용됩니다.">
+          <input
+            type="password"
+            placeholder="sk-..."
+            value={settings.openai_api_key}
+            onChange={update("openai_api_key")}
+            style={inputStyle}
+          />
+        </Field>
+      </div>
+
+      {/* 쿠팡 */}
+      <div style={sectionStyle}>
+        <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
+          쿠팡 파트너스 설정
+        </h2>
+        <Field label="Access Key">
+          <input
+            type="text"
+            placeholder="쿠팡 Access Key"
+            value={settings.coupang_access_key}
+            onChange={update("coupang_access_key")}
+            style={inputStyle}
+          />
+        </Field>
+        <Field label="Secret Key">
+          <input
+            type="password"
+            placeholder="쿠팡 Secret Key"
+            value={settings.coupang_secret_key}
+            onChange={update("coupang_secret_key")}
+            style={inputStyle}
+          />
+        </Field>
+        <Field label="도메인" hint="쿠팡 파트너스 도메인 (예: myshop.partners.coupang.com)">
+          <input
+            type="text"
+            placeholder="쿠팡 도메인"
+            value={settings.coupang_domain}
+            onChange={update("coupang_domain")}
+            style={inputStyle}
+          />
+        </Field>
+      </div>
+
+      {/* 네이버 */}
+      <div style={sectionStyle}>
+        <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
+          네이버 블로그 설정
+        </h2>
+        <Field label="네이버 아이디">
+          <input
+            type="text"
+            placeholder="네이버 아이디"
+            value={settings.naver_id}
+            onChange={update("naver_id")}
+            style={inputStyle}
+          />
+        </Field>
+        <Field label="네이버 비밀번호" hint="Selenium 자동 로그인에 사용됩니다.">
+          <input
+            type="password"
+            placeholder="네이버 비밀번호"
+            value={settings.naver_pw}
+            onChange={update("naver_pw")}
+            style={inputStyle}
+          />
+        </Field>
+        <Field label="Chrome User Data 경로" hint="기존 Chrome 프로필 사용 시 입력 (선택)">
+          <input
+            type="text"
+            placeholder="예: C:\\Users\\user\\AppData\\Local\\Google\\Chrome\\User Data"
+            value={settings.chrome_user_data_dir}
+            onChange={update("chrome_user_data_dir")}
+            style={inputStyle}
+          />
+        </Field>
+      </div>
+
+      {/* 파이프라인 기본값 */}
+      <div style={sectionStyle}>
+        <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
+          파이프라인 기본값
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          <Field label="수집 기간 (일)">
+            <select value={settings.pipeline_days} onChange={update("pipeline_days")} style={inputStyle}>
+              {[1, 2, 3, 5, 7].map((d) => <option key={d} value={d}>{d}일</option>)}
+            </select>
+          </Field>
+          <Field label="최대 포스트 수">
+            <select value={settings.pipeline_max_posts} onChange={update("pipeline_max_posts")} style={inputStyle}>
+              {[5, 10, 20, 30, 50].map((n) => <option key={n} value={n}>{n}개</option>)}
+            </select>
+          </Field>
+          <Field label="연예인 수">
+            <select value={settings.pipeline_top_celebs} onChange={update("pipeline_top_celebs")} style={inputStyle}>
+              {[1, 2, 3, 5].map((n) => <option key={n} value={n}>{n}명</option>)}
+            </select>
+          </Field>
+        </div>
+      </div>
+
+      {/* 저장 버튼 */}
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            padding: "12px 32px",
+            background: saving ? "#a5b4fc" : "linear-gradient(90deg, #6366f1, #8b5cf6)",
+            color: "#fff",
+            border: "none",
+            borderRadius: 10,
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: saving ? "not-allowed" : "pointer",
+          }}
+        >
+          {saving ? "저장 중..." : "설정 저장"}
+        </button>
+      </div>
+    </div>
+  );
+}

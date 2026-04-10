@@ -1,204 +1,239 @@
 # WS2 Project — Agent Context
 
-> Last updated: 2026-04-10  
+> Last updated: 2026-04-10 (v2)
 > Purpose: Quick-start reference for any agent continuing this project.
 
 ---
 
-## 1. Project Overview
+## 1. 최종 목표
 
-**Goal**: Collect Korean celebrity fashion/lifestyle items from Naver blogs and auto-generate SEO blog posts.
-
-**Pipeline**:
-1. Collect RSS posts from curated Naver bloggers
-2. Identify trending celebrities (GPT-4o-mini batch analysis)
-3. Scrape full HTML from each Naver blog post (via CORS proxy)
-4. Use GPT-4o-mini to extract structured items: `celeb × category × product_name × image_urls × keywords × link_url`
-5. Generate an SEO-optimized Korean blog post from the extracted items
+한국 연예인 아이템 자동 블로그 수익화 시스템:
+1. 네이버 블로거 RSS에서 연예인 착용 아이템 자동 수집
+2. GPT-4o-mini로 구조화 데이터 추출 (연예인 × 카테고리 × 제품명 × 이미지 × 키워드)
+3. 쿠팡 파트너스 어필리에이트 링크 자동 생성
+4. SEO 블로그 포스트 자동 생성
+5. Selenium으로 네이버 블로그 자동 발행
+6. APScheduler로 전체 파이프라인 자동 스케줄링
 
 ---
 
-## 2. Repo Structure
+## 2. 프로젝트 구조
 
 ```
 ws2/
+├── AGENT_CONTEXT.md
 ├── .env                         # gh_token, openai_token, hf_token
-├── .github/workflows/deploy.yml # GitHub Actions: main → web branch (GitHub Pages)
-├── AGENT_CONTEXT.md             # ← this file
+├── .github/workflows/deploy.yml # standalone → web branch (GitHub Pages)
 │
-├── standalone/                  # Pure client-side Vite+React+TS app (GitHub Pages)
+├── backend/                     # FastAPI 서버 (포트 8000)
+│   ├── main.py                  # APScheduler + 라우터 등록 + SPA 서빙
+│   ├── requirements.txt
+│   ├── settings.json            # 런타임 설정 (API 키, Naver 계정 등)
+│   ├── models/schemas.py        # 모든 Pydantic 모델
+│   ├── services/
+│   │   ├── settings_service.py  # settings.json 로드/저장
+│   │   ├── collector.py         # RSS 수집 + HTML 스크래핑 (ordered_blocks)
+│   │   ├── extractor.py         # LLM 구조화 추출 → CelebItem[]
+│   │   ├── analyzer.py          # 연예인 트렌딩 분석
+│   │   ├── generator.py         # 블로그 포스트 생성
+│   │   ├── coupang.py           # 쿠팡 파트너스 API (HMAC 인증)
+│   │   └── naver_writer.py      # Selenium 네이버 블로그 작성
+│   ├── routers/
+│   │   ├── pipeline.py          # /api/pipeline/* (SSE + REST)
+│   │   ├── coupang.py           # /api/coupang/*
+│   │   ├── naver.py             # /api/naver/*
+│   │   ├── scheduler.py         # /api/scheduler/*
+│   │   └── settings.py          # /api/settings
+│   └── scheduler/
+│       └── tasks.py             # APScheduler 작업 정의
+│
+├── frontend/                    # Vite + React + TypeScript (포트 5173 dev)
 │   ├── src/
-│   │   ├── App.tsx              # API key input, days selector, mode toggle
+│   │   ├── App.tsx              # BrowserRouter + Routes
+│   │   ├── main.tsx
 │   │   ├── lib/
-│   │   │   ├── types.ts         # Shared interfaces: PostItem, ScrapedPostData, CelebItem
-│   │   │   ├── blogs.ts         # 15 Naver blog IDs + category folders
-│   │   │   ├── collector.ts     # RSS collect + HTML scraping via CORS proxy
-│   │   │   ├── extractor.ts     # LLM-based structured item extraction
-│   │   │   ├── generator.ts     # Blog post generation from CelebItem[]
-│   │   │   └── analyzer.ts      # Celebrity name extraction + trending analysis
-│   │   └── components/
-│   │       ├── AutoMode.tsx     # One-button full pipeline
-│   │       ├── StepMode.tsx     # Step-by-step with intermediate state views
-│   │       ├── ItemsPanel.tsx   # Displays CelebItem[] as rich table with images
-│   │       ├── TrendingPanel.tsx# Celeb selector
-│   │       ├── PostsPanel.tsx   # RSS posts list
-│   │       ├── BlogPostPanel.tsx# Generated post with copy button
-│   │       ├── StepCard.tsx     # Step container (idle/running/done/error)
-│   │       ├── ProgressBar.tsx  # Progress indicator
-│   │       ├── ModeToggle.tsx   # Auto / Step-by-step toggle
-│   │       └── Card.tsx         # Base card UI
-│   ├── package.json
+│   │   │   ├── types.ts         # 공유 타입 (CelebItem, CoupangProduct, ScheduleJob 등)
+│   │   │   └── api.ts           # API 클라이언트 (BASE_URL=http://localhost:8000)
+│   │   ├── components/
+│   │   │   ├── Layout.tsx       # 사이드바 + 헤더 레이아웃
+│   │   │   ├── Card.tsx
+│   │   │   ├── ItemsPanel.tsx   # CelebItem[] 리치 테이블
+│   │   │   ├── BlogPostPanel.tsx
+│   │   │   ├── PostsPanel.tsx
+│   │   │   ├── TrendingPanel.tsx
+│   │   │   └── ProgressBar.tsx
+│   │   └── pages/
+│   │       ├── DashboardPage.tsx  # SSE 전체 파이프라인 + 결과 요약
+│   │       ├── PipelinePage.tsx   # 4단계 수동 실행
+│   │       ├── CoupangPage.tsx    # 상품 검색 + 어필리에이트 링크
+│   │       ├── BlogWriterPage.tsx # 요소 편집기 + 네이버 발행
+│   │       ├── SchedulerPage.tsx  # 스케줄 CRUD + cron 설정
+│   │       └── SettingsPage.tsx   # API 키 / Naver 계정 설정
 │   └── vite.config.ts
 │
-├── backend/                     # FastAPI server (not deployed; local dev only)
-│   ├── main.py                  # CORS + static serving + SSE pipeline endpoint
-│   ├── routers/blog.py          # REST + SSE endpoints
-│   ├── services/
-│   │   ├── collector.py
-│   │   ├── analyzer.py
-│   │   └── generator.py
-│   └── models/schemas.py
+├── standalone/                  # GitHub Pages 배포용 (순수 클라이언트)
+│   └── src/lib/                 # collector, extractor, generator, analyzer, types
 │
-└── pipeline/                    # Python scripts for offline data exploration
-    ├── collect_fixtures.py      # Scrapes Naver blog HTML → saves JSON fixtures
-    ├── extract_items.py         # Runs LLM extraction on fixtures → celeb_items.json
-    ├── fixtures/                # Per-blog scraped HTML data (JSON)
-    └── extracted/celeb_items.json  # Aggregated structured items output
+└── pipeline/                    # Python 오프라인 스크립트
+    ├── collect_fixtures.py      # 네이버 HTML 수집 → fixtures/
+    └── extract_items.py         # LLM 추출 → extracted/celeb_items.json
 ```
 
 ---
 
-## 3. Key Technical Details
+## 3. API 엔드포인트 전체 목록
 
-### Naver Blog URL Pattern
-- RSS: `https://rss.blog.naver.com/{blogId}.xml`  (filter by `<category>` == folder)
-- Actual content URL: `https://blog.naver.com/PostView.naver?blogId={id}&logNo={no}&redirect=Dlog&widgetTypeCall=true&directAccess=false`
-- Outer page is a frameset (useless); PostView URL gives the real Smart Editor 4 HTML
+### Pipeline (`/api/pipeline/`)
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | `/run?days&max_posts&top_celebs&openai_api_key` | SSE 전체 파이프라인 |
+| POST | `/collect` | RSS 수집 → PostItem[] |
+| POST | `/analyze` | 연예인 분석 → string[] |
+| POST | `/scrape` | 스크랩+LLM 추출 → CelebItem[] |
+| POST | `/generate` | 블로그 포스트 생성 |
 
-### CORS Proxies (browser-side)
+### Coupang (`/api/coupang/`)
+| Method | Path | 설명 |
+|--------|------|------|
+| POST | `/search` | 키워드 상품 검색 |
+| GET | `/affiliate?product_url=` | 어필리에이트 URL + 단축 URL |
+| POST | `/shorten` | IS.GD URL 단축 |
+
+### Naver (`/api/naver/`)
+| Method | Path | 설명 |
+|--------|------|------|
+| POST | `/write` | Selenium 블로그 발행 |
+| GET | `/status` | 현재 발행 상태 |
+
+### Scheduler (`/api/scheduler/`)
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | `/jobs` | 스케줄 목록 |
+| POST | `/jobs` | 스케줄 생성 |
+| PUT | `/jobs/{id}` | 스케줄 수정 |
+| DELETE | `/jobs/{id}` | 스케줄 삭제 |
+| POST | `/jobs/{id}/run` | 즉시 실행 |
+
+### Settings (`/api/settings`)
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | `` | 설정 조회 (마스킹) |
+| GET | `/raw` | 설정 조회 (원본) |
+| POST | `` | 설정 저장 |
+
+---
+
+## 4. 핵심 기술 상세
+
+### 네이버 블로그 스크래핑
+- PostView URL: `https://blog.naver.com/PostView.naver?blogId={id}&logNo={no}&redirect=Dlog&widgetTypeCall=true&directAccess=false`
+- Smart Editor 4 선택자: `p.se-text-paragraph` (텍스트), `img.se-image-resource` (이미지), `a.se-link` (링크)
+- `ordered_blocks`: DOM 순서 보존 text+image 인터리빙 → LLM에 `IMAGE_N` 레이블로 전달
+
+### 쿠팡 파트너스 API
+- HMAC-SHA256 서명: `datetime_gmt + method + path + query`
+- Authorization 헤더: `CEA algorithm=HmacSHA256, access-key=..., signed-date=..., signature=...`
+- 설정: `settings.json`의 `coupang_access_key`, `coupang_secret_key`
+
+### Selenium 네이버 블로그 작성 (Windows 전용)
+- 필수 라이브러리: selenium, pyperclip, win32clipboard(이미지), pyautogui(파일 다이얼로그)
+- 동작 방식: 클립보드 붙여넣기로 텍스트/이미지 삽입, 휴먼 딜레이 시뮬레이션
+- 지원 요소 타입: `text`, `header`, `image`, `url`(OG 카드), `url_text`(구매버튼)
+- URL 단축: IS.GD API (`https://is.gd/create.php?format=json&url=...`)
+
+### 설정 관리
+- 저장 위치: `backend/settings.json`
+- 민감정보 마스킹: GET `/api/settings` 응답에서 API 키 마스킹 처리
+- GET `/api/settings/raw`는 내부용 (마스킹 없음)
+
+### APScheduler
+- 타임존: Asia/Seoul
+- Trigger: cron (분 시 일 월 요일)
+- 스케줄 메타데이터: `routers/scheduler.py`의 `_jobs` 딕셔너리 (메모리, 재시작 시 초기화)
+- 실제 실행: `scheduler/tasks.py::run_pipeline_job(job_id)`
+
+---
+
+## 5. 실행 방법
+
+### Backend
+```bash
+cd ws2/backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
 ```
-https://api.allorigins.win/raw?url=ENCODED_URL&_=TIMESTAMP  (primary)
-https://corsproxy.io/?ENCODED_URL                           (fallback)
+
+### Frontend (개발)
+```bash
+cd ws2/frontend
+npm install
+npm run dev   # → http://localhost:5173
 ```
-Both tried in order; 10-second timeout per proxy.
 
-### HTML Parsing Selectors (Smart Editor 4)
-- Text paragraphs: `p.se-text-paragraph`
-- Images: `img.se-image-resource`, `img[src*='postfiles.pstatic.net']`
-- Links: `a.se-link, a[href*='coupang'], a[href*='smartstore'], a[href*='vvd.bz']`
-- Container: `div.se-main-container` or `div.__se_component_area`
-
-### Image URL Resolution
-Replace `?type=XXX` → `?type=w966` for full resolution.
-
-### ordered_blocks — Core Concept
-DOM is traversed in order, producing an interleaved array of `{type:"text"|"image", content?:string, url?:string}`. This is sent to the LLM as:
+### Frontend (프로덕션 빌드 → 백엔드 서빙)
+```bash
+cd ws2/frontend
+npm run build
+# dist/ 폴더를 backend/static/으로 복사
+cp -r dist/* ../backend/static/
+# 이후 http://localhost:8000 에서 풀스택 서빙
 ```
-[IMAGE_0]
-TEXT: 아이유가 착용한 가방은...
-[IMAGE_1]
-TEXT: 롱샴 르 플리아쥬 XL백...
+
+### Standalone (GitHub Pages)
+```bash
+cd ws2/standalone
+npm run build
+git push origin main   # → GitHub Actions → web branch 자동 배포
 ```
-LLM returns `image_indices: [0, 1]` which are resolved to actual pstatic.net URLs.
 
-### LLM Usage
-- Model: `gpt-4o-mini` for all tasks (extraction, analysis, generation)
-- `dangerouslyAllowBrowser: true` required in OpenAI JS SDK for browser use
-- Extraction: temperature 0.1, max_tokens 2000
-- Generation: temperature 0.8, max_tokens 3000
+---
 
-### CelebItem Interface
-```typescript
-interface CelebItem {
-  celeb: string;           // e.g. "아이유"
-  category: string;        // 가방/신발/의류/뷰티/식품/생활/액세서리/기타
-  product_name: string;    // brand + model name
-  image_urls: string[];    // pstatic.net URLs
-  keywords: string[];      // show name, episode, etc.
-  link_url: string;        // Coupang / smartstore / vvd.bz
-  source_title: string;
-  source_url: string;
+## 6. 환경 변수 / 설정 파일
+
+**`ws2/.env`** (로컬 개발용)
+```
+gh_token=ghp_...      # GitHub PAT (repo + workflow scope)
+openai_token=sk-...   # OpenAI
+hf_token=hf_...       # HuggingFace (미사용)
+```
+
+**`ws2/backend/settings.json`** (런타임 설정 — UI에서 변경 가능)
+```json
+{
+  "openai_api_key": "sk-...",
+  "coupang_access_key": "...",
+  "coupang_secret_key": "...",
+  "coupang_domain": "https://api-gateway.coupang.com",
+  "naver_id": "...",
+  "naver_pw": "...",
+  "pipeline_days": 2,
+  "pipeline_max_posts": 10,
+  "pipeline_top_celebs": 5,
+  "chrome_user_data_dir": "C:/Utilities/Blog/chrome-user-data"
 }
 ```
 
 ---
 
-## 4. GitHub Deployment
+## 7. 남은 작업 / 개선 포인트
 
-- **Branch**: `web` (auto-deployed by GitHub Actions)
-- **Trigger**: push to `main` when `standalone/**` changes
-- **Workflow**: `.github/workflows/deploy.yml`
-  - Node 20, `npm ci`, `npm run build` in `standalone/`
-  - `peaceiris/actions-gh-pages@v4` → deploys `standalone/dist` to `web` branch
-- **GitHub Pages**: serves the `web` branch
+### 즉시 필요
+- [ ] `backend/settings.json`에 실제 Naver ID/PW 입력 (Settings 페이지에서)
+- [ ] `backend/settings.json`에 실제 OpenAI API 키 입력
+- [ ] Chrome 드라이버 경로 확인 (webdriver-manager가 자동 설치)
+- [ ] `pip install -r requirements.txt` 실행 (`pywin32` 포함)
 
-To push and trigger deploy:
-```bash
-git add standalone/ .github/
-git commit -m "your message"
-git push origin main
-```
+### 기능 확장
+- [ ] 스케줄러 job 영속성 (재시작 후에도 유지되도록 SQLite jobstore 연동)
+- [ ] 쿠팡 상품 이미지 CORS 프록시 (브라우저에서 직접 불러오기 실패 시)
+- [ ] 블로그 글 생성 시 쿠팡 상품 자동 연동 (CelebItem 키워드로 쿠팡 검색 → 어필리에이트 링크 자동 삽입)
+- [ ] 발행 히스토리 저장 (DB 또는 JSON 파일)
+- [ ] 썸네일 자동 생성 (PIL로 제품 이미지 합성)
+- [ ] 네이버 블로그 이중 인증 대응
+- [ ] `vvd.bz` 단축 URL 서버사이드 리다이렉트 추적
 
----
-
-## 5. Environment Variables
-
-File: `ws2/.env`
-```
-gh_token=ghp_...          # GitHub PAT with repo + workflow scope
-openai_token=sk-proj-...  # OpenAI API key
-hf_token=hf_...           # HuggingFace token (unused in current deploy)
-```
-
-**The OpenAI key is entered by the user at runtime in the browser UI** — it is never stored in the source code or environment.
-
----
-
-## 6. Pipeline Flow (Standalone)
-
-```
-User enters API key + days
-         ↓
-collectPosts(days)          → PostItem[]      (RSS from 15 blogs, filtered by date)
-         ↓
-getTrendingCelebs(posts)    → string[]        (batch LLM analysis of all titles)
-         ↓
-[User selects celeb in StepMode, or auto picks top-1 in AutoMode]
-         ↓
-scrapeMultiplePosts(posts)  → ScrapedPostData[] (filter by celeb name in title → scrape HTML)
-         ↓
-extractItemsFromPosts(scraped) → CelebItem[]  (LLM extraction per post, deduped)
-         ↓
-generateBlogPost(items)     → string          (Korean SEO blog post)
-```
-
----
-
-## 7. Pending / Future Work
-
-- **Image display**: `ItemsPanel` shows first image; CORS restrictions may block pstatic.net images in browser — consider a proxy or server-side image fetch
-- **Celeb filter accuracy**: Currently filters posts where `title.includes(celeb)`; could improve with fuzzy matching
-- **More bloggers**: Add to `standalone/src/lib/blogs.ts` — format is `[blogId, categoryFolder]`
-- **Short URL resolution**: `vvd.bz` affiliate links need server-side resolution (can't do HEAD request from browser due to CORS); currently stored as-is
-- **Backend SSE pipeline**: `backend/` has a streaming FastAPI endpoint (`GET /api/pipeline`) for local use with full short-URL resolution and no CORS limitations
-- **Python pipeline scripts**: `pipeline/collect_fixtures.py` + `extract_items.py` for offline batch processing / testing LLM prompts
-
----
-
-## 8. Running Locally
-
-```bash
-# Dev server
-cd standalone
-npm install
-npm run dev   # → http://localhost:5173
-
-# Production build
-npm run build  # → standalone/dist/
-
-# Python pipeline (optional)
-cd pipeline
-pip install openai requests beautifulsoup4
-python collect_fixtures.py   # scrapes fixtures/
-python extract_items.py      # → extracted/celeb_items.json
+### 블로그 목록 확장
+`backend/services/collector.py`의 `BLOGS` 리스트에 추가:
+```python
+("새블로그ID", "카테고리폴더명")
 ```

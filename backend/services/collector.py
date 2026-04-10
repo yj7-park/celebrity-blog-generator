@@ -1,170 +1,217 @@
-import time
-import random
+"""
+Naver blog RSS collection and HTML scraping.
+Supports ordered_blocks (text + image interleaved) for LLM extraction.
+"""
+from __future__ import annotations
+import re, time
+from typing import Callable, List, Optional, Tuple
 import requests
-import pandas as pd
-import xmltodict
-import urllib.parse
 from bs4 import BeautifulSoup
-from typing import List, Dict, Tuple
 
-# Naver bloggers who post celebrity item content
+from models.schemas import OrderedBlock, PostItem, ScrapedPostData
+
+# ── Blog list (blogId, categoryFolder) ───────────────────────────────────────
 BLOGS: List[Tuple[str, str]] = [
-    ("bcf5qp11", "쇼핑"),
+    ("hsh6566",     "쇼핑"),
+    ("hkh443",      "코스트코"),
+    ("hprbel1097",  "방송아이템"),
+    ("jsodnfak",    "먹거리"),
+    ("fashionblog", "파트너스활동으로 소정 수익발생"),
+    ("bcf5qp11",    "쇼핑"),
     ("celubdigging", "파트너스활동으로 소정 수익발생"),
-    ("dalcome5", "◇궁금해◇"),
-    ("dehi61", "파트너스활동으로 소정 수익발생"),
-    ("fashionblog-", "방송·연예·패션"),
-    ("hkh443", "추천템"),
-    ("hprbel1097", "방송/패션"),
-    ("hsh6566", "방송아이템"),
-    ("jsodnfak", "방송정보"),
-    ("phd_choi93", "패션/코디 정보"),
-    ("pravas", "TV 속 상품 정보"),
-    ("skywhite369", "방송v패션v맛집v제품"),
-    ("lzheng", "방송그제품"),
-    ("unknown0998", "정보 생활"),
-    ("nemo-c", "방송제품정보"),
+    ("dalcome5",    "◇궁금해◇"),
+    ("greenp77",    "쇼핑"),
+    ("jiyeon_style","패션"),
+    ("beauty_daily","뷰티"),
+    ("kdrama_item", "방송아이템"),
+    ("celeb_pick",  "셀럽픽"),
+    ("stylenote_kr","스타일"),
+    ("kfashion_lab","패션"),
 ]
 
-BASE_URL = "https://rss.blog.naver.com/{name}.xml"
-
-_SCRAPE_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/122.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8",
-    "Referer": "https://blog.naver.com/",
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
 }
 
 
-def _wait() -> None:
-    time.sleep(random.uniform(0.5, 1.5))
+# ── RSS collection ────────────────────────────────────────────────────────────
 
-
-def get_rss(name: str, folder: str) -> List[Dict]:
+def _get_rss(name: str, folder: str) -> List[PostItem]:
     try:
-        url = BASE_URL.format(name=name)
-        response = requests.get(url, timeout=10)
-        tree = xmltodict.parse(response.text)
-        items = tree["rss"]["channel"].get("item", [])
+        import xmltodict
+        resp = requests.get(
+            f"https://rss.blog.naver.com/{name}.xml",
+            headers=HEADERS, timeout=8, verify=False,
+        )
+        resp.raise_for_status()
+        doc = xmltodict.parse(resp.text)
+        items = doc.get("rss", {}).get("channel", {}).get("item", [])
         if isinstance(items, dict):
             items = [items]
-        return [
-            {
-                "title": x["title"],
-                "url": x["guid"],
-                "date": x["pubDate"],
-                "tag": x.get("tag") or "",
-            }
-            for x in items
-            if x.get("category") == folder
-        ]
-    except Exception:
-        return []
-
-
-def collect_posts(days: int = 2) -> List[Dict]:
-    all_posts: List[Dict] = []
-    for name, folder in BLOGS:
-        all_posts.extend(get_rss(name, folder))
-
-    if not all_posts:
-        return []
-
-    df = pd.DataFrame(all_posts)
-    df["date"] = pd.to_datetime(df["date"], utc=True, errors="coerce")
-
-    cutoff = (pd.to_datetime("now", utc=True) - pd.DateOffset(days=days)).floor("D")
-    df = df[df["date"] >= cutoff].reset_index(drop=True)
-    df["date"] = df["date"].dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    return df.to_dict(orient="records")
-
-
-def get_html(url: str) -> str:
-    try:
-        response = requests.get(url, headers=_SCRAPE_HEADERS, timeout=10)
-        # Naver blog redirects to frame; extract actual content URL
-        rurl = "https://blog.naver.com/" + response.text.split('src="')[2].split('"\n')[0]
-        response = requests.get(rurl, headers=_SCRAPE_HEADERS, timeout=10)
-        return response.text
-    except Exception:
-        return ""
-
-
-def get_content(html: str) -> str:
-    try:
-        soup = BeautifulSoup(html, "html.parser")
-        paras = soup.find_all("p", {"class": "se-text-paragraph"})
-        return "\n".join(p.get_text() for p in paras).replace("\u200b", "")
-    except Exception:
-        return ""
-
-
-def _get_redirect(url: str) -> str:
-    _wait()
-    try:
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (X11; Linux x86_64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/114.0.0.0 Safari/537.36"
-            ),
-            "Accept-Language": "ko-KR,ko;q=0.8,en-US;q=0.5,en;q=0.3",
-        }
-        r = requests.get(url, headers=headers, allow_redirects=False, timeout=10)
-        return r.headers.get("location") or r.headers.get("Location") or ""
-    except Exception:
-        return ""
-
-
-def _get_item_name(url: str) -> str:
-    try:
-        return urllib.parse.unquote_plus(url.split("q=")[1].split("&src=")[0])
-    except Exception:
-        try:
-            return urllib.parse.unquote_plus(url.split("&pageKey=")[1].split("&")[0])
-        except Exception:
-            return ""
-
-
-def get_href(html: str) -> Dict[str, str]:
-    try:
-        soup = BeautifulSoup(html, "html.parser")
-        result: Dict[str, str] = {}
-        for a in soup.find_all("a", {"class": "se-link"}):
-            href = a.get("href", "")
-            if not href:
+        result: List[PostItem] = []
+        for it in items:
+            cats = it.get("category", "")
+            if isinstance(cats, list):
+                cats = " ".join(cats)
+            if folder.lower() not in str(cats).lower():
                 continue
-            redir = _get_redirect(href)
-            if "link.coupang" in redir:
-                redir = _get_redirect(redir)
-            name = _get_item_name(redir).replace("\xa0", " ")
-            if name:
-                result[a.get_text().strip()] = name
+            guid = it.get("guid", "")
+            url = (guid.get("#text", "") if isinstance(guid, dict) else guid) or ""
+            result.append(PostItem(
+                title=str(it.get("title", "")),
+                url=str(url),
+                date=str(it.get("pubDate", "")),
+                tag=str(it.get("category", "")),
+            ))
         return result
     except Exception:
-        return {}
+        return []
 
 
-def get_items_for_celeb(
-    posts: List[Dict], celeb: str, max_posts: int = 5
-) -> Tuple[Dict[str, str], List[str]]:
-    celeb_posts = [p for p in posts if celeb in p.get("title", "")]
-    all_items: Dict[str, str] = {}
-    snippets: List[str] = []
+def collect_posts(
+    days: int = 2,
+    on_progress: Optional[Callable[[int, int], None]] = None,
+) -> List[PostItem]:
+    import urllib3
+    urllib3.disable_warnings()
+    cutoff = time.time() - days * 86400
+    all_posts: List[PostItem] = []
+    total = len(BLOGS)
 
-    for post in celeb_posts[:max_posts]:
-        _wait()
-        html = get_html(post["url"])
-        if not html:
-            continue
-        content = get_content(html)
-        if content:
-            snippets.append(content[:500])
-        all_items.update(get_href(html))
+    for i, (name, folder) in enumerate(BLOGS):
+        posts = _get_rss(name, folder)
+        all_posts.extend(posts)
+        if on_progress:
+            on_progress(i + 1, total)
 
-    return all_items, snippets
+    valid: List[PostItem] = []
+    for p in all_posts:
+        try:
+            from email.utils import parsedate_to_datetime
+            t = parsedate_to_datetime(p.date).timestamp()
+            if t >= cutoff:
+                valid.append(p)
+        except Exception:
+            pass
+    valid.sort(key=lambda p: p.date, reverse=True)
+    return valid
+
+
+# ── HTML scraping ─────────────────────────────────────────────────────────────
+
+def _parse_naver_url(url: str) -> Optional[Tuple[str, str]]:
+    m = re.search(r'blog\.naver\.com/([^/?#]+)/(\d+)', url)
+    if not m:
+        m = re.search(r'blogId=([^&]+).*logNo=(\d+)', url)
+    return (m.group(1), m.group(2)) if m else None
+
+
+def _build_postview_url(blog_id: str, log_no: str) -> str:
+    return (
+        f"https://blog.naver.com/PostView.naver"
+        f"?blogId={blog_id}&logNo={log_no}"
+        f"&redirect=Dlog&widgetTypeCall=true&directAccess=false"
+    )
+
+
+def _fetch_html(url: str, timeout: int = 12) -> str:
+    import urllib3
+    urllib3.disable_warnings()
+    resp = requests.get(url, headers=HEADERS, timeout=timeout, verify=False)
+    resp.raise_for_status()
+    return resp.text
+
+
+def _parse_naver_html(html: str, title: str, post_url: str) -> ScrapedPostData:
+    soup = BeautifulSoup(html, "lxml")
+
+    # Images
+    image_urls: List[str] = []
+    seen_imgs: set[str] = set()
+    for img in soup.select("img.se-image-resource, img[src*='postfiles.pstatic.net']"):
+        src = img.get("src") or img.get("data-lazy-src") or ""
+        if src and "pstatic.net" in src:
+            src = re.sub(r'\?type=\w+', '?type=w966', src)
+            if src not in seen_imgs:
+                seen_imgs.add(src)
+                image_urls.append(src)
+
+    # Paragraphs
+    paragraphs: List[str] = []
+    for p in soup.select("p.se-text-paragraph"):
+        t = (p.get_text() or "").replace("\u200b", "").replace("\xa0", " ").strip()
+        if t:
+            paragraphs.append(t)
+
+    # Ordered blocks
+    ordered_blocks: List[OrderedBlock] = []
+    container = soup.select_one("div.se-main-container, div.__se_component_area")
+    if container:
+        def walk(node):
+            cls = node.get("class") or []
+            if node.name == "p" and "se-text-paragraph" in cls:
+                t = (node.get_text() or "").replace("\u200b", "").replace("\xa0", " ").strip()
+                if t:
+                    ordered_blocks.append(OrderedBlock(type="text", content=t))
+            elif node.name == "img" and (
+                "se-image-resource" in cls
+                or "postfiles.pstatic.net" in (node.get("src") or "")
+            ):
+                src = node.get("src") or node.get("data-lazy-src") or ""
+                if src and "pstatic.net" in src:
+                    src = re.sub(r'\?type=\w+', '?type=w966', src)
+                    ordered_blocks.append(OrderedBlock(type="image", url=src))
+            else:
+                for child in node.children:
+                    if hasattr(child, "name") and child.name:
+                        walk(child)
+
+        for child in container.children:
+            if hasattr(child, "name") and child.name:
+                walk(child)
+
+    # Links
+    links: List[dict] = []
+    for a in soup.select("a.se-link, a[href*='coupang'], a[href*='smartstore'], a[href*='vvd.bz']"):
+        href = a.get("href") or ""
+        text = (a.get_text() or "").strip()
+        if href.startswith("http"):
+            links.append({"text": text, "href": href})
+
+    return ScrapedPostData(
+        ordered_blocks=ordered_blocks,
+        image_urls=image_urls,
+        paragraphs=paragraphs,
+        links=links,
+        post_url=post_url,
+        title=title,
+    )
+
+
+def scrape_post(post: PostItem) -> Optional[ScrapedPostData]:
+    try:
+        parsed = _parse_naver_url(post.url)
+        if not parsed:
+            return None
+        pv_url = _build_postview_url(*parsed)
+        html = _fetch_html(pv_url)
+        data = _parse_naver_html(html, post.title, post.url)
+        return data if (data.paragraphs or data.image_urls) else None
+    except Exception:
+        return None
+
+
+def scrape_multiple_posts(
+    posts: List[PostItem],
+    max_posts: int = 10,
+    on_progress: Optional[Callable[[int, int], None]] = None,
+) -> List[ScrapedPostData]:
+    targets = posts[:max_posts]
+    results: List[ScrapedPostData] = []
+    for i, post in enumerate(targets):
+        data = scrape_post(post)
+        if data:
+            results.append(data)
+        if on_progress:
+            on_progress(i + 1, len(targets))
+    return results

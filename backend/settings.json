@@ -1,0 +1,12 @@
+{
+  "openai_api_key": "",
+  "coupang_access_key": "a14634f3-dc14-4e17-b895-05602fc65155",
+  "coupang_secret_key": "936c77f2fed3f25314c35fb42da5e869ff3b0693",
+  "coupang_domain": "https://api-gateway.coupang.com",
+  "naver_id": "",
+  "naver_pw": "",
+  "pipeline_days": 2,
+  "pipeline_max_posts": 10,
+  "pipeline_top_celebs": 5,
+  "chrome_user_data_dir": "C:/Utilities/Blog/chrome-user-data"
+}
