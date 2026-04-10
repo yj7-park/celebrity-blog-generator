@@ -1,38 +1,52 @@
 import { BLOGS } from "./blogs";
+import type { OrderedBlock, PostItem, ScrapedPostData } from "./types";
 
-export interface PostItem {
-  title: string;
-  url: string;
-  date: string;
-  tag: string;
+// ── CORS 프록시 (순서대로 fallback) ──────────────────────────────
+const PROXIES = [
+  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}&_=${Date.now()}`,
+  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+];
+
+async function fetchViaProxy(url: string, timeoutMs = 10000): Promise<string> {
+  let lastErr: unknown;
+  for (const proxyFn of PROXIES) {
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+      const res = await fetch(proxyFn(url), { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (res.ok) {
+        const text = await res.text();
+        if (text.length > 100) return text;
+      }
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error("All proxies failed");
 }
 
-// Public CORS proxy — requests Naver RSS/HTML on behalf of the browser
-const PROXY = "https://api.allorigins.win/raw?url=";
-
-function proxied(url: string): string {
-  return `${PROXY}${encodeURIComponent(url)}`;
-}
-
+// ── RSS 수집 ──────────────────────────────────────────────────────
 function parseRSS(xml: string, folder: string): PostItem[] {
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
-  const items = Array.from(doc.querySelectorAll("item"));
-  return items
-    .filter((el) => el.querySelector("category")?.textContent?.trim() === folder)
-    .map((el) => ({
-      title: el.querySelector("title")?.textContent ?? "",
-      url: el.querySelector("guid")?.textContent ?? "",
-      date: el.querySelector("pubDate")?.textContent ?? "",
-      tag: el.querySelector("tag")?.textContent ?? "",
-    }));
+  try {
+    const doc = new DOMParser().parseFromString(xml, "application/xml");
+    return Array.from(doc.querySelectorAll("item"))
+      .filter((el) => el.querySelector("category")?.textContent?.trim() === folder)
+      .map((el) => ({
+        title: el.querySelector("title")?.textContent ?? "",
+        url:   el.querySelector("guid")?.textContent ?? "",
+        date:  el.querySelector("pubDate")?.textContent ?? "",
+        tag:   el.querySelector("tag")?.textContent ?? "",
+      }));
+  } catch {
+    return [];
+  }
 }
 
 async function fetchRSS(name: string, folder: string): Promise<PostItem[]> {
   try {
-    const url = `https://rss.blog.naver.com/${name}.xml`;
-    const res = await fetch(proxied(url));
-    if (!res.ok) return [];
-    return parseRSS(await res.text(), folder);
+    const xml = await fetchViaProxy(`https://rss.blog.naver.com/${name}.xml`);
+    return parseRSS(xml, folder);
   } catch {
     return [];
   }
@@ -43,11 +57,18 @@ export async function collectPosts(
   onProgress?: (done: number, total: number) => void
 ): Promise<PostItem[]> {
   const results: PostItem[] = [];
-  for (let i = 0; i < BLOGS.length; i++) {
-    const [name, folder] = BLOGS[i];
-    const posts = await fetchRSS(name, folder);
-    results.push(...posts);
-    onProgress?.(i + 1, BLOGS.length);
+  const CHUNK = 3;
+
+  for (let i = 0; i < BLOGS.length; i += CHUNK) {
+    const chunk = BLOGS.slice(i, i + CHUNK);
+    const chunkRes = await Promise.all(
+      chunk.map(async ([name, folder]) => {
+        const posts = await fetchRSS(name, folder);
+        onProgress?.(Math.min(i + CHUNK, BLOGS.length), BLOGS.length);
+        return posts;
+      })
+    );
+    results.push(...chunkRes.flat());
   }
 
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
@@ -59,85 +80,101 @@ export async function collectPosts(
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-// ── Blog post HTML scraping ──────────────────────────────────────
+// ── 블로그 HTML 스크래핑 ──────────────────────────────────────────
 
-function extractNaverContentUrl(html: string): string | null {
-  // Naver wraps posts in a frame; the real content URL is in a src attribute
-  const match = html.match(/src="(\/[^"]+PostView[^"]+)"/);
-  return match ? `https://blog.naver.com${match[1]}` : null;
+/** 네이버 블로그 URL → blogId + logNo 추출 */
+function parseNaverUrl(url: string): { blogId: string; logNo: string } | null {
+  const m =
+    url.match(/blog\.naver\.com\/([^/?#]+)\/(\d+)/) ??
+    url.match(/blogId=([^&]+).*logNo=(\d+)/);
+  if (!m) return null;
+  return { blogId: m[1], logNo: m[2] };
 }
 
-function parseContent(html: string): string {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const paras = Array.from(doc.querySelectorAll("p.se-text-paragraph"));
-  return paras
-    .map((p) => p.textContent ?? "")
-    .join("\n")
-    .replace(/\u200b/g, "")
-    .trim();
+function buildPostViewUrl(blogId: string, logNo: string): string {
+  return `https://blog.naver.com/PostView.naver?blogId=${blogId}&logNo=${logNo}&redirect=Dlog&widgetTypeCall=true&directAccess=false`;
 }
 
-function parseItems(html: string): Record<string, string> {
+function parseNaverHtml(html: string, sourceTitle: string, sourceUrl: string): ScrapedPostData {
   const doc = new DOMParser().parseFromString(html, "text/html");
-  const result: Record<string, string> = {};
-  doc.querySelectorAll("a.se-link").forEach((a) => {
-    const href = (a as HTMLAnchorElement).href || a.getAttribute("href") || "";
-    const text = a.textContent?.trim() ?? "";
-    if (!href || !text) return;
-    // Try to extract product name from URL params (works without redirect)
-    const name = parseItemName(href);
-    if (name) result[text] = name;
+
+  // ── 이미지 URL (원본 해상도) ──
+  const imageUrls: string[] = [];
+  const seenImgs = new Set<string>();
+  doc.querySelectorAll("img.se-image-resource, img[src*='postfiles.pstatic.net']").forEach((img) => {
+    let src = img.getAttribute("src") || img.getAttribute("data-lazy-src") || "";
+    if (src && src.includes("pstatic.net")) {
+      src = src.replace(/\?type=\w+/, "?type=w966");
+      if (!seenImgs.has(src)) { seenImgs.add(src); imageUrls.push(src); }
+    }
   });
-  return result;
+
+  // ── 텍스트 단락 ──
+  const paragraphs: string[] = [];
+  doc.querySelectorAll("p.se-text-paragraph").forEach((p) => {
+    const t = p.textContent?.replace(/\u200b/g, "").replace(/\xa0/g, " ").trim() ?? "";
+    if (t) paragraphs.push(t);
+  });
+
+  // ── ordered_blocks (텍스트+이미지 순서 보존) ──
+  const orderedBlocks: OrderedBlock[] = [];
+  const container = doc.querySelector("div.se-main-container, div.__se_component_area");
+  if (container) {
+    const walk = (node: Element) => {
+      if (node.matches("p.se-text-paragraph")) {
+        const t = node.textContent?.replace(/\u200b/g, "").replace(/\xa0/g, " ").trim() ?? "";
+        if (t) orderedBlocks.push({ type: "text", content: t });
+      } else if (node.matches("img.se-image-resource, img[src*='postfiles.pstatic.net']")) {
+        let src = node.getAttribute("src") || node.getAttribute("data-lazy-src") || "";
+        if (src && src.includes("pstatic.net")) {
+          src = src.replace(/\?type=\w+/, "?type=w966");
+          orderedBlocks.push({ type: "image", url: src });
+        }
+      } else {
+        Array.from(node.children).forEach(walk);
+      }
+    };
+    Array.from(container.children).forEach(walk);
+  }
+
+  // ── 링크 ──
+  const links: Array<{ text: string; href: string }> = [];
+  doc.querySelectorAll("a.se-link, a[href*='coupang'], a[href*='smartstore'], a[href*='vvd.bz']").forEach((a) => {
+    const href = a.getAttribute("href") || "";
+    const text = a.textContent?.trim() ?? "";
+    if (href.startsWith("http")) links.push({ text, href });
+  });
+
+  return { orderedBlocks, imageUrls, paragraphs, links, postUrl: sourceUrl, title: sourceTitle };
 }
 
-function parseItemName(url: string): string {
+export async function scrapePost(post: PostItem): Promise<ScrapedPostData | null> {
   try {
-    const u = new URL(url);
-    return (
-      decodeURIComponent(u.searchParams.get("q") ?? "") ||
-      decodeURIComponent(u.searchParams.get("pageKey") ?? "")
-    );
+    const parsed = parseNaverUrl(post.url);
+    if (!parsed) return null;
+    const pvUrl = buildPostViewUrl(parsed.blogId, parsed.logNo);
+    const html = await fetchViaProxy(pvUrl, 12000);
+    return parseNaverHtml(html, post.title, post.url);
   } catch {
-    return "";
+    return null;
   }
 }
 
-export interface ScrapedPost {
-  content: string;
-  items: Record<string, string>;
-}
-
-export async function scrapePost(url: string): Promise<ScrapedPost> {
-  try {
-    const frameHtml = await fetch(proxied(url)).then((r) => r.text());
-    const contentUrl = extractNaverContentUrl(frameHtml) ?? url;
-    const html = await fetch(proxied(contentUrl)).then((r) => r.text());
-    return { content: parseContent(html), items: parseItems(html) };
-  } catch {
-    return { content: "", items: {} };
-  }
-}
-
-export async function scrapePostsForCeleb(
+export async function scrapeMultiplePosts(
   posts: PostItem[],
-  celeb: string,
-  maxPosts = 5,
+  maxPosts = 8,
   onProgress?: (done: number, total: number) => void
-): Promise<{ items: Record<string, string>; snippets: string[] }> {
-  const celebPosts = posts
-    .filter((p) => p.title.includes(celeb))
-    .slice(0, maxPosts);
+): Promise<ScrapedPostData[]> {
+  const targets = posts.slice(0, maxPosts);
+  const results: ScrapedPostData[] = [];
 
-  const allItems: Record<string, string> = {};
-  const snippets: string[] = [];
-
-  for (let i = 0; i < celebPosts.length; i++) {
-    const { content, items } = await scrapePost(celebPosts[i].url);
-    if (content) snippets.push(content.slice(0, 500));
-    Object.assign(allItems, items);
-    onProgress?.(i + 1, celebPosts.length);
+  for (let i = 0; i < targets.length; i++) {
+    const data = await scrapePost(targets[i]);
+    if (data && (data.paragraphs.length > 0 || data.imageUrls.length > 0)) {
+      results.push(data);
+    }
+    onProgress?.(i + 1, targets.length);
   }
 
-  return { items: allItems, snippets };
+  return results;
 }

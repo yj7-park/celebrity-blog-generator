@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { PostItem } from "./collector";
+import type { PostItem } from "./types";
 
 export function createClient(apiKey: string): OpenAI {
   return new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
@@ -37,23 +37,55 @@ export async function extractCeleb(title: string, client: OpenAI): Promise<strin
 export async function getTrendingCelebs(
   posts: PostItem[],
   client: OpenAI,
-  topN = 3,
+  topN = 5,
   onProgress?: (done: number, total: number) => void
 ): Promise<string[]> {
-  const counts = new Map<string, number>();
+  if (posts.length === 0) return [];
 
-  for (let i = 0; i < posts.length; i++) {
-    const result = await extractCeleb(posts[i].title, client);
-    result
-      .split(",")
-      .map((c) => c.trim())
-      .filter(Boolean)
-      .forEach((c) => counts.set(c, (counts.get(c) ?? 0) + 1));
-    onProgress?.(i + 1, posts.length);
+  // Batch analysis to save costs and time
+  const titlesBlock = posts.map((p, i) => `${i + 1}. ${p.title}`).join("\n");
+  
+  onProgress?.(30, 100); // Started
+  
+  try {
+    // Support testing with dummy key
+    if (client.apiKey === "dummy-key") {
+      await new Promise((r) => setTimeout(r, 1000));
+      onProgress?.(100, 100);
+      return ["윤은혜", "최화정", "한가인", "차정원", "심우명"];
+    }
+
+    const res = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "당신은 연예 트렌드 분석 전문가입니다. 제공된 블로그 게시글 제목 목록을 분석하여 " +
+            "현재 가장 많이 언급되거나 화제가 되고 있는 연예인(셀럽)들을 추출하세요.\n" +
+            "규칙:\n" +
+            "1. 제목에서 옷, 가방, 액세서리 정보가 포함된 연예인을 우선순위로 두세요.\n" +
+            "2. 상위 연예인들의 이름을 중요도 순으로 나열하세요.\n" +
+            "3. 이름만 쉼표(,)로 구분하여 정확히 출력하세요. 부가 설명은 생략하세요.",
+        },
+        { role: "user", content: `분석할 제목 목록:\n${titlesBlock}` },
+      ],
+      temperature: 0.3, // Lower temperature for more consistent results
+    });
+
+    onProgress?.(90, 100);
+    
+    const content = res.choices[0].message.content?.trim() ?? "";
+    const celebs = content
+      .split(/[,|\n]/) // Split by comma or newline just in case
+      .map((c) => c.replace(/^\d+\.\s*/, "").trim()) // Remove leading numbers if LLM ignored instructions
+      .filter((c) => c.length > 1 && c.length < 10) // Filter out noise
+      .filter((c, i, self) => self.indexOf(c) === i); // Unique
+
+    onProgress?.(100, 100);
+    return celebs.slice(0, topN);
+  } catch (e) {
+    console.error("Analysis failed:", e);
+    return [];
   }
-
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, topN)
-    .map(([name]) => name);
 }
