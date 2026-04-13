@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { runPipelineSSE, checkRecentRun, deleteRun } from "../lib/api";
-import type { CelebItem, PipelineRun } from "../lib/types";
+import { runPipelineSSE, checkRecentRun, deleteRun, writeNaverBlog, getSettings } from "../lib/api";
+import type { CelebItem, NaverBlogElement, PipelineRun } from "../lib/types";
 import ProgressBar from "../components/ProgressBar";
 import ItemsPanel from "../components/ItemsPanel";
 
@@ -69,6 +69,13 @@ export default function DashboardPage() {
   const [blogPost, setBlogPost] = useState<{ celeb: string; title: string; post: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Naver publish state
+  const [naverElements, setNaverElements] = useState<NaverBlogElement[]>([]);
+  const [naverLogin, setNaverLogin] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
   // Cache-hit modal state
   const [cacheModal, setCacheModal] = useState<PipelineRun | null>(null);
   // Overwrite banner: shown after fresh run when same celeb had a previous run
@@ -78,6 +85,11 @@ export default function DashboardPage() {
 
   const esRef = useRef<EventSource | null>(null);
 
+  // Load Naver login status once
+  useEffect(() => {
+    getSettings().then(s => setNaverLogin(s.naver_id || null)).catch(() => {});
+  }, []);
+
   // Load run from history page navigation
   useEffect(() => {
     const state = location.state as { loadedRun?: PipelineRun } | null;
@@ -85,6 +97,7 @@ export default function DashboardPage() {
       const run = state.loadedRun;
       setItems((run.items ?? []) as CelebItem[]);
       setBlogPost({ celeb: run.celeb, title: run.title, post: run.blog_post ?? "" });
+      setNaverElements(run.elements ?? []);
       setTrending([run.celeb]);
       setStepStatus(STEP_LABELS.map(() => "done" as StepStatus));
       setFromCache(run.celeb);
@@ -96,6 +109,7 @@ export default function DashboardPage() {
   const loadCachedRun = (run: PipelineRun) => {
     setItems((run.items ?? []) as CelebItem[]);
     setBlogPost({ celeb: run.celeb, title: run.title, post: run.blog_post ?? "" });
+    setNaverElements(run.elements ?? []);
     setTrending([run.celeb]);
     setStepStatus(STEP_LABELS.map(() => "done" as StepStatus));
     setPostCount(null);
@@ -136,6 +150,9 @@ export default function DashboardPage() {
     setItems([]);
     setBlogPost(null);
     setFromCache(null);
+    setNaverElements([]);
+    setPublishedUrl(null);
+    setPublishError(null);
     setCurrentStep(0);
     setStepStatus(buildStepStatus(0, true));
     setProgress(null);
@@ -161,6 +178,7 @@ export default function DashboardPage() {
             if (data.trending) setTrending(data.trending);
             if (data.posts_count != null) setPostCount(data.posts_count);
             if (data.items) setItems(data.items);
+            if (data.elements) setNaverElements(data.elements);
             if (data.blog_post) {
               setBlogPost({
                 celeb: data.celeb ?? "",
@@ -548,6 +566,114 @@ export default function DashboardPage() {
               }}>
                 {blogPost.post}
               </pre>
+
+              {/* ── 네이버 블로그 발행 ── */}
+              <div style={{
+                marginTop: 20,
+                borderTop: "1px solid #f3f4f6",
+                paddingTop: 20,
+              }}>
+                <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: "#1e1b4b" }}>
+                  네이버 블로그 발행
+                </h4>
+
+                {/* 계정 상태 */}
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "8px 12px", borderRadius: 8, marginBottom: 12,
+                  background: naverLogin ? "#d1fae5" : "#fef3c7",
+                  fontSize: 12, fontWeight: 500,
+                  color: naverLogin ? "#065f46" : "#92400e",
+                }}>
+                  {naverLogin ? `✅ ${naverLogin} 계정으로 발행` : "⚠️ 설정에서 네이버 계정을 먼저 입력하세요."}
+                </div>
+
+                {/* elements 미리보기 */}
+                {naverElements.length > 0 && (
+                  <div style={{
+                    fontSize: 11, color: "#6b7280", marginBottom: 12,
+                    background: "#f9fafb", borderRadius: 6, padding: "6px 10px",
+                  }}>
+                    {naverElements.map((el, i) => (
+                      <span key={i} style={{
+                        display: "inline-block", margin: "2px 3px",
+                        padding: "1px 6px", borderRadius: 4,
+                        background: el.type === "image" ? "#dbeafe"
+                          : el.type === "header" ? "#ede9fe"
+                          : el.type === "url_text" ? "#fef3c7"
+                          : "#f3f4f6",
+                        color: el.type === "image" ? "#1d4ed8"
+                          : el.type === "header" ? "#7c3aed"
+                          : el.type === "url_text" ? "#92400e"
+                          : "#374151",
+                        fontFamily: "monospace",
+                      }}>
+                        {el.type}
+                      </span>
+                    ))}
+                    <span style={{ marginLeft: 6 }}>총 {naverElements.length}개 elements</span>
+                  </div>
+                )}
+
+                {publishError && (
+                  <div style={{
+                    background: "#fef2f2", border: "1px solid #fecaca",
+                    borderRadius: 8, padding: "8px 12px",
+                    color: "#dc2626", fontSize: 13, marginBottom: 12,
+                  }}>⚠️ {publishError}</div>
+                )}
+
+                {publishedUrl && (
+                  <div style={{
+                    background: "#d1fae5", border: "1px solid #a7f3d0",
+                    borderRadius: 8, padding: "10px 14px", marginBottom: 12,
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#065f46", marginBottom: 4 }}>
+                      ✅ 발행 완료!
+                    </div>
+                    <a href={publishedUrl} target="_blank" rel="noreferrer"
+                      style={{ fontSize: 12, color: "#6366f1", wordBreak: "break-all" }}>
+                      {publishedUrl}
+                    </a>
+                  </div>
+                )}
+
+                <button
+                  disabled={publishing || !naverLogin || naverElements.length === 0}
+                  onClick={async () => {
+                    if (!blogPost || naverElements.length === 0) return;
+                    setPublishing(true);
+                    setPublishError(null);
+                    setPublishedUrl(null);
+                    try {
+                      // 해시태그 element에서 태그 추출
+                      const hashEl = [...naverElements].reverse().find(
+                        el => el.type === "text" && el.content.trim().startsWith("#")
+                      );
+                      const tags = hashEl
+                        ? hashEl.content.split(/\s+/).filter(t => t.startsWith("#")).map(t => t.slice(1))
+                        : [];
+                      const res = await writeNaverBlog(blogPost.title, naverElements, tags);
+                      if (res.url) setPublishedUrl(res.url);
+                      else setPublishError("발행은 요청됐지만 URL을 받지 못했습니다.");
+                    } catch (e) {
+                      setPublishError(String(e));
+                    } finally {
+                      setPublishing(false);
+                    }
+                  }}
+                  style={{
+                    padding: "11px 24px", fontSize: 14, fontWeight: 700,
+                    background: (publishing || !naverLogin || naverElements.length === 0)
+                      ? "#a5b4fc"
+                      : "linear-gradient(90deg, #6366f1, #8b5cf6)",
+                    color: "#fff", border: "none", borderRadius: 10,
+                    cursor: (publishing || !naverLogin || naverElements.length === 0) ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {publishing ? "⏳ 발행 중..." : "네이버 블로그에 발행"}
+                </button>
+              </div>
             </div>
           )}
         </div>

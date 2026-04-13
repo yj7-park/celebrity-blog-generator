@@ -88,11 +88,18 @@ export interface PipelineRun {
   days_ago?: number;
   items?: CelebItem[];
   blog_post?: string;
+  elements?: NaverBlogElement[];
 }
 
 export interface CheckRunResponse {
   found: boolean;
   run: PipelineRun | null;
+}
+
+/** Element consumed by NaverBlogWriter.write() */
+export interface NaverBlogElement {
+  type: "text" | "header" | "image" | "url" | "url_text" | "video";
+  content: string;
 }
 
 // SSE Pipeline Events — matches backend _sse() format:
@@ -110,7 +117,7 @@ export interface PipelineEvent {
     celeb?: string;
     title?: string;
     blog_post?: string;
-    elements?: unknown[];
+    elements?: NaverBlogElement[];
     posts_count?: number;
   } | null;
 }
