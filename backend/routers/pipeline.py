@@ -139,15 +139,12 @@ def _filter_items_by_celeb(items, celeb: str):
 # ── Coupang enrichment helper ─────────────────────────────────────────────────
 
 def _enrich_with_coupang(items, settings: AppSettings):
-    """Search Coupang for each item and attach affiliate URL to link_url."""
+    """Search Coupang for each item by product_name and attach affiliate URL."""
     if not settings.coupang_access_key or not settings.coupang_secret_key:
         return items
 
     enriched = []
     for item in items:
-        if item.link_url and "coupang.com" in item.link_url:
-            enriched.append(item)
-            continue
         try:
             products = search_products(item.product_name, settings, limit=1)
             if products:

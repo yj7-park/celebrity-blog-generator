@@ -124,14 +124,12 @@ def extract_from_post(scraped: ScrapedPostData, client: OpenAI) -> List[CelebIte
         image_urls = [img_map[i] for i in indices if isinstance(i, int) and i in img_map]
 
         link_text = str(item.get("link_text", ""))
-        # Try to match by link_text, fall back to first available link
+        # Try to match by link_text only — no fallback to first link (avoids wrong URLs)
         matched_link = next(
             (lk.get("href", "") for lk in scraped.links
              if link_text and link_text[:8] in lk.get("text", "")),
             "",
         )
-        if not matched_link and scraped.links:
-            matched_link = scraped.links[0].get("href", "")
 
         # Resolve short URLs (vvd.bz, bit.ly, han.gl, etc.) to final destination
         if matched_link and is_short_url(matched_link):
