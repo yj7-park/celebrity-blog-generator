@@ -93,7 +93,7 @@ export async function writeNaverBlog(
   elements: { type: string; content: string }[],
   tags: string[],
   thumbnailPath?: string
-): Promise<{ status: string; url?: string }> {
+): Promise<{ success: boolean; blog_url?: string; error?: string }> {
   return apiFetch("/api/naver/write", {
     method: "POST",
     body: JSON.stringify({ title, elements, tags, thumbnail_path: thumbnailPath }),

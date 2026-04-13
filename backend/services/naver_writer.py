@@ -84,8 +84,8 @@ class NaverBlogWriter:
 
     # ── Login ─────────────────────────────────────────────────────────────────
 
-    def _login(self):
-        self.driver.get("https://nid.naver.com/nidlogin.login?mode=form&url=https://blog.naver.com/")
+    def _do_login_form(self):
+        """Fill and submit the Naver login form (assumes already on login page)."""
         WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.ID, "id"))
         ).click()
@@ -99,12 +99,39 @@ class NaverBlogWriter:
         self._delay(0.8, 1.2)
 
         self.driver.find_element(By.ID, "log.login").click()
+        # Wait for redirect away from login page (up to 15 s — may need phone auth)
         try:
-            WebDriverWait(self.driver, 8).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "button_signout"))
+            WebDriverWait(self.driver, 15).until(
+                lambda d: "nidlogin" not in d.current_url
             )
         except Exception:
-            raise RuntimeError("Naver 로그인 실패 — ID/PW 확인 또는 보안 인증 필요")
+            raise RuntimeError(
+                "Naver 로그인 실패 — Chrome 프로필 세션이 만료되었습니다. "
+                f"chrome.exe --user-data-dir=\"{self.chrome_user_data_dir}\" 로 "
+                "Chrome을 직접 열어 Naver에 로그인한 뒤 다시 시도하세요."
+            )
+
+    def _login(self):
+        """Ensure the driver is logged into Naver.
+
+        Strategy:
+        1. Navigate to the blog write page.
+        2. If we were NOT redirected to nid.naver.com we're already logged in.
+        3. If redirected, fill in the login form.
+        """
+        self.driver.get("https://blog.naver.com/GoBlogWrite.naver")
+        self._delay(2, 3)
+
+        current = self.driver.current_url
+        if "nid.naver.com" not in current:
+            # Already on the write page (or blog.naver.com) — logged in
+            return
+
+        # Redirected to login page — attempt login
+        self._do_login_form()
+        # After login, navigate back to the write page
+        self.driver.get("https://blog.naver.com/GoBlogWrite.naver")
+        self._delay(2, 3)
 
     # ── Image clipboard helper (Windows only) ─────────────────────────────────
 
@@ -286,9 +313,8 @@ class NaverBlogWriter:
         """Write and publish a Naver blog post. Returns the published blog URL."""
         try:
             self._init_driver()
-            self._login()
+            self._login()  # also navigates to GoBlogWrite.naver
 
-            self.driver.get("https://blog.naver.com/GoBlogWrite.naver")
             self.driver.switch_to.frame("mainFrame")
             self._delay(2, 3)
 

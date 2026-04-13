@@ -139,9 +139,12 @@ export default function BlogWriterPage() {
 
     try {
       const res = await writeNaverBlog(title, elems, tagList);
-      if (res.url) {
-        setPublishedUrl(res.url);
+      if (res.blog_url) {
+        setPublishedUrl(res.blog_url);
         setPublishStatus("완료");
+        setPublishing(false);
+      } else if (res.error) {
+        setPublishError(res.error);
         setPublishing(false);
       } else {
         startPolling();

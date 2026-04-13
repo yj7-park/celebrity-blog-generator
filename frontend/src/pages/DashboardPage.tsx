@@ -654,7 +654,8 @@ export default function DashboardPage() {
                         ? hashEl.content.split(/\s+/).filter(t => t.startsWith("#")).map(t => t.slice(1))
                         : [];
                       const res = await writeNaverBlog(blogPost.title, naverElements, tags);
-                      if (res.url) setPublishedUrl(res.url);
+                      if (res.blog_url) setPublishedUrl(res.blog_url);
+                      else if (res.error) setPublishError(res.error);
                       else setPublishError("발행은 요청됐지만 URL을 받지 못했습니다.");
                     } catch (e) {
                       setPublishError(String(e));
