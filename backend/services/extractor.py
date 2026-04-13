@@ -7,6 +7,7 @@ import json, re
 from typing import List, Optional
 from openai import OpenAI
 from models.schemas import CelebItem, ScrapedPostData
+from services.url_resolver import resolve, is_short_url
 
 CATEGORY_GUIDE = """
 카테고리 기준:
@@ -123,11 +124,18 @@ def extract_from_post(scraped: ScrapedPostData, client: OpenAI) -> List[CelebIte
         image_urls = [img_map[i] for i in indices if isinstance(i, int) and i in img_map]
 
         link_text = str(item.get("link_text", ""))
+        # Try to match by link_text, fall back to first available link
         matched_link = next(
             (lk.get("href", "") for lk in scraped.links
              if link_text and link_text[:8] in lk.get("text", "")),
-            ""
+            "",
         )
+        if not matched_link and scraped.links:
+            matched_link = scraped.links[0].get("href", "")
+
+        # Resolve short URLs (vvd.bz, bit.ly, han.gl, etc.) to final destination
+        if matched_link and is_short_url(matched_link):
+            matched_link = resolve(matched_link)
 
         celeb = str(item.get("celeb", "")).strip()
         product_name = str(item.get("product_name", "")).strip()

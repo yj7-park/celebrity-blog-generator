@@ -12,6 +12,7 @@ from routers.coupang import router as coupang_router
 from routers.naver import router as naver_router
 from routers.scheduler import router as scheduler_router
 from routers.settings import router as settings_router
+from routers.proxy import router as proxy_router
 
 # Global APScheduler instance (imported by scheduler router)
 scheduler = AsyncIOScheduler(timezone="Asia/Seoul")
@@ -43,6 +44,7 @@ app.include_router(coupang_router)
 app.include_router(naver_router)
 app.include_router(scheduler_router)
 app.include_router(settings_router)
+app.include_router(proxy_router)
 
 
 @app.get("/api/health")

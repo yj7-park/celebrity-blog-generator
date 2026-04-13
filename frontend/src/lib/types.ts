@@ -54,12 +54,22 @@ export interface AppSettings {
   chrome_user_data_dir: string;
 }
 
-// SSE Pipeline Events
-export type PipelineEvent =
-  | { type: "progress"; step: string; percent: number }
-  | { type: "posts"; data: { count: number; titles: string[] } }
-  | { type: "trending"; data: { celebs: string[] } }
-  | { type: "items"; data: { items: CelebItem[] } }
-  | { type: "blog_post"; data: { celeb: string; post: string } }
-  | { type: "error"; message: string }
-  | { type: "done" };
+// SSE Pipeline Events — matches backend _sse() format:
+// { type, step, percent, data, error }
+export interface PipelineEvent {
+  type: "progress" | "done" | "error";
+  step: string;
+  percent: number;
+  error: string;
+  data: {
+    posts?: PostItem[];
+    trending?: string[];
+    selected?: string;
+    items?: CelebItem[];
+    celeb?: string;
+    title?: string;
+    blog_post?: string;
+    elements?: unknown[];
+    posts_count?: number;
+  } | null;
+}

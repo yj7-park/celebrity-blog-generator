@@ -56,9 +56,7 @@ async def api_scrape(req: ScrapeRequest):
     # Filter posts by celeb name if provided
     target_posts = req.posts
     if req.celeb:
-        filtered = [p for p in req.posts if req.celeb in p.title]
-        if len(filtered) >= 3:
-            target_posts = filtered
+        target_posts = _filter_posts_by_celeb(req.posts, req.celeb) or req.posts
 
     scraped = await asyncio.to_thread(
         scrape_multiple_posts, target_posts, req.max_posts
@@ -66,7 +64,7 @@ async def api_scrape(req: ScrapeRequest):
     items = await asyncio.to_thread(extract_items_from_posts, scraped, client)
 
     if req.celeb:
-        filtered_items = [it for it in items if req.celeb in it.celeb or it.celeb in req.celeb]
+        filtered_items = _filter_items_by_celeb(items, req.celeb)
         if filtered_items:
             items = filtered_items
 
@@ -89,6 +87,53 @@ async def api_generate(req: GenerateRequest):
         blog_post=result["blog_post"],
         elements=result["elements"],
     )
+
+
+# ── Celebrity filtering helpers ───────────────────────────────────────────────
+
+def _celeb_tokens(name: str) -> list[str]:
+    """Split a celeb name into searchable tokens (handles spaces, English aliases)."""
+    tokens = [name.strip()]
+    # Add each word as a separate token (e.g. "한소희" stays whole, but "IU 아이유" → ["IU", "아이유"])
+    parts = name.strip().split()
+    if len(parts) > 1:
+        tokens.extend(parts)
+    # Lowercase variant for English names
+    tokens.extend([t.lower() for t in tokens if t.isascii()])
+    return list(dict.fromkeys(t for t in tokens if t))  # deduplicate, preserve order
+
+
+def _filter_posts_by_celeb(posts, celeb: str):
+    """
+    Multi-strategy post filtering:
+    1. Exact name match in title
+    2. Any token match in title
+    Falls back to all posts if fewer than 3 posts matched.
+    """
+    tokens = _celeb_tokens(celeb)
+    # Strategy 1: full name in title
+    exact = [p for p in posts if celeb in p.title]
+    if len(exact) >= 3:
+        return exact
+    # Strategy 2: any token match
+    token_matched = [
+        p for p in posts
+        if any(tok in p.title for tok in tokens)
+    ]
+    if len(token_matched) >= 3:
+        return token_matched
+    # Strategy 3: return all (let LLM extractor handle it)
+    return posts
+
+
+def _filter_items_by_celeb(items, celeb: str):
+    """Filter extracted CelebItems by celeb name with token matching."""
+    tokens = _celeb_tokens(celeb)
+    matched = [
+        it for it in items
+        if any(tok in it.celeb or it.celeb in tok for tok in tokens)
+    ]
+    return matched
 
 
 # ── Coupang enrichment helper ─────────────────────────────────────────────────
@@ -169,7 +214,7 @@ async def run_pipeline(
 
             # ── Phase 3: Scrape + Extract ─────────────────────────────────────
             yield _sse("progress", f"{celeb} 포스트 스크랩 중...", 42)
-            target_posts = [p for p in posts_result if celeb in p.title] or posts_result
+            target_posts = _filter_posts_by_celeb(posts_result, celeb) or posts_result
             scraped = await asyncio.to_thread(
                 scrape_multiple_posts, target_posts, min(max_posts, len(target_posts))
             )
@@ -177,7 +222,7 @@ async def run_pipeline(
 
             yield _sse("progress", "LLM 아이템 추출 중...", 62)
             all_items = await asyncio.to_thread(extract_items_from_posts, scraped, client)
-            celeb_items = [it for it in all_items if celeb in it.celeb or it.celeb in celeb]
+            celeb_items = _filter_items_by_celeb(all_items, celeb)
             final_items = celeb_items if celeb_items else all_items
 
             yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 72,

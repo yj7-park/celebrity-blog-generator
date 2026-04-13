@@ -1,5 +1,15 @@
 import type { CelebItem } from "../lib/types";
 
+/** Proxy pstatic.net / blogfiles images through the backend to avoid CORS. */
+function proxyImageUrl(url: string): string {
+  if (!url) return url;
+  const PROXIED = ["pstatic.net", "blogfiles.naver.net", "daumcdn.net"];
+  if (PROXIED.some((d) => url.includes(d))) {
+    return `/api/proxy/image?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 interface Props {
   items: CelebItem[];
 }
@@ -58,7 +68,7 @@ export default function ItemsPanel({ items }: Props) {
             {/* 이미지 */}
             {item.image_urls && item.image_urls[0] ? (
               <img
-                src={item.image_urls[0]}
+                src={proxyImageUrl(item.image_urls[0])}
                 alt={item.product_name}
                 style={{
                   width: 72,

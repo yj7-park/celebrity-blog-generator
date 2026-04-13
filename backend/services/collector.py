@@ -170,12 +170,25 @@ def _parse_naver_html(html: str, title: str, post_url: str) -> ScrapedPostData:
             if hasattr(child, "name") and child.name:
                 walk(child)
 
-    # Links
+    # Links — include all known short-URL domains + coupang / smartstore
+    _LINK_KEYWORDS = (
+        "coupang", "smartstore", "naver.me",
+        "vvd.bz", "han.gl", "me2.do", "url.kr",
+        "bit.ly", "t.co", "tinyurl.com", "ow.ly", "goo.gl",
+        "smarturl.it", "rebrand.ly", "buff.ly", "cutt.ly",
+        "vo.la", "c11.kr", "mrk.kr", "lrl.kr", "glink.page",
+        "coupa.ng", "link.coupang.com",
+    )
+    _selector = ", ".join(
+        f"a[href*='{kw}']" for kw in _LINK_KEYWORDS
+    ) + ", a.se-link"
     links: List[dict] = []
-    for a in soup.select("a.se-link, a[href*='coupang'], a[href*='smartstore'], a[href*='vvd.bz']"):
+    seen_hrefs: set[str] = set()
+    for a in soup.select(_selector):
         href = a.get("href") or ""
         text = (a.get_text() or "").strip()
-        if href.startswith("http"):
+        if href.startswith("http") and href not in seen_hrefs:
+            seen_hrefs.add(href)
             links.append({"text": text, "href": href})
 
     return ScrapedPostData(
