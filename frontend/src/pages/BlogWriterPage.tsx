@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { writeNaverBlog, getNaverStatus, getSettings } from "../lib/api";
+import { writeNaverBlog, getNaverStatus, getSettings, cancelNaver } from "../lib/api";
 
 type ElementType = "text" | "header" | "url" | "url_text";
 
@@ -101,13 +101,13 @@ export default function BlogWriterPage() {
     pollingRef.current = window.setInterval(async () => {
       try {
         const res = await getNaverStatus();
-        setPublishStatus(res.status);
-        if (res.status === "done" || res.url) {
-          setPublishedUrl(res.url ?? null);
+        setPublishStatus(res.phase);
+        if (res.phase === "done" || res.last_url) {
+          setPublishedUrl(res.last_url || null);
           setPublishing(false);
           if (pollingRef.current) clearInterval(pollingRef.current);
-        } else if (res.status === "error") {
-          setPublishError(res.error ?? "발행 중 오류 발생");
+        } else if (res.phase === "error") {
+          setPublishError(res.last_error ?? "발행 중 오류 발생");
           setPublishing(false);
           if (pollingRef.current) clearInterval(pollingRef.current);
         }
@@ -430,25 +430,48 @@ export default function BlogWriterPage() {
           </div>
         )}
 
-        <button
-          onClick={handlePublish}
-          disabled={publishing || !naverLogin}
-          style={{
-            padding: "12px 28px",
-            background:
-              publishing || !naverLogin
-                ? "#a5b4fc"
-                : "linear-gradient(90deg, #6366f1, #8b5cf6)",
-            color: "#fff",
-            border: "none",
-            borderRadius: 10,
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: publishing || !naverLogin ? "not-allowed" : "pointer",
-          }}
-        >
-          {publishing ? "⏳ 발행 중..." : "네이버 블로그에 발행"}
-        </button>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <button
+            onClick={handlePublish}
+            disabled={publishing || !naverLogin}
+            style={{
+              padding: "12px 28px",
+              background:
+                publishing || !naverLogin
+                  ? "#a5b4fc"
+                  : "linear-gradient(90deg, #6366f1, #8b5cf6)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: publishing || !naverLogin ? "not-allowed" : "pointer",
+            }}
+          >
+            {publishing ? "⏳ 발행 중..." : "네이버 블로그에 발행"}
+          </button>
+          {publishing && (
+            <button
+              onClick={() => {
+                cancelNaver().catch(() => {});
+                setPublishing(false);
+                setPublishStatus(null);
+              }}
+              style={{
+                padding: "12px 18px",
+                background: "#fee2e2",
+                color: "#dc2626",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              발행 중단
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

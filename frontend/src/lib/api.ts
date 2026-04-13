@@ -65,6 +65,21 @@ export async function generatePost(
   });
 }
 
+export async function processImage(url: string): Promise<{ processed_path: string }> {
+  return apiFetch("/api/pipeline/process-image", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+}
+
+export async function cancelPipeline(): Promise<{ status: string }> {
+  return apiFetch("/api/pipeline/cancel", { method: "POST" });
+}
+
+export async function cancelNaver(): Promise<{ status: string }> {
+  return apiFetch("/api/naver/cancel", { method: "POST" });
+}
+
 // --- Coupang ---
 export async function searchCoupang(
   keyword: string,
@@ -100,7 +115,13 @@ export async function writeNaverBlog(
   });
 }
 
-export async function getNaverStatus(): Promise<{ status: string; url?: string; error?: string }> {
+export async function getNaverStatus(): Promise<{
+  running: boolean;
+  phase: string;
+  message: string;
+  last_url: string;
+  last_error: string;
+}> {
   return apiFetch("/api/naver/status");
 }
 

@@ -2,10 +2,27 @@
 Naver Blog Writer using Selenium.
 Adapted from Blog-main/NaverBlogWriter.py
 Runs synchronously in a background thread.
+
+Session strategy
+----------------
+Chrome user data dir (chrome-user-data/ inside the project root) persists
+cookies across runs. On the first launch, or whenever the Naver session
+expires, the login form is filled automatically.
+
+If Naver shows a security/CAPTCHA page instead of logging in directly,
+the browser stays open and a status callback is fired so the caller
+can notify the user. The code then waits up to 5 minutes for the user
+to complete manual verification in the browser window.
 """
 from __future__ import annotations
-import io, json, os, random, time
-from typing import List, Optional
+import io, os, random, time
+from pathlib import Path
+from typing import Callable, Optional
+
+from services.cancel_token import naver as _naver_cancel
+
+# Debug screenshots directory
+_DEBUG_DIR = Path(__file__).resolve().parents[2] / "debug-screenshots"
 
 import pyperclip
 
@@ -32,6 +49,29 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+# Default: chrome-user-data/ at project root (two levels above this file)
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_USER_DATA = str(_PROJECT_ROOT / "chrome-user-data")
+
+StatusCallback = Callable[[str, str], None]   # (phase, message) → None
+
+
+def _screenshot(driver, name: str):
+    """Save a debug screenshot + page HTML to debug-screenshots/."""
+    try:
+        os.makedirs(_DEBUG_DIR, exist_ok=True)
+        # Screenshot
+        png_path = str(_DEBUG_DIR / f"{name}.png")
+        driver.save_screenshot(png_path)
+        # HTML
+        html_path = str(_DEBUG_DIR / f"{name}.html")
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(f"<!-- url: {driver.current_url} -->\n")
+            f.write(driver.page_source)
+        print(f"[DEBUG] {name}  url={driver.current_url}")
+    except Exception as e:
+        print(f"[DEBUG] screenshot failed ({name}): {e}")
+
 
 class NaverBlogWriter:
     """Selenium-based Naver blog post writer."""
@@ -40,11 +80,12 @@ class NaverBlogWriter:
         self,
         naver_id: str,
         naver_pw: str,
-        chrome_user_data_dir: str = "C:/Utilities/Blog/chrome-user-data",
+        chrome_user_data_dir: str = "",
     ):
         self.naver_id = naver_id
         self.naver_pw = naver_pw
-        self.chrome_user_data_dir = chrome_user_data_dir
+        # Empty string → use project-local default
+        self.chrome_user_data_dir = chrome_user_data_dir or _DEFAULT_USER_DATA
         self.driver: Optional[webdriver.Chrome] = None
 
     def __del__(self):
@@ -59,19 +100,21 @@ class NaverBlogWriter:
             self.driver = None
 
     def _init_driver(self):
+        os.makedirs(self.chrome_user_data_dir, exist_ok=True)
         opts = Options()
-        opts.add_argument("lang=ko_KR")
+        opts.add_argument("--lang=ko-KR")
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-gpu")
         opts.add_argument("--disable-dev-shm-usage")
-        if self.chrome_user_data_dir:
-            opts.add_argument(f"user-data-dir={self.chrome_user_data_dir}")
+        opts.add_argument("--window-size=1920,1080")
+        opts.add_argument(f"--user-data-dir={self.chrome_user_data_dir}")
         self.driver = webdriver.Chrome(service=Service(), options=opts)
 
     # ── Human-like helpers ────────────────────────────────────────────────────
 
     def _delay(self, lo=1.0, hi=3.0):
-        time.sleep(random.uniform(lo, hi))
+        """Human-like delay that wakes immediately if cancel is requested."""
+        _naver_cancel.interruptible_sleep(random.uniform(lo, hi))
 
     def _move(self, element):
         ActionChains(self.driver).move_to_element(element).perform()
@@ -84,54 +127,95 @@ class NaverBlogWriter:
 
     # ── Login ─────────────────────────────────────────────────────────────────
 
-    def _do_login_form(self):
-        """Fill and submit the Naver login form (assumes already on login page)."""
-        WebDriverWait(self.driver, 10).until(
+    def _do_login_form(self, status_cb: Optional[StatusCallback] = None):
+        """Fill and submit the Naver login form.
+
+        After submitting:
+        - If redirected away from nidlogin quickly → success.
+        - If Naver shows a security/CAPTCHA page (still on nid.naver.com
+          but not nidlogin.login) → fire status_cb and wait up to 5 min
+          for the user to complete verification in the open browser window.
+        """
+        _screenshot(self.driver, "02_login_page")
+        id_el = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.ID, "id"))
-        ).click()
+        )
+        id_el.click()
+        self._delay(0.3, 0.5)
         pyperclip.copy(self.naver_id)
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("v").key_up(Keys.CONTROL).perform()
-        self._delay(0.8, 1.2)
+        self._delay(0.5, 0.8)
 
-        self.driver.find_element(By.ID, "pw").click()
+        pw_el = self.driver.find_element(By.ID, "pw")
+        pw_el.click()
+        self._delay(0.3, 0.5)
         pyperclip.copy(self.naver_pw)
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("v").key_up(Keys.CONTROL).perform()
-        self._delay(0.8, 1.2)
+        self._delay(0.5, 0.8)
 
+        _screenshot(self.driver, "03_before_submit")
         self.driver.find_element(By.ID, "log.login").click()
-        # Wait for redirect away from login page (up to 15 s — may need phone auth)
+
+        # ── Phase 1: wait for redirect away from the login form (30 s) ──────
         try:
-            WebDriverWait(self.driver, 15).until(
+            WebDriverWait(self.driver, 30).until(
                 lambda d: "nidlogin" not in d.current_url
             )
+            _screenshot(self.driver, "04_after_submit")
         except Exception:
+            _screenshot(self.driver, "04_timeout")
             raise RuntimeError(
-                "Naver 로그인 실패 — Chrome 프로필 세션이 만료되었습니다. "
+                "Naver 로그인 실패 (30초 초과). ID/PW를 확인하거나 "
                 f"chrome.exe --user-data-dir=\"{self.chrome_user_data_dir}\" 로 "
                 "Chrome을 직접 열어 Naver에 로그인한 뒤 다시 시도하세요."
             )
 
-    def _login(self):
+        # ── Phase 2: if Naver showed a security page, wait for manual auth ──
+        if "nid.naver.com" in self.driver.current_url:
+            msg = (
+                "Naver 보안 인증이 필요합니다. "
+                "열려 있는 Chrome 창에서 인증을 완료해주세요. (최대 5분 대기)"
+            )
+            if status_cb:
+                status_cb("verification_needed", msg)
+
+            # Wait up to 5 minutes for the user to complete verification
+            try:
+                WebDriverWait(self.driver, 300).until(
+                    lambda d: "nid.naver.com" not in d.current_url
+                )
+            except Exception:
+                raise RuntimeError(
+                    "Naver 보안 인증 시간 초과 (5분). "
+                    "Chrome 창에서 인증을 완료한 뒤 다시 시도하세요."
+                )
+
+            if status_cb:
+                status_cb("logging_in", "인증 완료. 블로그 작성 중...")
+
+    def _login(self, status_cb: Optional[StatusCallback] = None):
         """Ensure the driver is logged into Naver.
 
-        Strategy:
         1. Navigate to the blog write page.
-        2. If we were NOT redirected to nid.naver.com we're already logged in.
-        3. If redirected, fill in the login form.
+        2. If NOT redirected → session alive, skip login.
+        3. If redirected to nid.naver.com → fill login form.
+        4. Navigate back to the write page.
         """
         self.driver.get("https://blog.naver.com/GoBlogWrite.naver")
         self._delay(2, 3)
+        _screenshot(self.driver, "01_after_goblogwrite")
 
-        current = self.driver.current_url
-        if "nid.naver.com" not in current:
-            # Already on the write page (or blog.naver.com) — logged in
-            return
+        if "nid.naver.com" not in self.driver.current_url:
+            print(f"[DEBUG] session valid, url={self.driver.current_url}")
+            return  # session still valid
 
-        # Redirected to login page — attempt login
-        self._do_login_form()
-        # After login, navigate back to the write page
+        print(f"[DEBUG] redirected to login, url={self.driver.current_url}")
+        self._do_login_form(status_cb)
+
+        self._delay(1, 2)
         self.driver.get("https://blog.naver.com/GoBlogWrite.naver")
         self._delay(2, 3)
+        _screenshot(self.driver, "05_after_login_goblogwrite")
 
     # ── Image clipboard helper (Windows only) ─────────────────────────────────
 
@@ -168,14 +252,16 @@ class NaverBlogWriter:
     # ── Element inserters ─────────────────────────────────────────────────────
 
     def _insert_text(self, content: str):
-        """Insert text content (15px font, backtick toggles bold)."""
-        WebDriverWait(self.driver, 3).until(
+        # Set font size to 15 via the toolbar dropdown
+        fs_btn = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-font-size-code-toolbar-button"))
-        ).click()
+        )
+        self.driver.execute_script("arguments[0].click();", fs_btn)
         self._delay(0.3, 0.6)
-        WebDriverWait(self.driver, 3).until(
+        fs15_btn = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-toolbar-option-font-size-code-fs15-button"))
-        ).click()
+        )
+        self.driver.execute_script("arguments[0].click();", fs15_btn)
         self._delay(0.3, 0.6)
         for char in content.replace("\\n", "\n"):
             if char == "`":
@@ -185,20 +271,17 @@ class NaverBlogWriter:
         self._delay(0.1, 0.2)
 
     def _insert_header(self, content: str):
-        """Insert header (Ctrl+Alt+Q shortcut)."""
         for _ in range(2):
             ActionChains(self.driver).key_down(Keys.CONTROL).key_down(Keys.ALT).send_keys("q").key_up(Keys.CONTROL).key_up(Keys.ALT).perform()
             self._delay(0.1, 0.2)
         ActionChains(self.driver).send_keys(content).perform()
 
     def _insert_image(self, image_path: str):
-        """Paste image from clipboard."""
         self._copy_image_to_clipboard(image_path)
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("v").key_up(Keys.CONTROL).perform()
         self._delay(3, 4)
 
     def _insert_url(self, url: str):
-        """Insert OG link card."""
         short_url = self.shorten_url(url)
         link_btn = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-oglink-toolbar-button"))
@@ -216,7 +299,6 @@ class NaverBlogWriter:
             confirm.click()
             self._delay(1, 2)
         except Exception:
-            # Fallback: close popup and type as text
             try:
                 close = WebDriverWait(self.driver, 3).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "se-popup-close-button"))
@@ -229,34 +311,27 @@ class NaverBlogWriter:
             self._delay(2, 3)
 
     def _insert_video(self, video_path: str):
-        """Upload a local video file to Naver Blog using the video insert button."""
         if not HAS_PYAUTOGUI:
             raise RuntimeError("pyautogui 없음 (Windows 전용 기능)")
         try:
-            # Click video insert toolbar button
             video_btn = WebDriverWait(self.driver, 5).until(
                 EC.element_to_be_clickable((By.CLASS_NAME, "se-video-toolbar-button"))
             )
             self._move(video_btn)
             video_btn.click()
             self._delay(1.5, 2.0)
-
-            # Click "내 PC에서 올리기" (local file upload)
             local_btn = WebDriverWait(self.driver, 5).until(
                 EC.element_to_be_clickable((By.CLASS_NAME, "se-video-local-button"))
             )
             self._move(local_btn)
             local_btn.click()
             self._delay(2.0, 2.5)
-
-            # Paste file path into the OS file-picker dialog
             pyperclip.copy(video_path.replace("/", "\\"))
             pyautogui.hotkey("ctrl", "v")
             self._delay(0.5, 1.0)
             pyautogui.press("enter")
-            self._delay(5, 8)  # Wait for upload
-        except Exception as e:
-            # Fallback: skip video and continue
+            self._delay(5, 8)
+        except Exception:
             try:
                 close = WebDriverWait(self.driver, 3).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "se-popup-close-button"))
@@ -266,15 +341,11 @@ class NaverBlogWriter:
                 pass
 
     def _insert_url_text(self, url: str):
-        """Insert large '최저가 구매하러 가기' bold link."""
         short_url = self.shorten_url(url)
-        # Two enters then arrow up
         ActionChains(self.driver).send_keys(Keys.ENTER, Keys.ENTER, Keys.ARROW_UP, Keys.ARROW_UP).perform()
         self._delay(0.4, 0.6)
-        # Bold on
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("B").key_up(Keys.CONTROL).perform()
         self._delay(0.3, 0.5)
-        # Large font
         WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-font-size-code-toolbar-button"))
         ).click()
@@ -283,10 +354,8 @@ class NaverBlogWriter:
             EC.presence_of_element_located((By.CLASS_NAME, "se-toolbar-option-font-size-code-fs38-button"))
         ).click()
         self._delay(0.3, 0.5)
-        # Text
         ActionChains(self.driver).send_keys(" 최저가 구매하러 가기 ").perform()
         self._delay(0.4, 0.6)
-        # Select text and add link
         ActionChains(self.driver).key_down(Keys.SHIFT).send_keys(Keys.HOME).key_up(Keys.SHIFT).perform()
         self._delay(0.3, 0.5)
         WebDriverWait(self.driver, 3).until(
@@ -298,7 +367,6 @@ class NaverBlogWriter:
         ).click()
         self._delay(0.3, 0.5)
         ActionChains(self.driver).send_keys(short_url, Keys.ENTER).perform()
-        # Move to next line
         ActionChains(self.driver).send_keys(Keys.ARROW_DOWN).perform()
         self._delay(0.4, 0.6)
 
@@ -307,33 +375,39 @@ class NaverBlogWriter:
     def write(
         self,
         title: str,
-        elements: list,       # list of {"type": ..., "content": ...}
+        elements: list,
         thumbnail_path: str = "",
+        status_cb: Optional[StatusCallback] = None,
     ) -> str:
         """Write and publish a Naver blog post. Returns the published blog URL."""
         try:
             self._init_driver()
-            self._login()  # also navigates to GoBlogWrite.naver
+            self._login(status_cb)
 
             self.driver.switch_to.frame("mainFrame")
             self._delay(2, 3)
+            _screenshot(self.driver, "06_in_mainframe")
 
-            # Dismiss modal if present
             try:
                 WebDriverWait(self.driver, 3).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "se-popup-button-cancel"))
                 ).click()
+                _screenshot(self.driver, "07_popup_dismissed")
             except Exception:
                 pass
 
             # ── Title ──────────────────────────────────────────────────────────
+            _screenshot(self.driver, "08_before_title")
             title_el = WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, '//span[contains(text(),"제목")]'))
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, ".se-title-text .se-text-paragraph")
+                )
             )
-            self._move(title_el)
-            title_el.click()
+            ActionChains(self.driver).move_to_element(title_el).click().perform()
+            self._delay(0.3, 0.5)
             ActionChains(self.driver).send_keys(title).perform()
             self._delay(0.3, 0.5)
+            _screenshot(self.driver, "09_after_title")
 
             # ── Thumbnail ──────────────────────────────────────────────────────
             if thumbnail_path and HAS_PYAUTOGUI:
@@ -346,13 +420,17 @@ class NaverBlogWriter:
                 self._delay(2, 2.5)
 
             # ── Body ───────────────────────────────────────────────────────────
-            text_area = WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, '//span[contains(text(),"본문에")]'))
+            _screenshot(self.driver, "10_before_body")
+            body_el = WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, ".se-section-text .se-text-paragraph")
+                )
             )
-            self._move(text_area)
-            text_area.click()
+            ActionChains(self.driver).move_to_element(body_el).click().perform()
+            _screenshot(self.driver, "11_after_body_click")
 
             for el in elements:
+                _naver_cancel.check("Naver 글쓰기가 취소되었습니다.")
                 el_type = el.get("type", "")
                 content = el.get("content", "")
                 self._scroll("down")
@@ -370,37 +448,62 @@ class NaverBlogWriter:
                 elif el_type == "video":
                     self._insert_video(str(content))
 
-                # Press Enter to move to next line
                 ActionChains(self.driver).key_down(Keys.CONTROL).key_down(Keys.ALT).send_keys("h").key_up(Keys.CONTROL).key_up(Keys.ALT).perform()
                 self._delay(0.1, 0.2)
 
             # ── Publish ────────────────────────────────────────────────────────
-            publish_btn = WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located(
-                    (By.XPATH, '/html/body/div[1]/div/div[1]/div/div[3]/div[2]/button')
+            # Stay inside mainFrame — the entire editor page is inside it
+            self._delay(1, 1.5)
+            _screenshot(self.driver, "20_before_publish")
+
+            publish_btn = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, "button[data-click-area='tpb.publish']")
                 )
             )
             self._move(publish_btn)
             publish_btn.click()
             self._delay(2, 3)
+            _screenshot(self.driver, "21_publish_dialog")
 
-            sympathy = WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, '//label[contains(text(),"공감허용")]'))
-            )
-            self._move(sympathy)
-            sympathy.click()
-            self._delay(1, 1.5)
+            # 공감허용 toggle (optional — ignore if not found)
+            try:
+                sympathy = WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, '//label[contains(text(),"공감허용") or contains(text(),"공감 허용")]')
+                    )
+                )
+                self._move(sympathy)
+                sympathy.click()
+                self._delay(1, 1.5)
+            except Exception:
+                pass
 
-            confirm = WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located(
-                    (By.XPATH, '/html/body/div[1]/div/div[1]/div/div[3]/div[2]/div/div/div/div[8]/div/button')
+            _screenshot(self.driver, "22_before_confirm")
+            # 발행 확인 버튼 (data-click-area="tpb*i.publish" or data-testid="seOnePublishBtn")
+            confirm = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR,
+                     "button[data-click-area='tpb*i.publish'], button[data-testid='seOnePublishBtn']")
                 )
             )
             self._move(confirm)
             confirm.click()
-            self._delay(3, 4)
 
-            blog_url = self.driver.current_url
-            return blog_url
+            # Wait for the page to redirect to the published post
+            try:
+                WebDriverWait(self.driver, 15).until(
+                    lambda d: "Redirect=Write" not in d.current_url
+                    and "blog.naver.com" in d.current_url
+                )
+            except Exception:
+                pass  # URL might not change — return what we have
+
+            _screenshot(self.driver, "99_before_return")
+            return self.driver.current_url
+        except Exception as e:
+            if self.driver:
+                _screenshot(self.driver, "99_error")
+            raise
         finally:
             self._close()

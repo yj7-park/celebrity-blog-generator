@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { runPipelineSSE, checkRecentRun, deleteRun, writeNaverBlog, getSettings } from "../lib/api";
+import { runPipelineSSE, checkRecentRun, deleteRun, writeNaverBlog, getNaverStatus, getSettings, cancelPipeline, cancelNaver } from "../lib/api";
 import type { CelebItem, NaverBlogElement, PipelineRun } from "../lib/types";
 import ProgressBar from "../components/ProgressBar";
 import ItemsPanel from "../components/ItemsPanel";
@@ -75,6 +75,9 @@ export default function DashboardPage() {
   const [publishing, setPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishPhase, setPublishPhase] = useState<string>("idle");
+  const [publishMessage, setPublishMessage] = useState<string>("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Cache-hit modal state
   const [cacheModal, setCacheModal] = useState<PipelineRun | null>(null);
@@ -213,6 +216,8 @@ export default function DashboardPage() {
     esRef.current?.close();
     setRunning(false);
     setStepStatus((prev) => prev.map((s) => (s === "running" ? "idle" : s)));
+    // Also signal the backend threads to stop
+    cancelPipeline().catch(() => {});
   };
 
   const handleExportJSON = () => {
@@ -615,6 +620,20 @@ export default function DashboardPage() {
                   </div>
                 )}
 
+                {/* 발행 진행 상태 */}
+                {publishing && publishMessage && (
+                  <div style={{
+                    borderRadius: 8, padding: "10px 14px", marginBottom: 12,
+                    background: publishPhase === "verification_needed" ? "#fffbeb" : "#eff6ff",
+                    border: `1px solid ${publishPhase === "verification_needed" ? "#fde68a" : "#bfdbfe"}`,
+                    color: publishPhase === "verification_needed" ? "#92400e" : "#1d4ed8",
+                    fontSize: 13, fontWeight: 500,
+                  }}>
+                    {publishPhase === "verification_needed" ? "🔐 " : "⏳ "}
+                    {publishMessage}
+                  </div>
+                )}
+
                 {publishError && (
                   <div style={{
                     background: "#fef2f2", border: "1px solid #fecaca",
@@ -645,8 +664,20 @@ export default function DashboardPage() {
                     setPublishing(true);
                     setPublishError(null);
                     setPublishedUrl(null);
+                    setPublishPhase("logging_in");
+                    setPublishMessage("Naver 로그인 중...");
+
+                    // Poll /api/naver/status every 3 s while publishing
+                    if (pollRef.current) clearInterval(pollRef.current);
+                    pollRef.current = setInterval(async () => {
+                      try {
+                        const s = await getNaverStatus();
+                        setPublishPhase(s.phase);
+                        setPublishMessage(s.message);
+                      } catch { /* ignore */ }
+                    }, 3000);
+
                     try {
-                      // 해시태그 element에서 태그 추출
                       const hashEl = [...naverElements].reverse().find(
                         el => el.type === "text" && el.content.trim().startsWith("#")
                       );
@@ -660,7 +691,10 @@ export default function DashboardPage() {
                     } catch (e) {
                       setPublishError(String(e));
                     } finally {
+                      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
                       setPublishing(false);
+                      setPublishPhase("idle");
+                      setPublishMessage("");
                     }
                   }}
                   style={{
@@ -672,8 +706,30 @@ export default function DashboardPage() {
                     cursor: (publishing || !naverLogin || naverElements.length === 0) ? "not-allowed" : "pointer",
                   }}
                 >
-                  {publishing ? "⏳ 발행 중..." : "네이버 블로그에 발행"}
+                  {publishing
+                    ? publishPhase === "verification_needed"
+                      ? "🔐 인증 대기 중..."
+                      : "⏳ 발행 중..."
+                    : "네이버 블로그에 발행"
+                  }
                 </button>
+                {publishing && (
+                  <button
+                    onClick={() => {
+                      cancelNaver().catch(() => {});
+                      setPublishing(false);
+                      setPublishPhase("idle");
+                      setPublishMessage("");
+                    }}
+                    style={{
+                      padding: "11px 18px", fontSize: 13, fontWeight: 600,
+                      background: "#fee2e2", color: "#dc2626",
+                      border: "none", borderRadius: 10, cursor: "pointer",
+                    }}
+                  >
+                    발행 중단
+                  </button>
+                )}
               </div>
             </div>
           )}

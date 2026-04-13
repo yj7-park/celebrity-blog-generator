@@ -15,6 +15,7 @@ from routers.settings import router as settings_router
 from routers.proxy import router as proxy_router
 from routers.db import router as db_router
 import db as _db
+from services import cancel_token as _ct
 
 # Global APScheduler instance (imported by scheduler router)
 scheduler = AsyncIOScheduler(timezone="Asia/Seoul")
@@ -25,6 +26,9 @@ async def lifespan(app: FastAPI):
     _db.init_db()
     scheduler.start()
     yield
+    # Signal all blocking threads to exit promptly so hot-reload is fast
+    _ct.pipeline.cancel()
+    _ct.naver.cancel()
     scheduler.shutdown(wait=False)
 
 

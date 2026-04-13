@@ -10,11 +10,28 @@ celeb_items     : saved after Coupang enrichment (final state, queryable)
 pipeline_runs   : saved after blog generation (history)
 """
 from __future__ import annotations
-import asyncio, json
+import asyncio, functools, json
 from typing import AsyncGenerator, List
-from fastapi import APIRouter
+import anyio
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from openai import OpenAI
+from pydantic import BaseModel as _BaseModel
+
+from services import cancel_token as _ct
+
+
+async def _run(fn, *args, **kw):
+    """Run a blocking function in a cancellable worker thread.
+
+    Using ``anyio.to_thread.run_sync`` with ``cancellable=True`` means:
+    - If the enclosing async task is cancelled (e.g. hot-reload / SIGTERM),
+      the coroutine is released immediately — the server doesn't hang.
+    - The worker thread itself continues briefly but will notice the cancel
+      token and exit at its next checkpoint.
+    """
+    wrapped = functools.partial(fn, *args, **kw) if (args or kw) else fn
+    return await anyio.to_thread.run_sync(wrapped, cancellable=True)
 
 from models.schemas import (
     AnalyzeRequest, AnalyzeResponse,
@@ -30,9 +47,13 @@ from services.extractor import extract_items_from_posts
 from services.generator import generate_blog_elements
 from services.coupang import search_products, shorten_url
 from services.image_matcher import cross_match_items
-from services.image_processor import process_items_images
+from services.image_processor import process_image, process_items_images
 from services.settings_service import load_settings
 import db as _db
+
+class ProcessImageRequest(_BaseModel):
+    url: str
+
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
 
@@ -48,14 +69,14 @@ def _get_client(api_key: str = "", settings: AppSettings = None) -> OpenAI:
 
 @router.post("/collect", response_model=CollectResponse)
 async def api_collect(req: CollectRequest):
-    posts = await asyncio.to_thread(collect_posts, req.days)
+    posts = await _run(collect_posts, req.days)
     return CollectResponse(posts=posts, count=len(posts))
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def api_analyze(req: AnalyzeRequest):
     client = _get_client(req.openai_api_key)
-    trending = await asyncio.to_thread(get_trending_celebs, req.posts, client, req.top_n)
+    trending = await _run(get_trending_celebs, req.posts, client, req.top_n)
     return AnalyzeResponse(trending=trending, post_count=len(req.posts))
 
 
@@ -68,7 +89,7 @@ async def api_scrape(req: ScrapeRequest):
     if req.celeb:
         target_posts = _filter_posts_by_celeb(req.posts, req.celeb) or req.posts
 
-    scraped_data, all_items = await asyncio.to_thread(
+    scraped_data, all_items = await _run(
         _scrape_and_extract_cached, target_posts, req.max_posts, client
     )
 
@@ -77,7 +98,7 @@ async def api_scrape(req: ScrapeRequest):
         if filtered:
             all_items = filtered
 
-    all_items = await asyncio.to_thread(cross_match_items, all_items)
+    all_items = await _run(cross_match_items, all_items)
     return ScrapeResponse(scraped_count=len(scraped_data), items=all_items)
 
 
@@ -86,15 +107,32 @@ async def api_generate(req: GenerateRequest):
     settings = load_settings()
     client = _get_client(req.openai_api_key)
 
-    enriched = await asyncio.to_thread(_enrich_with_coupang, req.items, settings)
-    result = await asyncio.to_thread(generate_blog_elements, enriched, client)
-    celeb = enriched[0].celeb if enriched else ""
+    enriched = await _run(_enrich_with_coupang, req.items, settings)
+    enriched = await _run(process_items_images, enriched)
+    result   = await _run(generate_blog_elements, enriched, client)
+    celeb    = enriched[0].celeb if enriched else ""
     return GenerateResponse(
         celeb=celeb,
         title=result["title"],
         blog_post=result["blog_post"],
         elements=result["elements"],
     )
+
+
+@router.post("/process-image")
+async def api_process_image(req: ProcessImageRequest):
+    """Download and process a single image URL. Returns the local file path."""
+    local_path = await _run(process_image, req.url)
+    if not local_path:
+        raise HTTPException(status_code=422, detail="이미지 처리 실패")
+    return {"processed_path": local_path}
+
+
+@router.post("/cancel")
+async def cancel_pipeline():
+    """Immediately signal all running pipeline threads to stop."""
+    _ct.pipeline.cancel()
+    return {"status": "cancelled"}
 
 
 # ── Celebrity filtering helpers ───────────────────────────────────────────────
@@ -242,12 +280,14 @@ async def run_pipeline(
     api_key = openai_api_key or settings.openai_api_key
 
     async def generate() -> AsyncGenerator[str, None]:
+        _ct.pipeline.reset()
         try:
             client = OpenAI(api_key=api_key)
 
             # ── Phase 1: Collect RSS ──────────────────────────────────────────
             yield _sse("progress", "RSS 수집 중...", 5)
-            posts_result = await asyncio.to_thread(collect_posts, days)
+            posts_result = await _run(collect_posts, days)
+            _ct.pipeline.check()
             if not posts_result:
                 yield _sse("error", error="게시글을 찾을 수 없습니다.")
                 return
@@ -257,9 +297,9 @@ async def run_pipeline(
 
             # ── Phase 2: Trending analysis ────────────────────────────────────
             yield _sse("progress", "트렌딩 연예인 분석 중...", 22)
-            trending = await asyncio.to_thread(
-                get_trending_celebs, posts_result, client, top_celebs
-            )
+            _ct.pipeline.check()
+            trending = await _run(get_trending_celebs, posts_result, client, top_celebs)
+            _ct.pipeline.check()
             if not trending:
                 yield _sse("error", error="연예인을 찾을 수 없습니다.")
                 return
@@ -272,7 +312,8 @@ async def run_pipeline(
             yield _sse("progress", f"{celeb} 포스트 스크랩·추출 중 (캐시 확인)...", 42)
             target_posts = _filter_posts_by_celeb(posts_result, celeb) or posts_result
 
-            scraped, all_items = await asyncio.to_thread(
+            _ct.pipeline.check()
+            scraped, all_items = await _run(
                 _scrape_and_extract_cached,
                 target_posts, min(max_posts, len(target_posts)), client
             )
@@ -284,35 +325,34 @@ async def run_pipeline(
 
             # ── Phase 4: Image matching + processing ──────────────────────────
             yield _sse("progress", "이미지 매칭 중...", 66)
-            final_items = await asyncio.to_thread(cross_match_items, final_items)
+            _ct.pipeline.check()
+            final_items = await _run(cross_match_items, final_items)
 
             yield _sse("progress", "이미지 가공 중...", 70)
-            final_items = await asyncio.to_thread(process_items_images, final_items)
+            _ct.pipeline.check()
+            final_items = await _run(process_items_images, final_items)
 
             yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 72,
                        data={"items": [it.model_dump() for it in final_items]})
 
             # ── Phase 5: Coupang affiliate search ─────────────────────────────
             yield _sse("progress", "쿠팡 어필리에이션 URL 생성 중...", 76)
-            enriched_items = await asyncio.to_thread(
-                _enrich_with_coupang, final_items, settings
-            )
+            _ct.pipeline.check()
+            enriched_items = await _run(_enrich_with_coupang, final_items, settings)
             linked_count = sum(1 for it in enriched_items if it.link_url)
             yield _sse("progress", f"쿠팡 링크 완료: {linked_count}/{len(enriched_items)}개", 82,
                        data={"items": [it.model_dump() for it in enriched_items]})
 
-            # Save to celeb_items store (upsert — always overwrite with freshest data)
+            # Save to celeb_items store (upsert)
             try:
-                await asyncio.to_thread(
-                    _db.save_celeb_items,
-                    [it.model_dump() for it in enriched_items],
-                )
+                await _run(_db.save_celeb_items, [it.model_dump() for it in enriched_items])
             except Exception:
                 pass
 
             # ── Phase 6: Generate blog post ───────────────────────────────────
             yield _sse("progress", "블로그 포스트 생성 중...", 86)
-            result = await asyncio.to_thread(generate_blog_elements, enriched_items, client)
+            _ct.pipeline.check()
+            result = await _run(generate_blog_elements, enriched_items, client)
 
             yield _sse("done", "완료!", 100, data={
                 "celeb": celeb,
@@ -326,7 +366,7 @@ async def run_pipeline(
 
             # Save pipeline run (non-blocking)
             try:
-                await asyncio.to_thread(
+                await _run(
                     _db.save_run,
                     celeb,
                     [it.model_dump() for it in enriched_items],
@@ -337,6 +377,13 @@ async def run_pipeline(
             except Exception:
                 pass
 
+        except InterruptedError:
+            # Manual cancel via /cancel endpoint — inform the client
+            yield _sse("error", error="작업이 취소되었습니다.")
+        except asyncio.CancelledError:
+            # Server is shutting down / hot-reload — release immediately
+            _ct.pipeline.cancel()
+            raise
         except Exception as e:
             yield _sse("error", error=str(e))
 

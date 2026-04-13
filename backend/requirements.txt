@@ -12,6 +12,7 @@ apscheduler==3.10.4
 selenium==4.25.0
 webdriver-manager==4.0.2
 pyperclip==1.9.0
+pywin32
 pyautogui==0.9.54
 Pillow==10.4.0
 imagehash==4.3.1

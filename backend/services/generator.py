@@ -23,6 +23,12 @@ AFFILIATE_DISCLOSURE = (
     "이에 따른 일정액의 수수료를 제공받습니다."
 )
 
+# 대가성 문구 이미지 경로 (텍스트 대신 이미지로 삽입 — 검색 노출 최적화)
+from pathlib import Path as _Path
+AFFILIATE_DISCLOSURE_IMAGE = str(
+    _Path(__file__).resolve().parents[1] / "static" / "assets" / "affiliate_disclosure.png"
+)
+
 # ── Anti-SLOP system prompt ────────────────────────────────────────────────────
 
 _SYSTEM_PROMPT = """\
@@ -36,10 +42,12 @@ _SYSTEM_PROMPT = """\
 - URL이나 이미지 경로는 포함하지 마세요 — 코드에서 자동 삽입
 
 [필수 말투]
-- 해요체 (합니다체 금지)
+- 친근한 해요체 (합니다체·반말 모두 금지)
+- 문장 끝을 "~했어요", "~이에요", "~거든요", "~더라고요", "~해요~", "~한 것 같아요" 등으로 자연스럽게 변화
 - "진짜", "완전", "솔직히", "근데", "이게" 같은 구어체 표현 자연스럽게 사용
 - 각 아이템 설명은 반드시 다른 방식으로 시작 (같은 도입 패턴 반복 금지)
 - 짧은 문장(5-8자)과 긴 문장(20-30자)을 불규칙하게 섞기
+- 예시: "이 장면 나오자마자 캡처했어요", "진짜 심장 쫄았거든요~", "이 백 보자마자 바로 찾아봤어요"
 
 [절대 금지]
 - "완벽한", "훌륭한", "뛰어난", "탁월한", "놀라운" 같은 빈 찬사 형용사
@@ -52,7 +60,7 @@ _SYSTEM_PROMPT = """\
 - 아이템이 나온 드라마/예능명과 에피소드 (keywords에서 추출)
 - 구체적인 착장 포인트 (색감, 소재, 매치 방법)
 - 솔직한 한마디: 가격대 현실 코멘트, 구하기 어렵다거나, 대안이 있다거나
-- 개인적인 감상 ("이 장면에서 진짜 심장 쫄았음", "이 백 나오자마자 캡처함")
+- 개인적인 감상 ("이 장면에서 진짜 심장 쫄았어요~", "이 백 나오자마자 캡처했어요")
 
 [해시태그]
 네이버 블로그 실사용 스타일 — 드라마명, 연예인명, 아이템 키워드, 10-12개
@@ -166,8 +174,8 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
     # ── Step 2: Build BlogElement list (Naver-compatible) ─────────────────────
     elements: List[BlogElement] = []
 
-    # 대가성 문구 (법적 의무 — 최상단)
-    elements.append(BlogElement(type="text", content=AFFILIATE_DISCLOSURE))
+    # 대가성 문구 이미지 (법적 의무 — 최상단, 텍스트 대신 이미지로 삽입)
+    elements.append(BlogElement(type="image", content=AFFILIATE_DISCLOSURE_IMAGE))
 
     # 도입부
     if intro:
@@ -211,7 +219,7 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
         elements.append(BlogElement(type="text", content=hashtags))
 
     # ── Step 3: Build raw text for preview ────────────────────────────────────
-    lines = [AFFILIATE_DISCLOSURE, "", intro, ""]
+    lines = ["[대가성문구 이미지]", "", intro, ""]
     for el in elements:
         if el.type == "header":
             lines.append(f"\n### {el.content}")

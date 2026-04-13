@@ -4,6 +4,7 @@ import {
   analyzeCelebs,
   scrapePosts,
   generatePost,
+  processImage,
 } from "../lib/api";
 import type { PostItem, CelebItem } from "../lib/types";
 import ItemsPanel from "../components/ItemsPanel";
@@ -185,6 +186,22 @@ export default function PipelinePage() {
     }
   };
 
+  // Image picker callback: re-process selected URL and update item
+  const handleUpdateItemImage = async (index: number, newImageUrl: string) => {
+    try {
+      const res = await processImage(newImageUrl);
+      setItems((prev) =>
+        prev.map((item, i) =>
+          i === index
+            ? { ...item, image_urls: [newImageUrl, ...(item.image_urls ?? []).filter((u) => u !== newImageUrl)], processed_image_path: res.processed_path }
+            : item
+        )
+      );
+    } catch {
+      // silently ignore — user can try another image
+    }
+  };
+
   // Step 4: 블로그 생성
   const handleGenerate = async () => {
     setStep4Status("running");
@@ -298,7 +315,7 @@ export default function PipelinePage() {
             <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 10 }}>
               총 {items.length}개 아이템 추출됨
             </div>
-            <ItemsPanel items={items} />
+            <ItemsPanel items={items} onUpdateItem={handleUpdateItemImage} />
           </div>
         )}
       </div>
