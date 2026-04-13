@@ -1,6 +1,8 @@
 import type {
   PostItem,
   CelebItem,
+  CelebItemRecord,
+  ScrapedPostRecord,
   CoupangProduct,
   ScheduleJob,
   AppSettings,
@@ -161,6 +163,31 @@ export async function getRun(id: string): Promise<PipelineRun> {
 
 export async function deleteRun(id: string): Promise<void> {
   await apiFetch(`/api/db/runs/${id}`, { method: "DELETE" });
+}
+
+// --- Celeb Items ---
+export async function listCelebItems(celeb = "", limit = 500): Promise<{ items: CelebItemRecord[] }> {
+  const qs = celeb ? `?celeb=${encodeURIComponent(celeb)}&limit=${limit}` : `?limit=${limit}`;
+  return apiFetch(`/api/db/celeb-items${qs}`);
+}
+
+export async function deleteCelebItem(id: string): Promise<void> {
+  await apiFetch(`/api/db/celeb-items/${id}`, { method: "DELETE" });
+}
+
+export async function deleteCelebItemsByPost(postUrl: string): Promise<{ deleted: number }> {
+  return apiFetch(`/api/db/celeb-items-by-post?post_url=${encodeURIComponent(postUrl)}`, {
+    method: "DELETE",
+  });
+}
+
+// --- Scraped Post Cache ---
+export async function listScrapedPosts(): Promise<{ posts: ScrapedPostRecord[] }> {
+  return apiFetch("/api/db/scraped-posts");
+}
+
+export async function deleteScrapedPost(id: string): Promise<void> {
+  await apiFetch(`/api/db/scraped-posts/${id}`, { method: "DELETE" });
 }
 
 // --- SSE Pipeline ---

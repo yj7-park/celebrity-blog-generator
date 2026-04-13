@@ -1,9 +1,16 @@
 """Blog post generation from CelebItem list.
 
-Outputs:
-  - blog_post : raw text for preview
-  - title     : SEO-optimised post title
-  - elements  : List[BlogElement] ready for NaverBlogWriter
+Outputs
+-------
+title     : SEO-optimised post title
+blog_post : preview text (markdown-ish, for UI display only)
+elements  : List[BlogElement] ready for NaverBlogWriter
+
+Anti-SLOP strategy
+------------------
+The system prompt forces the LLM into the persona of a real Korean lifestyle
+blogger — concrete scene references, varied sentence lengths, honest price
+comments, and strict prohibitions on AI clichés.
 """
 from __future__ import annotations
 import json
@@ -16,21 +23,53 @@ AFFILIATE_DISCLOSURE = (
     "이에 따른 일정액의 수수료를 제공받습니다."
 )
 
+# ── Anti-SLOP system prompt ────────────────────────────────────────────────────
+
+_SYSTEM_PROMPT = """\
+당신은 '연주'라는 28살 직장인 여성 블로거입니다. 드라마와 패션에 진심이고,
+네이버 블로그에 연예인 착용 아이템 소개 글을 씁니다.
+
+[필수 말투]
+- 해요체 (합니다체 금지)
+- "진짜", "완전", "솔직히", "근데", "이게" 같은 구어체 표현 자연스럽게 사용
+- 각 아이템 설명은 반드시 다른 방식으로 시작 (같은 도입 패턴 반복 금지)
+- 짧은 문장(5-8자)과 긴 문장(20-30자)을 불규칙하게 섞기
+
+[절대 금지 표현]
+- "완벽한", "훌륭한", "뛰어난", "탁월한", "놀라운" 같은 빈 찬사 형용사
+- "첫째로 / 둘째로 / 마지막으로" 나열 패턴
+- "뿐만 아니라", "또한", "그뿐만 아니라" 같은 작문 접속사
+- 모든 아이템을 동일한 길이로 균등하게 설명하는 것
+- "오늘은 ~ 소개해 드릴게요" 형태의 판에 박힌 도입부
+
+[필수 포함 내용]
+- 아이템이 나온 드라마/예능명과 에피소드 (keywords에서 추출)
+- 구체적인 착장 포인트 (색감, 소재, 매치 방법)
+- 솔직한 한마디: 가격대 현실 코멘트, 구하기 어렵다거나, 대안이 있다거나
+- 개인적인 감상 ("이 장면에서 진짜 심장 쫄았음", "이 백 나오자마자 캡처함")
+
+[네이버 블로그 해시태그 형식]
+실제 사용하는 스타일로 — 드라마명, 연예인명, 아이템 키워드 혼합, 10-12개
+"""
+
+# ── Public API ────────────────────────────────────────────────────────────────
 
 def generate_blog_post(items: List[CelebItem], client: OpenAI) -> str:
     """Return raw text blog post (for preview / legacy callers)."""
-    result = _generate(items, client)
-    return result["blog_post"]
+    return _generate(items, client)["blog_post"]
 
 
-def generate_blog_elements(
-    items: List[CelebItem], client: OpenAI
-) -> dict:
-    """Return {'title': str, 'blog_post': str, 'elements': List[BlogElement]}."""
+def generate_blog_elements(items: List[CelebItem], client: OpenAI) -> dict:
+    """Return {'title', 'blog_post', 'elements': List[BlogElement]}."""
     return _generate(items, client)
 
 
 # ── Internal ───────────────────────────────────────────────────────────────────
+
+def _sanitize(s: str) -> str:
+    """Remove NUL / control characters that break JSON serialisation."""
+    return "".join(c for c in s if c >= " " or c in "\n\r\t")
+
 
 def _generate(items: List[CelebItem], client: OpenAI) -> dict:
     if not items:
@@ -50,55 +89,55 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
         grouped[it.celeb].append(it)
     main_celeb, main_items = max(grouped.items(), key=lambda kv: len(kv[1]))
 
-    def _sanitize(s: str) -> str:
-        """Remove control characters (NUL, etc.) that break JSON serialization."""
-        return "".join(c for c in s if c >= " " or c in "\n\r\t")
-
-    items_text = "\n".join(
-        f"- [{_sanitize(it.category)}] {_sanitize(it.product_name)}"
-        f" (키워드: {', '.join(_sanitize(k) for k in it.keywords[:3])})"
-        for it in main_items[:10]
-    )
+    # Build item context for the prompt
+    items_context = []
+    for i, it in enumerate(main_items[:8]):
+        kw_str = ", ".join(_sanitize(k) for k in it.keywords[:4])
+        items_context.append(
+            f"[아이템 {i+1}]\n"
+            f"  카테고리: {_sanitize(it.category)}\n"
+            f"  제품명: {_sanitize(it.product_name)}\n"
+            f"  이슈 키워드: {kw_str or '(없음)'}\n"
+            f"  쿠팡 링크: {'있음' if it.link_url else '없음'}\n"
+            f"  이미지: {'있음' if it.processed_image_path or it.image_urls else '없음'}"
+        )
+    items_text = "\n\n".join(items_context)
 
     # ── Step 1: structured JSON from LLM ──────────────────────────────────────
-    structure_prompt = f"""연예인 '{main_celeb}'의 착용·사용 아이템에 관한 블로그 포스트 구성 데이터를 JSON으로 반환하세요.
+    structure_prompt = f"""연예인 '{main_celeb}'의 착용·사용 아이템 소개 블로그 포스트를 작성해주세요.
 
-수집된 아이템:
+수집된 아이템 정보:
 {items_text}
 
-다음 JSON 형식을 **반드시** 지켜주세요. 마크다운 코드블록 없이 JSON만 반환하세요:
+다음 JSON 형식으로 **마크다운 코드블록 없이** 반환하세요:
 {{
-  "title": "SEO 최적화 제목 (40자 이내)",
-  "intro": "흥미로운 도입부 2~3문장. 독자가 계속 읽고 싶게 만드세요.",
+  "title": "SEO 최적화 제목 — 연예인명 + 아이템 키워드 포함, 35자 이내",
+  "intro": "도입부 2-3문장. 드라마/예능 화제성으로 시작. 독자가 '맞아 나도 그 장면!' 하게 만들기.",
   "items": [
     {{
-      "header": "아이템명 (카테고리)",
-      "description": "아이템 상세 설명 3~5문장. 방송 착용 맥락, 스타일 포인트, 구매 욕구를 자극하는 내용."
+      "header": "[카테고리] 제품명",
+      "body": "2-4문장 설명. 첫 문장은 반드시 이슈 키워드(드라마/프로그램명, 장면)로 시작. 구체적 스타일 포인트 포함.",
+      "honest_note": "가격·구매 관련 솔직한 한마디 (1문장, 없으면 빈 문자열)"
     }}
   ],
-  "outro": "마무리 2~3문장. 구매를 자연스럽게 유도.",
-  "hashtags": "#연예인명 #패션 #아이템 등 10개 해시태그 공백 구분"
-}}"""
+  "outro": "마무리 2-3문장. 구매를 억지로 밀어붙이지 말고 자연스럽게.",
+  "hashtags": "#드라마명 #연예인명 #아이템 등 10-12개 해시태그 공백 구분"
+}}
+
+시스템 지침을 반드시 따르세요 — SLOP 패턴 사용 시 전체 답변을 재생성합니다."""
 
     try:
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "당신은 연예인 패션과 라이프스타일 아이템을 소개하는 인기 블로거입니다. "
-                        "독자가 구매 욕구를 느낄 수 있도록 생동감 있고 친근하게 작성합니다."
-                    ),
-                },
+                {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": structure_prompt},
             ],
-            temperature=0.8,
-            max_tokens=3000,
+            temperature=0.85,
+            max_tokens=3500,
         )
-        raw = resp.choices[0].message.content or "{}"
+        raw = (resp.choices[0].message.content or "{}").strip()
         # Strip markdown code fences if present
-        raw = raw.strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -118,7 +157,7 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
     outro: str = structured.get("outro", "")
     hashtags: str = structured.get("hashtags", "")
 
-    # ── Step 2: Build BlogElement list ────────────────────────────────────────
+    # ── Step 2: Build BlogElement list (Naver-compatible) ─────────────────────
     elements: List[BlogElement] = []
 
     # 대가성 문구 (법적 의무 — 최상단)
@@ -128,21 +167,34 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
     if intro:
         elements.append(BlogElement(type="text", content=intro))
 
-    # 아이템별 블록
+    # 아이템별 블록: header → image → body → honest_note → 구매 버튼
     for idx, item_obj in enumerate(item_blocks):
-        source_item = main_items[idx] if idx < len(main_items) else None
+        src = main_items[idx] if idx < len(main_items) else None
 
         header_text = item_obj.get("header", "")
-        description = item_obj.get("description", "")
+        body = item_obj.get("body", "")
+        honest_note = item_obj.get("honest_note", "")
 
         if header_text:
             elements.append(BlogElement(type="header", content=header_text))
-        if description:
-            elements.append(BlogElement(type="text", content=description))
 
-        # 쿠팡 링크가 있으면 구매 버튼 삽입
-        if source_item and source_item.link_url:
-            elements.append(BlogElement(type="url_text", content=source_item.link_url))
+        # 처리된 이미지 삽입
+        if src and src.processed_image_path:
+            elements.append(BlogElement(type="image", content=src.processed_image_path))
+        elif src and src.image_urls:
+            # 처리 전 상태라면 네트워크 URL도 시도
+            elements.append(BlogElement(type="image", content=src.image_urls[0]))
+
+        # 설명 + 솔직한 한마디 합치기
+        body_full = body
+        if honest_note:
+            body_full = body + "\n\n" + honest_note
+        if body_full.strip():
+            elements.append(BlogElement(type="text", content=body_full.strip()))
+
+        # 쿠팡 구매 버튼 (link_url이 있을 때만)
+        if src and src.link_url:
+            elements.append(BlogElement(type="url_text", content=src.link_url))
 
     # 마무리
     if outro:
@@ -157,6 +209,8 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
     for el in elements:
         if el.type == "header":
             lines.append(f"\n### {el.content}")
+        elif el.type == "image":
+            lines.append(f"[이미지: {el.content}]")
         elif el.type == "text" and el.content not in (AFFILIATE_DISCLOSURE, intro, outro, hashtags):
             lines.append(el.content)
         elif el.type == "url_text":

@@ -164,17 +164,18 @@ def process_image(url: str) -> Optional[str]:
 
 def process_items_images(items) -> list:
     """
-    For each CelebItem, process the first image_url and update image_urls
-    to point to the local processed file path.
+    For each CelebItem, process the first image_url and store the local
+    processed path in `processed_image_path`.  The original `image_urls`
+    (network URLs) are preserved unchanged.
 
     Items with no image_urls are left unchanged.
     Returns the updated list.
     """
     result = []
     for item in items:
-        if item.image_urls:
+        if item.image_urls and not item.processed_image_path:
             local_path = process_image(item.image_urls[0])
             if local_path:
-                item = item.model_copy(update={"image_urls": [local_path]})
+                item = item.model_copy(update={"processed_image_path": local_path})
         result.append(item)
     return result

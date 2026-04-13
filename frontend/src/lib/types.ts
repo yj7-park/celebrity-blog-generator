@@ -4,10 +4,34 @@ export interface CelebItem {
   product_name: string;
   image_urls: string[];
   candidate_image_urls?: string[];
+  processed_image_path?: string;
   keywords: string[];
   link_url: string;
   source_title: string;
   source_url: string;
+}
+
+/** Row from the celeb_items DB table (flat, not nested). */
+export interface CelebItemRecord {
+  id: string;
+  post_url: string;
+  post_title: string;
+  celeb: string;
+  category: string;
+  product_name: string;
+  keywords: string[];
+  image_url: string;
+  coupang_url: string;
+  created_at: string;
+}
+
+/** Row from the scraped_posts DB table. */
+export interface ScrapedPostRecord {
+  id: string;
+  post_url: string;
+  post_title: string;
+  content_hash: string;
+  scraped_at: string;
 }
 
 export interface CoupangProduct {

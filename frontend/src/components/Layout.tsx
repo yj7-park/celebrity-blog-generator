@@ -7,6 +7,7 @@ import {
   PenLine,
   Clock,
   History,
+  Database,
   Settings,
 } from "lucide-react";
 
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
   { to: "/blog-writer", icon: PenLine, label: "블로그 작성" },
   { to: "/scheduler", icon: Clock, label: "스케줄러" },
   { to: "/history", icon: History, label: "히스토리" },
+  { to: "/data", icon: Database, label: "수집 데이터" },
   { to: "/settings", icon: Settings, label: "설정" },
 ];
 
@@ -27,6 +29,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/blog-writer": "블로그 작성",
   "/scheduler": "스케줄러",
   "/history": "히스토리",
+  "/data": "수집 데이터",
   "/settings": "설정",
 };
 

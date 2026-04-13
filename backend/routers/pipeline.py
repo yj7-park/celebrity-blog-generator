@@ -1,6 +1,13 @@
 """
 Pipeline router: collect → analyze → scrape → extract → coupang → generate
 Supports both REST and Server-Sent Events (SSE) streaming.
+
+Caching strategy
+----------------
+scraped_posts   : cache per (post_url, content_hash)  — skip re-scraping
+extracted_items : cache per (post_url, content_hash)  — skip LLM extraction (most expensive)
+celeb_items     : saved after Coupang enrichment (final state, queryable)
+pipeline_runs   : saved after blog generation (history)
 """
 from __future__ import annotations
 import asyncio, json
@@ -11,6 +18,7 @@ from openai import OpenAI
 
 from models.schemas import (
     AnalyzeRequest, AnalyzeResponse,
+    CelebItem,
     CollectRequest, CollectResponse,
     GenerateRequest, GenerateResponse,
     ScrapeRequest, ScrapeResponse,
@@ -56,25 +64,21 @@ async def api_scrape(req: ScrapeRequest):
     settings = load_settings()
     client = _get_client(settings=settings)
 
-    # Filter posts by celeb name if provided
     target_posts = req.posts
     if req.celeb:
         target_posts = _filter_posts_by_celeb(req.posts, req.celeb) or req.posts
 
-    scraped = await asyncio.to_thread(
-        scrape_multiple_posts, target_posts, req.max_posts
+    scraped_data, all_items = await asyncio.to_thread(
+        _scrape_and_extract_cached, target_posts, req.max_posts, client
     )
-    items = await asyncio.to_thread(extract_items_from_posts, scraped, client)
 
     if req.celeb:
-        filtered_items = _filter_items_by_celeb(items, req.celeb)
-        if filtered_items:
-            items = filtered_items
+        filtered = _filter_items_by_celeb(all_items, req.celeb)
+        if filtered:
+            all_items = filtered
 
-    # Cross-post image matching: pick most consistent image per item
-    items = await asyncio.to_thread(cross_match_items, items)
-
-    return ScrapeResponse(scraped_count=len(scraped), items=items)
+    all_items = await asyncio.to_thread(cross_match_items, all_items)
+    return ScrapeResponse(scraped_count=len(scraped_data), items=all_items)
 
 
 @router.post("/generate", response_model=GenerateResponse)
@@ -82,9 +86,7 @@ async def api_generate(req: GenerateRequest):
     settings = load_settings()
     client = _get_client(req.openai_api_key)
 
-    # Enrich items with Coupang affiliate URLs if not already set
     enriched = await asyncio.to_thread(_enrich_with_coupang, req.items, settings)
-
     result = await asyncio.to_thread(generate_blog_elements, enriched, client)
     celeb = enriched[0].celeb if enriched else ""
     return GenerateResponse(
@@ -98,42 +100,26 @@ async def api_generate(req: GenerateRequest):
 # ── Celebrity filtering helpers ───────────────────────────────────────────────
 
 def _celeb_tokens(name: str) -> list[str]:
-    """Split a celeb name into searchable tokens (handles spaces, English aliases)."""
     tokens = [name.strip()]
-    # Add each word as a separate token (e.g. "한소희" stays whole, but "IU 아이유" → ["IU", "아이유"])
     parts = name.strip().split()
     if len(parts) > 1:
         tokens.extend(parts)
-    # Lowercase variant for English names
     tokens.extend([t.lower() for t in tokens if t.isascii()])
-    return list(dict.fromkeys(t for t in tokens if t))  # deduplicate, preserve order
+    return list(dict.fromkeys(t for t in tokens if t))
 
 
 def _filter_posts_by_celeb(posts, celeb: str):
-    """
-    Multi-strategy post filtering:
-    1. Exact name match in title
-    2. Any token match in title
-    Falls back to all posts if fewer than 3 posts matched.
-    """
     tokens = _celeb_tokens(celeb)
-    # Strategy 1: full name in title
     exact = [p for p in posts if celeb in p.title]
     if len(exact) >= 3:
         return exact
-    # Strategy 2: any token match
-    token_matched = [
-        p for p in posts
-        if any(tok in p.title for tok in tokens)
-    ]
+    token_matched = [p for p in posts if any(tok in p.title for tok in tokens)]
     if len(token_matched) >= 3:
         return token_matched
-    # Strategy 3: return all (let LLM extractor handle it)
     return posts
 
 
 def _filter_items_by_celeb(items, celeb: str):
-    """Filter extracted CelebItems by celeb name with token matching."""
     tokens = _celeb_tokens(celeb)
     matched = [
         it for it in items
@@ -142,13 +128,11 @@ def _filter_items_by_celeb(items, celeb: str):
     return matched
 
 
-# ── Coupang enrichment helper ─────────────────────────────────────────────────
+# ── Coupang enrichment ────────────────────────────────────────────────────────
 
 def _enrich_with_coupang(items, settings: AppSettings):
-    """Search Coupang for each item by product_name and attach affiliate URL."""
     if not settings.coupang_access_key or not settings.coupang_secret_key:
         return items
-
     enriched = []
     for item in items:
         try:
@@ -163,15 +147,88 @@ def _enrich_with_coupang(items, settings: AppSettings):
     return enriched
 
 
-# ── SSE full pipeline ─────────────────────────────────────────────────────────
+# ── Cache-aware scrape + extract ──────────────────────────────────────────────
 
-def _sse(event_type: str, step: str = "", percent: int = 0, data=None, error: str = "") -> str:
+def _scrape_and_extract_cached(target_posts, max_posts: int, client) -> tuple:
+    """
+    Scrape posts and extract items, using DB cache to skip unchanged content.
+
+    Returns (scraped_list, all_items).
+    """
+    from services.collector import scrape_post as _scrape_one
+
+    scraped_list = []
+    all_items: List[CelebItem] = []
+    seen_urls: set[str] = set()
+
+    for post in target_posts[:max_posts]:
+        if post.url in seen_urls:
+            continue
+        seen_urls.add(post.url)
+
+        try:
+            scraped = _scrape_one(post)
+        except Exception:
+            continue
+        if not scraped:
+            continue
+
+        scraped_list.append(scraped)
+
+        # Compute content hash from scraped data
+        chash = _db.content_hash(scraped.model_dump())
+
+        # Save scraping cache (upsert — harmless if already exists)
+        try:
+            _db.save_scraped_post(post.url, scraped.title or post.title,
+                                   chash, scraped.model_dump())
+        except Exception:
+            pass
+
+        # Check extraction cache
+        cached_items = _db.get_extracted_items(post.url, chash)
+        if cached_items is not None:
+            # Re-hydrate Pydantic models from cached dicts
+            for d in cached_items:
+                try:
+                    all_items.append(CelebItem(**d))
+                except Exception:
+                    pass
+            continue
+
+        # Cache miss — run LLM extraction
+        from services.extractor import extract_from_post as _extract_one
+        try:
+            post_items = _extract_one(scraped, client)
+        except Exception:
+            post_items = []
+
+        # Save extraction cache
+        try:
+            _db.save_extracted_items(
+                post.url, chash,
+                [it.model_dump() for it in post_items],
+            )
+        except Exception:
+            pass
+
+        all_items.extend(post_items)
+
+    return scraped_list, all_items
+
+
+# ── SSE helpers ───────────────────────────────────────────────────────────────
+
+def _sse(event_type: str, step: str = "", percent: int = 0,
+         data=None, error: str = "", cached: bool = False) -> str:
     payload = json.dumps({
-        "type": event_type, "step": step,
-        "percent": percent, "data": data, "error": error,
+        "type": event_type, "step": step, "percent": percent,
+        "data": data, "error": error, "cached": cached,
     }, ensure_ascii=False)
     return f"data: {payload}\n\n"
 
+
+# ── SSE full pipeline ─────────────────────────────────────────────────────────
 
 @router.get("/run")
 async def run_pipeline(
@@ -190,11 +247,7 @@ async def run_pipeline(
 
             # ── Phase 1: Collect RSS ──────────────────────────────────────────
             yield _sse("progress", "RSS 수집 중...", 5)
-
-            def do_collect():
-                return collect_posts(days)
-
-            posts_result = await asyncio.to_thread(do_collect)
+            posts_result = await asyncio.to_thread(collect_posts, days)
             if not posts_result:
                 yield _sse("error", error="게시글을 찾을 수 없습니다.")
                 return
@@ -215,31 +268,31 @@ async def run_pipeline(
             yield _sse("progress", f"분석 완료: {', '.join(trending)}", 38,
                        data={"trending": trending, "selected": celeb})
 
-            # ── Phase 3: Scrape + Extract ─────────────────────────────────────
-            yield _sse("progress", f"{celeb} 포스트 스크랩 중...", 42)
+            # ── Phase 3: Scrape + Extract (cache-aware) ───────────────────────
+            yield _sse("progress", f"{celeb} 포스트 스크랩·추출 중 (캐시 확인)...", 42)
             target_posts = _filter_posts_by_celeb(posts_result, celeb) or posts_result
-            scraped = await asyncio.to_thread(
-                scrape_multiple_posts, target_posts, min(max_posts, len(target_posts))
+
+            scraped, all_items = await asyncio.to_thread(
+                _scrape_and_extract_cached,
+                target_posts, min(max_posts, len(target_posts)), client
             )
-            yield _sse("progress", f"스크랩 완료: {len(scraped)}개", 58)
 
-            yield _sse("progress", "LLM 아이템 추출 중...", 62)
-            all_items = await asyncio.to_thread(extract_items_from_posts, scraped, client)
-            celeb_items = _filter_items_by_celeb(all_items, celeb)
-            final_items = celeb_items if celeb_items else all_items
+            celeb_items_filtered = _filter_items_by_celeb(all_items, celeb)
+            final_items = celeb_items_filtered if celeb_items_filtered else all_items
 
-            # Cross-post image matching
+            yield _sse("progress", f"스크랩 {len(scraped)}개 완료 (아이템 {len(final_items)}개)", 62)
+
+            # ── Phase 4: Image matching + processing ──────────────────────────
             yield _sse("progress", "이미지 매칭 중...", 66)
             final_items = await asyncio.to_thread(cross_match_items, final_items)
 
-            # Image processing: edge-crop watermarks + add brand label
             yield _sse("progress", "이미지 가공 중...", 70)
             final_items = await asyncio.to_thread(process_items_images, final_items)
 
             yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 72,
                        data={"items": [it.model_dump() for it in final_items]})
 
-            # ── Phase 4: Coupang affiliate search ─────────────────────────────
+            # ── Phase 5: Coupang affiliate search ─────────────────────────────
             yield _sse("progress", "쿠팡 어필리에이션 URL 생성 중...", 76)
             enriched_items = await asyncio.to_thread(
                 _enrich_with_coupang, final_items, settings
@@ -248,7 +301,16 @@ async def run_pipeline(
             yield _sse("progress", f"쿠팡 링크 완료: {linked_count}/{len(enriched_items)}개", 82,
                        data={"items": [it.model_dump() for it in enriched_items]})
 
-            # ── Phase 5: Generate blog post ───────────────────────────────────
+            # Save to celeb_items store (upsert — always overwrite with freshest data)
+            try:
+                await asyncio.to_thread(
+                    _db.save_celeb_items,
+                    [it.model_dump() for it in enriched_items],
+                )
+            except Exception:
+                pass
+
+            # ── Phase 6: Generate blog post ───────────────────────────────────
             yield _sse("progress", "블로그 포스트 생성 중...", 86)
             result = await asyncio.to_thread(generate_blog_elements, enriched_items, client)
 
@@ -262,7 +324,7 @@ async def run_pipeline(
                 "posts_count": len(posts_result),
             })
 
-            # Auto-save run to DB (non-blocking, failures are silently ignored)
+            # Save pipeline run (non-blocking)
             try:
                 await asyncio.to_thread(
                     _db.save_run,
@@ -270,6 +332,7 @@ async def run_pipeline(
                     [it.model_dump() for it in enriched_items],
                     result["blog_post"],
                     result["title"],
+                    [el.model_dump() for el in result["elements"]],
                 )
             except Exception:
                 pass
