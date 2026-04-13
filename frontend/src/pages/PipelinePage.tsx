@@ -116,7 +116,6 @@ function RunButton({
 }
 
 export default function PipelinePage() {
-  const [apiKey, setApiKey] = useState("");
   const [days, setDays] = useState(2);
   const [maxPosts, setMaxPosts] = useState(10);
   const [topCelebs, setTopCelebs] = useState(3);
@@ -158,11 +157,10 @@ export default function PipelinePage() {
 
   // Step 2: 연예인 분석
   const handleAnalyze = async () => {
-    if (!apiKey.trim()) { setStep2Error("OpenAI API 키를 입력해주세요."); return; }
     setStep2Status("running");
     setStep2Error(null);
     try {
-      const res = await analyzeCelebs(posts, apiKey.trim(), topCelebs);
+      const res = await analyzeCelebs(posts, "", topCelebs);
       setCelebs(res.trending);
       setSelectedCeleb(res.trending[0] ?? "");
       setStep2Status("done");
@@ -189,11 +187,10 @@ export default function PipelinePage() {
 
   // Step 4: 블로그 생성
   const handleGenerate = async () => {
-    if (!apiKey.trim()) { setStep4Error("OpenAI API 키를 입력해주세요."); return; }
     setStep4Status("running");
     setStep4Error(null);
     try {
-      const res = await generatePost(items, apiKey.trim());
+      const res = await generatePost(items, "");
       setBlogPost({ celeb: res.celeb, post: res.blog_post });
       setStep4Status("done");
     } catch (e) {
@@ -209,7 +206,7 @@ export default function PipelinePage() {
         <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
           공통 설정
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
           <div>
             <label style={{ display: "block", fontSize: 12, color: "#6b7280", marginBottom: 5 }}>수집 기간</label>
             <select value={days} onChange={(e) => setDays(Number(e.target.value))} style={inputStyle}>
@@ -228,16 +225,12 @@ export default function PipelinePage() {
               {[1, 2, 3, 5].map((n) => <option key={n} value={n}>{n}명</option>)}
             </select>
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: 12, color: "#6b7280", marginBottom: 5 }}>OpenAI API Key</label>
-            <input
-              type="password"
-              placeholder="sk-..."
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
+        </div>
+        <div style={{
+          fontSize: 12, color: "#6b7280", background: "#f9fafb",
+          border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 12px",
+        }}>
+          🔑 OpenAI API 키는 <a href="/settings" style={{ color: "#6366f1", fontWeight: 600 }}>설정</a> 페이지에서 공통으로 관리합니다.
         </div>
       </div>
 

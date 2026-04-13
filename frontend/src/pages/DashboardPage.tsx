@@ -52,7 +52,6 @@ function formatDaysAgo(daysAgo: number): string {
 export default function DashboardPage() {
   const location = useLocation();
 
-  const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("dash_apiKey") ?? "");
   const [days, setDays] = useState(2);
   const [maxPosts, setMaxPosts] = useState(10);
   const [topCelebs, setTopCelebs] = useState(3);
@@ -111,11 +110,6 @@ export default function DashboardPage() {
   };
 
   const handleStart = async () => {
-    if (!apiKey.trim()) {
-      setError("OpenAI API 키를 입력해주세요.");
-      return;
-    }
-
     // If a specific celeb is entered, check DB first
     if (celebFilter.trim()) {
       try {
@@ -135,7 +129,6 @@ export default function DashboardPage() {
   const doRunPipeline = (previousRun: PipelineRun | null) => {
     if (esRef.current) esRef.current.close();
 
-    sessionStorage.setItem("dash_apiKey", apiKey.trim());
     setError(null);
     setRunning(true);
     setPostCount(null);
@@ -149,7 +142,7 @@ export default function DashboardPage() {
     setOverwriteBanner(null);
 
     esRef.current = runPipelineSSE(
-      { days, max_posts: maxPosts, top_celebs: topCelebs, openai_api_key: apiKey.trim() },
+      { days, max_posts: maxPosts, top_celebs: topCelebs, openai_api_key: "" },
       (event) => {
         const { type, step, percent, data, error: evtError } = event;
 
@@ -335,17 +328,6 @@ export default function DashboardPage() {
             placeholder="예: 한소희, 아이유 ..."
             value={celebFilter}
             onChange={(e) => setCelebFilter(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: "block", fontSize: 12, color: "#6b7280", marginBottom: 6 }}>OpenAI API Key</label>
-          <input
-            type="password"
-            placeholder="sk-..."
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
             style={inputStyle}
           />
         </div>
