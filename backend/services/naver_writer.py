@@ -106,7 +106,7 @@ class NaverBlogWriter:
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-gpu")
         opts.add_argument("--disable-dev-shm-usage")
-        opts.add_argument("--window-size=1920,1080")
+        opts.add_argument("--start-maximized")
         opts.add_argument(f"--user-data-dir={self.chrome_user_data_dir}")
         self.driver = webdriver.Chrome(service=Service(), options=opts)
 
@@ -278,6 +278,13 @@ class NaverBlogWriter:
 
     def _insert_image(self, image_path: str):
         self._copy_image_to_clipboard(image_path)
+        # win32clipboard can steal window focus — refocus via JS (do NOT call
+        # switch_to.window() here as it would reset the mainFrame context)
+        try:
+            self.driver.execute_script("window.focus();")
+        except Exception:
+            pass
+        self._delay(0.3, 0.5)
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("v").key_up(Keys.CONTROL).perform()
         self._delay(3, 4)
 
@@ -287,7 +294,7 @@ class NaverBlogWriter:
             EC.presence_of_element_located((By.CLASS_NAME, "se-oglink-toolbar-button"))
         )
         self._move(link_btn)
-        link_btn.click()
+        self.driver.execute_script("arguments[0].click();", link_btn)
         self._delay(1, 1.5)
         try:
             ActionChains(self.driver).send_keys(short_url + "\n").perform()
@@ -385,25 +392,29 @@ class NaverBlogWriter:
         self._delay(0.4, 0.6)
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("B").key_up(Keys.CONTROL).perform()
         self._delay(0.3, 0.5)
-        WebDriverWait(self.driver, 3).until(
+        fs_btn = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-font-size-code-toolbar-button"))
-        ).click()
+        )
+        self.driver.execute_script("arguments[0].click();", fs_btn)
         self._delay(0.3, 0.5)
-        WebDriverWait(self.driver, 3).until(
+        fs38_btn = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-toolbar-option-font-size-code-fs38-button"))
-        ).click()
+        )
+        self.driver.execute_script("arguments[0].click();", fs38_btn)
         self._delay(0.3, 0.5)
         ActionChains(self.driver).send_keys(" 최저가 구매하러 가기 ").perform()
         self._delay(0.4, 0.6)
         ActionChains(self.driver).key_down(Keys.SHIFT).send_keys(Keys.HOME).key_up(Keys.SHIFT).perform()
         self._delay(0.3, 0.5)
-        WebDriverWait(self.driver, 3).until(
+        link_btn = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-link-toolbar-button"))
-        ).click()
+        )
+        self.driver.execute_script("arguments[0].click();", link_btn)
         self._delay(0.3, 0.5)
-        WebDriverWait(self.driver, 3).until(
+        link_input = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-custom-layer-link-input"))
-        ).click()
+        )
+        self.driver.execute_script("arguments[0].click();", link_input)
         self._delay(0.3, 0.5)
         ActionChains(self.driver).send_keys(short_url, Keys.ENTER).perform()
         ActionChains(self.driver).send_keys(Keys.ARROW_DOWN).perform()
@@ -424,6 +435,15 @@ class NaverBlogWriter:
             self._login(status_cb)
 
             self.driver.switch_to.frame("mainFrame")
+            # Wait for SE One toolbar to be visible — confirms editor is ready
+            try:
+                WebDriverWait(self.driver, 15).until(
+                    EC.presence_of_element_located(
+                        (By.CSS_SELECTOR, ".se-toolbar-button-publish")
+                    )
+                )
+            except Exception:
+                pass  # toolbar selector may differ; fall through with delay
             self._delay(2, 3)
             _screenshot(self.driver, "06_in_mainframe")
 
@@ -468,29 +488,37 @@ class NaverBlogWriter:
             ActionChains(self.driver).move_to_element(body_el).click().perform()
             _screenshot(self.driver, "11_after_body_click")
 
-            for el in elements:
+            for idx, el in enumerate(elements):
                 _naver_cancel.check("Naver 글쓰기가 취소되었습니다.")
                 el_type = el.get("type", "")
                 content = el.get("content", "")
+                preview = str(content)[:40] if content else ""
+                print(f"[WRITER] element {idx}: type={el_type!r} content={preview!r}")
                 self._scroll("down")
 
-                if el_type == "text":
-                    self._insert_text(str(content))
-                elif el_type == "header":
-                    self._insert_header(str(content))
-                elif el_type == "image":
-                    self._insert_image(str(content))
-                elif el_type == "url":
-                    self._insert_url(str(content))
-                elif el_type == "url_text":
-                    self._insert_url_text(str(content))
-                elif el_type == "video":
-                    self._insert_video(str(content))
-                elif el_type == "divider":
-                    self._insert_divider(str(content) if content else "line2")
-                elif el_type == "callout":
-                    style = el.get("style", "quotation_postit")
-                    self._insert_callout(str(content), style)
+                try:
+                    if el_type == "text":
+                        self._insert_text(str(content))
+                    elif el_type == "header":
+                        self._insert_header(str(content))
+                    elif el_type == "image":
+                        self._insert_image(str(content))
+                    elif el_type == "url":
+                        self._insert_url(str(content))
+                    elif el_type == "url_text":
+                        self._insert_url_text(str(content))
+                    elif el_type == "video":
+                        self._insert_video(str(content))
+                    elif el_type == "divider":
+                        self._insert_divider(str(content) if content else "line2")
+                    elif el_type == "callout":
+                        style = el.get("style", "quotation_postit")
+                        self._insert_callout(str(content), style)
+                    print(f"[WRITER] element {idx} OK")
+                except Exception as _elem_err:
+                    print(f"[WRITER] element {idx} FAILED: {_elem_err!r}")
+                    _screenshot(self.driver, f"err_{idx:02d}_{el_type}")
+                    raise
 
                 ActionChains(self.driver).key_down(Keys.CONTROL).key_down(Keys.ALT).send_keys("h").key_up(Keys.CONTROL).key_up(Keys.ALT).perform()
                 self._delay(0.1, 0.2)
