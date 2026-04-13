@@ -268,4 +268,9 @@ def _generate(items: List[CelebItem], client: OpenAI,
     lines += ["", outro, "", hashtags]
     blog_post = "\n".join(lines)
 
-    return {"title": title, "blog_post": blog_post, "elements": elements}
+    # Parse hashtags string → clean tag list (strip #, split on whitespace/comma)
+    import re as _re
+    _raw_tags = _re.split(r"[\s,]+", hashtags) if hashtags else []
+    tags = [t.lstrip("#").strip() for t in _raw_tags if t.lstrip("#").strip()]
+
+    return {"title": title, "blog_post": blog_post, "elements": elements, "tags": tags}

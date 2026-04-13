@@ -61,7 +61,7 @@ async def write_blog_post(req: NaverWriteRequest):
         elements = [el.model_dump() for el in req.elements]
         _writer_status["phase"]   = "writing"
         _writer_status["message"] = "블로그 작성 중..."
-        return writer.write(req.title, elements, req.thumbnail_path, _status_cb)
+        return writer.write(req.title, elements, req.thumbnail_path, _status_cb, req.tags)
 
     try:
         # cancellable=True: on hot-reload / SIGTERM the coroutine is released

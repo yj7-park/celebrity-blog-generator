@@ -19,21 +19,33 @@ type StepState = "idle" | "running" | "done" | "error";
 
 const cardStyle: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 16,
+  border: "1px solid rgba(99,102,241,0.1)",
+  borderRadius: 18,
   padding: "24px 28px",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+  boxShadow: "0 4px 20px rgba(30,27,75,0.07), 0 1px 4px rgba(30,27,75,0.04)",
   marginBottom: 16,
 };
 
 const inputStyle: React.CSSProperties = {
   padding: "10px 14px",
-  border: "1px solid #d1d5db",
+  border: "1.5px solid #e5e7eb",
   borderRadius: 10,
   fontSize: 14,
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
+  background: "#fafafa",
+  color: "#1e1b4b",
+};
+
+const selectStyle: React.CSSProperties = {
+  ...inputStyle,
+  appearance: "none" as const,
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 10px center",
+  paddingRight: 36,
+  cursor: "pointer",
 };
 
 function StepHeader({
@@ -41,48 +53,45 @@ function StepHeader({
   title,
   status,
 }: {
-  step: number;
+  step: number | string;
   title: string;
   status: StepState;
 }) {
-  const statusMeta: Record<StepState, { color: string; label: string }> = {
-    idle: { color: "#9ca3af", label: "대기" },
-    running: { color: "#7c3aed", label: "실행 중" },
-    done: { color: "#10b981", label: "완료" },
-    error: { color: "#ef4444", label: "오류" },
+  const statusMeta: Record<StepState, { color: string; label: string; badgeBg: string }> = {
+    idle:    { color: "#9ca3af", label: "대기",    badgeBg: "#f3f4f6" },
+    running: { color: "#7c3aed", label: "실행 중", badgeBg: "#ede9fe" },
+    done:    { color: "#059669", label: "완료",    badgeBg: "#d1fae5" },
+    error:   { color: "#dc2626", label: "오류",    badgeBg: "#fee2e2" },
   };
-  const meta = statusMeta[status];
+  const { color, label, badgeBg } = statusMeta[status];
+  const circleGrad: Record<StepState, string> = {
+    idle:    "#e5e7eb",
+    running: "linear-gradient(135deg, #7c3aed, #a78bfa)",
+    done:    "linear-gradient(135deg, #059669, #34d399)",
+    error:   "linear-gradient(135deg, #dc2626, #f87171)",
+  };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: "50%",
-          background: status === "idle" ? "#f3f4f6" : status === "done" ? "#d1fae5" : status === "error" ? "#fee2e2" : "#ede9fe",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontWeight: 700,
-          fontSize: 14,
-          color: meta.color,
-          flexShrink: 0,
-        }}
-      >
-        {step}
+      <div style={{
+        width: 32, height: 32, borderRadius: "50%",
+        background: circleGrad[status],
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontWeight: 800, fontSize: 13,
+        color: status === "idle" ? "#9ca3af" : "#fff",
+        flexShrink: 0,
+        boxShadow: status !== "idle" ? "0 2px 8px rgba(99,102,241,0.25)" : "none",
+      }}>
+        {status === "done" ? "✓" : step}
       </div>
-      <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#1e1b4b", flex: 1 }}>{title}</h3>
-      <span
-        style={{
-          fontSize: 12,
-          color: meta.color,
-          background: status === "idle" ? "#f3f4f6" : status === "done" ? "#d1fae5" : status === "error" ? "#fee2e2" : "#ede9fe",
-          padding: "3px 10px",
-          borderRadius: 99,
-          fontWeight: 600,
-        }}
-      >
-        {meta.label}
+      <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#1e1b4b", flex: 1, letterSpacing: "-0.01em" }}>
+        {title}
+      </h3>
+      <span style={{
+        fontSize: 11, color, background: badgeBg,
+        padding: "3px 10px", borderRadius: 99, fontWeight: 700,
+        border: `1px solid ${color}22`,
+      }}>
+        {label}
       </span>
     </div>
   );
@@ -104,14 +113,16 @@ function RunButton({
       onClick={onClick}
       disabled={disabled}
       style={{
-        padding: "10px 20px",
-        background: disabled ? "#a5b4fc" : "linear-gradient(90deg, #6366f1, #8b5cf6)",
+        padding: "10px 22px",
+        background: disabled ? "linear-gradient(90deg, #c4b5fd, #a5b4fc)" : "linear-gradient(90deg, #6366f1, #8b5cf6)",
         color: "#fff",
         border: "none",
         borderRadius: 10,
         fontSize: 14,
-        fontWeight: 600,
+        fontWeight: 700,
         cursor: disabled ? "not-allowed" : "pointer",
+        boxShadow: disabled ? "none" : "0 3px 10px rgba(99,102,241,0.35)",
+        letterSpacing: "-0.01em",
       }}
     >
       {loading ? "⏳ 실행 중..." : label}
@@ -330,34 +341,36 @@ export default function PipelinePage() {
     <div>
       {/* 공통 설정 */}
       <div style={cardStyle}>
-        <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
+        <h2 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 700, color: "#1e1b4b", letterSpacing: "-0.01em" }}>
           공통 설정
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
           <div>
-            <label style={{ display: "block", fontSize: 12, color: "#6b7280", marginBottom: 5 }}>수집 기간</label>
-            <select value={days} onChange={(e) => setDays(Number(e.target.value))} style={inputStyle}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#4b5563", marginBottom: 6 }}>수집 기간</label>
+            <select value={days} onChange={(e) => setDays(Number(e.target.value))} style={selectStyle}>
               {[1, 2, 3, 5, 7].map((d) => <option key={d} value={d}>{d}일</option>)}
             </select>
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 12, color: "#6b7280", marginBottom: 5 }}>최대 포스트</label>
-            <select value={maxPosts} onChange={(e) => setMaxPosts(Number(e.target.value))} style={inputStyle}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#4b5563", marginBottom: 6 }}>최대 포스트</label>
+            <select value={maxPosts} onChange={(e) => setMaxPosts(Number(e.target.value))} style={selectStyle}>
               {[5, 10, 20, 30].map((n) => <option key={n} value={n}>{n}개</option>)}
             </select>
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 12, color: "#6b7280", marginBottom: 5 }}>연예인 수</label>
-            <select value={topCelebs} onChange={(e) => setTopCelebs(Number(e.target.value))} style={inputStyle}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#4b5563", marginBottom: 6 }}>연예인 수</label>
+            <select value={topCelebs} onChange={(e) => setTopCelebs(Number(e.target.value))} style={selectStyle}>
               {[1, 2, 3, 5].map((n) => <option key={n} value={n}>{n}명</option>)}
             </select>
           </div>
         </div>
         <div style={{
-          fontSize: 12, color: "#6b7280", background: "#f9fafb",
-          border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 12px",
+          fontSize: 12, color: "#6b7280",
+          background: "linear-gradient(90deg, #f5f3ff, #eff6ff)",
+          border: "1px solid #ddd6fe", borderRadius: 9, padding: "9px 14px",
+          display: "flex", alignItems: "center", gap: 6,
         }}>
-          🔑 OpenAI API 키는 <a href="/settings" style={{ color: "#6366f1", fontWeight: 600 }}>설정</a> 페이지에서 공통으로 관리합니다.
+          🔑 OpenAI API 키는 <a href="/settings" style={{ color: "#6366f1", fontWeight: 700 }}>설정</a> 페이지에서 공통으로 관리합니다.
         </div>
       </div>
 

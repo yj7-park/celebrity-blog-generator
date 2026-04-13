@@ -31,17 +31,7 @@
 
 ## 🔴 당장 해결 필요 — 테스트 차단 중
 
-### 1. Chrome 로그인 세션 문제
-**상황**: `chrome-user-data/lockfile`이 다른 프로세스에 잠겨 있어 Chrome이 기존 프로파일로 시작 불가  
-**현재 설정**: `settings.json`에 `chrome_user_data_dir: "C:/Utilities/Blog/chrome-user-data"` 변경  
-**해결 방법** (둘 중 하나):
-- **방법 A (권장)**: PC 재시작 → 기존 `chrome-user-data` lockfile 자동 해제 → `settings.json`을 `""` (빈 값, 기본 경로)로 되돌림
-- **방법 B**: `! chrome.exe --user-data-dir="C:/Utilities/Blog/chrome-user-data"` 실행 후 Naver 수동 로그인 → Chrome 종료 → 이후 write 요청은 자동 로그인
-
-### 2. 전체 발행 테스트 (49개 elements)
-위 로그인 문제 해결 후:
-- run ID `61789b32b8d1` (아이유, 49 elements) write 재시도
-- element 7, 18, 22, 28, 34, 40, 46 (두 번째 이후 divider들) 모두 OK 확인
+### 1. 전체 발행 테스트 (49개 elements)
 - 실제 발행된 블로그 포스트에서 구분선·callout·오렌지 헤더·구매버튼이 시각적으로 보이는지 확인
 
 ---
@@ -66,16 +56,24 @@
 
 ## 🟢 다음 기능 개선 (테스트 통과 후)
 
-### 5. 이미지 선택 품질 개선
-- 현재 `processed_image_path` 없으면 `image_urls[0]` 사용 (원본 URL, 워터마크 있을 수 있음)
-- OpenAI Vision으로 워터마크 분석 후 최적 이미지 선택하는 `analyze-images` 엔드포인트 이미 구현됨 → 파이프라인에 연결
+### 5. 이미지 선택 품질 개선 ✅ 완료
+- OpenAI Vision `analyze_item` pipeline Phase 4로 연결됨 (pipeline.py)
+- best_url 자동 선정 후 image_urls 앞에 정렬
 
-### 6. 태그 자동 입력
-`NaverWriteRequest.tags` 필드는 있으나 현재 write()에서 실제 태그 입력 미구현  
-SE One 발행 다이얼로그의 태그 입력란에 tags 삽입 로직 추가 필요
+### 6. 태그 자동 입력 ✅ 완료
+- `write()` 메서드에 `tags: list` 파라미터 추가
+- 발행 다이얼로그에서 5개 CSS 셀렉터 탐색 후 태그 순서대로 입력 + Enter 확인
+- `generator.py` → `tags` 리스트 반환, pipeline `done` 이벤트에 포함
+- DashboardPage: `blogTags` 상태로 수신, 발행 시 전달
 
-### 7. 썸네일 설정
-`thumbnail_path` 파라미터 있으나 `HAS_PYAUTOGUI` 의존 → 안정적인 Selenium 방식으로 교체 고려
+### 7. 썸네일 설정 ✅ 완료 (Selenium 방식)
+- pyautogui 제거 → `input[type=file]` 직접 `send_keys()` 방식
+- 4개 셀렉터 순서 시도 → 실패 시 버튼 클릭 후 동적 input 찾기
+- 발견 실패 시 경고 로그 출력 후 계속 진행
+
+### 8. 자동 로그인 세션 팝업 처리 ✅ 완료
+- `write()` 진입 직후 popup 3라운드 × 5개 셀렉터 순환 dismiss
+- Escape → `.se-popup-button-cancel` 등 복수 셀렉터 대응
 
 ---
 

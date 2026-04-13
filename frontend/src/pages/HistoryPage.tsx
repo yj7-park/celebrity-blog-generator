@@ -5,10 +5,10 @@ import type { PipelineRun } from "../lib/types";
 
 const cardStyle: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 16,
+  border: "1px solid rgba(99,102,241,0.1)",
+  borderRadius: 18,
   padding: "24px 28px",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+  boxShadow: "0 4px 20px rgba(30,27,75,0.07), 0 1px 4px rgba(30,27,75,0.04)",
 };
 
 function formatDate(iso: string) {
@@ -95,19 +95,19 @@ export default function HistoryPage() {
             <span style={{ fontSize: 12 }}>대시보드에서 파이프라인을 실행하면 자동으로 저장됩니다.</span>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {/* 헤더 */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "120px 1fr 80px 80px 160px",
+              gridTemplateColumns: "120px 1fr 80px 140px 170px",
               gap: 12,
-              padding: "8px 12px",
+              padding: "8px 14px",
               fontSize: 11,
-              fontWeight: 600,
+              fontWeight: 700,
               color: "#9ca3af",
               textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              borderBottom: "1px solid #f3f4f6",
+              letterSpacing: "0.06em",
+              borderBottom: "2px solid #f3f4f6",
             }}>
               <span>연예인</span>
               <span>블로그 제목</span>
@@ -122,17 +122,25 @@ export default function HistoryPage() {
                 key={run.id}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "120px 1fr 80px 80px 160px",
+                  gridTemplateColumns: "120px 1fr 80px 140px 170px",
                   gap: 12,
-                  padding: "12px 12px",
-                  borderRadius: 10,
+                  padding: "13px 14px",
+                  borderRadius: 12,
                   background: "#fafafa",
-                  border: "1px solid #f3f4f6",
+                  border: "1.5px solid #f3f4f6",
                   alignItems: "center",
-                  transition: "background 0.15s",
+                  transition: "background 0.15s, border-color 0.15s, box-shadow 0.15s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f3ff")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#fafafa")}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f5f3ff";
+                  e.currentTarget.style.borderColor = "rgba(99,102,241,0.2)";
+                  e.currentTarget.style.boxShadow = "0 2px 10px rgba(99,102,241,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#fafafa";
+                  e.currentTarget.style.borderColor = "#f3f4f6";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               >
                 {/* 연예인 */}
                 <span style={{
@@ -151,12 +159,18 @@ export default function HistoryPage() {
                 </span>
 
                 {/* 아이템 수 */}
-                <span style={{
-                  textAlign: "center", fontSize: 13, fontWeight: 600,
-                  color: "#7c3aed",
-                }}>
-                  {run.item_count}개
-                </span>
+                <div style={{ textAlign: "center" }}>
+                  <span style={{
+                    display: "inline-block",
+                    fontSize: 12, fontWeight: 700,
+                    color: "#7c3aed",
+                    background: "#f5f3ff",
+                    border: "1px solid #ddd6fe",
+                    padding: "2px 8px", borderRadius: 99,
+                  }}>
+                    {run.item_count}개
+                  </span>
+                </div>
 
                 {/* 날짜 */}
                 <span style={{ textAlign: "center", fontSize: 11, color: "#6b7280" }}>
@@ -169,11 +183,12 @@ export default function HistoryPage() {
                     onClick={() => handleLoad(run)}
                     disabled={loadingId === run.id}
                     style={{
-                      padding: "5px 12px", fontSize: 12, fontWeight: 600,
-                      background: loadingId === run.id ? "#e0e7ff" : "#ede9fe",
-                      color: "#6366f1", border: "none", borderRadius: 7,
+                      padding: "5px 13px", fontSize: 12, fontWeight: 700,
+                      background: loadingId === run.id ? "#e0e7ff" : "linear-gradient(90deg, #6366f1, #8b5cf6)",
+                      color: "#fff", border: "none", borderRadius: 8,
                       cursor: loadingId === run.id ? "not-allowed" : "pointer",
                       whiteSpace: "nowrap",
+                      boxShadow: loadingId === run.id ? "none" : "0 2px 6px rgba(99,102,241,0.3)",
                     }}
                   >
                     {loadingId === run.id ? "로딩..." : "불러오기"}
@@ -182,9 +197,9 @@ export default function HistoryPage() {
                     onClick={() => handleDelete(run)}
                     disabled={deletingId === run.id}
                     style={{
-                      padding: "5px 12px", fontSize: 12, fontWeight: 600,
-                      background: "#fef2f2", color: "#dc2626",
-                      border: "none", borderRadius: 7,
+                      padding: "5px 13px", fontSize: 12, fontWeight: 700,
+                      background: "#fff0f0", color: "#dc2626",
+                      border: "1.5px solid #fecaca", borderRadius: 8,
                       cursor: deletingId === run.id ? "not-allowed" : "pointer",
                       whiteSpace: "nowrap",
                     }}

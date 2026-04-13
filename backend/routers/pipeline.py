@@ -372,11 +372,11 @@ async def run_pipeline(
                 yield _sse("error", error="게시글을 찾을 수 없습니다.")
                 return
 
-            yield _sse("progress", f"RSS 수집 완료: {len(posts_result)}개", 18,
+            yield _sse("progress", f"RSS 수집 완료: {len(posts_result)}개", 15,
                        data={"posts": [p.model_dump() for p in posts_result[:20]]})
 
             # ── Phase 2: Trending analysis ────────────────────────────────────
-            yield _sse("progress", "트렌딩 연예인 분석 중...", 22)
+            yield _sse("progress", "트렌딩 연예인 분석 중...", 18)
             _ct.pipeline.check()
             trending = await _run(get_trending_celebs, posts_result, client, top_celebs)
             _ct.pipeline.check()
@@ -385,11 +385,11 @@ async def run_pipeline(
                 return
 
             celeb = trending[0]
-            yield _sse("progress", f"분석 완료: {', '.join(trending)}", 38,
+            yield _sse("progress", f"분석 완료: {', '.join(trending)}", 30,
                        data={"trending": trending, "selected": celeb})
 
             # ── Phase 3: Scrape + Extract (cache-aware) ───────────────────────
-            yield _sse("progress", f"{celeb} 포스트 스크랩·추출 중 (캐시 확인)...", 42)
+            yield _sse("progress", f"{celeb} 포스트 스크랩·추출 중 (캐시 확인)...", 33)
             target_posts = _filter_posts_by_celeb(posts_result, celeb) or posts_result
 
             _ct.pipeline.check()
@@ -401,26 +401,67 @@ async def run_pipeline(
             celeb_items_filtered = _filter_items_by_celeb(all_items, celeb)
             final_items = celeb_items_filtered if celeb_items_filtered else all_items
 
-            yield _sse("progress", f"스크랩 {len(scraped)}개 완료 (아이템 {len(final_items)}개)", 62)
+            yield _sse("progress", f"스크랩 {len(scraped)}개 완료 (아이템 {len(final_items)}개)", 52)
 
-            # ── Phase 4: Image matching + processing ──────────────────────────
-            yield _sse("progress", "이미지 매칭 중...", 66)
+            # ── Phase 3.5: Image matching + processing ────────────────────────
+            yield _sse("progress", "이미지 매칭 중...", 55)
             _ct.pipeline.check()
             final_items = await _run(cross_match_items, final_items)
 
-            yield _sse("progress", "이미지 가공 중...", 70)
+            yield _sse("progress", "이미지 가공 중...", 58)
             _ct.pipeline.check()
             final_items = await _run(process_items_images, final_items)
 
-            yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 72,
+            yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 61,
                        data={"items": [it.model_dump() for it in final_items]})
 
+            # ── Phase 4: AI Image Analysis ────────────────────────────────────
+            if final_items:
+                total_img = len(final_items)
+                yield _sse("progress", f"AI 이미지 분석 시작 (총 {total_img}개)...", 63)
+                _ct.pipeline.check()
+
+                analyses = []
+                for idx, item in enumerate(final_items):
+                    _ct.pipeline.check()
+                    analysis = await _run(_analyze_item, idx, item, client)
+                    analyses.append(analysis)
+                    pct = 63 + int((idx + 1) / total_img * 15)  # 63 → 78%
+                    score_str = f"{analysis.best_score:.0%}"
+                    flag = " ⚠️" if analysis.needs_review else " ✅"
+                    yield _sse(
+                        "progress",
+                        f"[{idx+1}/{total_img}] {item.product_name} — {score_str}{flag}",
+                        pct,
+                        data={"analysis": analysis.model_dump()},
+                    )
+
+                # 분석 결과에서 가장 좋은 이미지 URL을 맨 앞으로 재배치
+                updated: List[CelebItem] = []
+                for item, analysis in zip(final_items, analyses):
+                    if analysis.best_url:
+                        rest = [u for u in (item.image_urls or []) if u != analysis.best_url]
+                        item = item.model_copy(update={"image_urls": [analysis.best_url] + rest})
+                    updated.append(item)
+                final_items = updated
+
+                review_count = sum(1 for a in analyses if a.needs_review)
+                yield _sse(
+                    "progress",
+                    f"이미지 분석 완료: {total_img}개 중 {review_count}개 검토 필요",
+                    79,
+                    data={
+                        "items": [it.model_dump() for it in final_items],
+                        "review_count": review_count,
+                    },
+                )
+
             # ── Phase 5: Coupang affiliate search ─────────────────────────────
-            yield _sse("progress", "쿠팡 어필리에이션 URL 생성 중...", 76)
+            yield _sse("progress", "쿠팡 어필리에이션 URL 생성 중...", 81)
             _ct.pipeline.check()
             enriched_items = await _run(_enrich_with_coupang, final_items, settings)
             linked_count = sum(1 for it in enriched_items if it.link_url)
-            yield _sse("progress", f"쿠팡 링크 완료: {linked_count}/{len(enriched_items)}개", 82,
+            yield _sse("progress", f"쿠팡 링크 완료: {linked_count}/{len(enriched_items)}개", 86,
                        data={"items": [it.model_dump() for it in enriched_items]})
 
             # Save to celeb_items store (upsert)
@@ -430,7 +471,7 @@ async def run_pipeline(
                 pass
 
             # ── Phase 6: Generate blog post ───────────────────────────────────
-            yield _sse("progress", "블로그 포스트 생성 중...", 86)
+            yield _sse("progress", "블로그 포스트 생성 중...", 90)
             _ct.pipeline.check()
             placement = settings.image_placement or "두괄식"
             result = await _run(generate_blog_elements, enriched_items, client, placement)
@@ -440,6 +481,7 @@ async def run_pipeline(
                 "title": result["title"],
                 "blog_post": result["blog_post"],
                 "elements": [el.model_dump() for el in result["elements"]],
+                "tags": result.get("tags", []),
                 "items": [it.model_dump() for it in enriched_items],
                 "trending": trending,
                 "posts_count": len(posts_result),

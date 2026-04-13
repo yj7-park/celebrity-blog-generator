@@ -4,20 +4,23 @@ import type { AppSettings } from "../lib/types";
 
 const inputStyle: React.CSSProperties = {
   padding: "10px 14px",
-  border: "1px solid #d1d5db",
+  border: "1.5px solid #e5e7eb",
   borderRadius: 10,
   fontSize: 14,
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
+  background: "#fafafa",
+  color: "#1e1b4b",
+  transition: "border-color 0.15s",
 };
 
 const sectionStyle: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 16,
+  border: "1px solid rgba(99,102,241,0.1)",
+  borderRadius: 18,
   padding: "24px 28px",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+  boxShadow: "0 4px 20px rgba(30,27,75,0.07), 0 1px 4px rgba(30,27,75,0.04)",
   marginBottom: 16,
 };
 
@@ -122,7 +125,7 @@ export default function SettingsPage() {
 
       {/* OpenAI */}
       <div style={sectionStyle}>
-        <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
+        <h2 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 700, color: "#1e1b4b", letterSpacing: "-0.01em", paddingBottom: 12, borderBottom: "1.5px solid #f3f4f6" }}>
           OpenAI 설정
         </h2>
         <Field label="OpenAI API Key" hint="블로그 글 생성에 사용됩니다.">
@@ -138,7 +141,7 @@ export default function SettingsPage() {
 
       {/* 쿠팡 */}
       <div style={sectionStyle}>
-        <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
+        <h2 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 700, color: "#1e1b4b", letterSpacing: "-0.01em", paddingBottom: 12, borderBottom: "1.5px solid #f3f4f6" }}>
           쿠팡 파트너스 설정
         </h2>
         <Field label="Access Key">
@@ -172,7 +175,7 @@ export default function SettingsPage() {
 
       {/* 네이버 */}
       <div style={sectionStyle}>
-        <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
+        <h2 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 700, color: "#1e1b4b", letterSpacing: "-0.01em", paddingBottom: 12, borderBottom: "1.5px solid #f3f4f6" }}>
           네이버 블로그 설정
         </h2>
         <Field label="네이버 아이디">
@@ -206,7 +209,7 @@ export default function SettingsPage() {
 
       {/* 파이프라인 기본값 */}
       <div style={sectionStyle}>
-        <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
+        <h2 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 700, color: "#1e1b4b", letterSpacing: "-0.01em", paddingBottom: 12, borderBottom: "1.5px solid #f3f4f6" }}>
           파이프라인 기본값
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
@@ -241,13 +244,15 @@ export default function SettingsPage() {
           disabled={saving}
           style={{
             padding: "12px 32px",
-            background: saving ? "#a5b4fc" : "linear-gradient(90deg, #6366f1, #8b5cf6)",
+            background: saving ? "linear-gradient(90deg, #c4b5fd, #a5b4fc)" : "linear-gradient(90deg, #6366f1, #8b5cf6)",
             color: "#fff",
             border: "none",
-            borderRadius: 10,
+            borderRadius: 11,
             fontSize: 15,
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: saving ? "not-allowed" : "pointer",
+            boxShadow: saving ? "none" : "0 4px 14px rgba(99,102,241,0.4)",
+            letterSpacing: "-0.01em",
           }}
         >
           {saving ? "저장 중..." : "설정 저장"}

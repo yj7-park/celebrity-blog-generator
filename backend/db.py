@@ -492,11 +492,15 @@ def check_recent_run(celeb: str, days: int = 7) -> Optional[dict]:
         items = json.loads(row["items_json"])
     except Exception:
         items = []
+    try:
+        elements = json.loads(row["elements_json"])
+    except Exception:
+        elements = []
     created = datetime.fromisoformat(row["created_at"])
     days_ago = (datetime.now(timezone.utc) - created).days
     return {
         "id": row["id"], "celeb": row["celeb"],
         "created_at": row["created_at"], "title": row["title"],
         "item_count": len(items), "items": items,
-        "blog_post": row["blog_post"], "days_ago": days_ago,
+        "blog_post": row["blog_post"], "elements": elements, "days_ago": days_ago,
     }

@@ -203,17 +203,35 @@ class NaverBlogWriter:
         """Ensure the driver is logged into Naver.
 
         1. Navigate to the blog write page.
-        2. If NOT redirected → session alive, skip login.
-        3. If redirected to nid.naver.com → fill login form.
-        4. Navigate back to the write page.
+        2. Wait until URL settles to either nid.naver.com (login needed)
+           or back to blog.naver.com (session alive).
+        3. If session alive → skip login, notify caller via status_cb.
+        4. If redirected to nid.naver.com → fill login form.
+        5. Navigate back to the write page.
         """
+        if status_cb:
+            status_cb("logging_in", "블로그 에디터 로드 중...")
+
         self.driver.get("https://blog.naver.com/GoBlogWrite.naver")
-        self._delay(2, 3)
         _screenshot(self.driver, "01_after_goblogwrite")
 
+        # Wait until the URL settles (login redirect or editor page), up to 8 s
+        try:
+            WebDriverWait(self.driver, 8).until(
+                lambda d: "nid.naver.com" in d.current_url
+                          or "PostWrite" in d.current_url
+                          or "blog.naver.com" in d.current_url
+            )
+        except Exception:
+            pass  # continue with whatever URL we have
+
+        _screenshot(self.driver, "01b_settled")
+
         if "nid.naver.com" not in self.driver.current_url:
-            print(f"[DEBUG] session valid, url={self.driver.current_url}")
-            return  # session still valid
+            print(f"[DEBUG] session valid (auto-login), url={self.driver.current_url}")
+            if status_cb:
+                status_cb("logging_in", "자동 로그인 세션 확인됨. 에디터 준비 중...")
+            return  # session still valid — already on write page
 
         print(f"[DEBUG] redirected to login, url={self.driver.current_url}")
         self._do_login_form(status_cb)
@@ -456,85 +474,90 @@ class NaverBlogWriter:
         self._delay(0.5, 0.8)
 
     def _insert_callout(self, content: str, style: str = "quotation_postit"):
-        """인용구(콜아웃) 블록 삽입. style: default|quotation_line|quotation_bubble|quotation_underline|quotation_postit
-
-        빈 줄 + 버튼 → se-insert-menu-button-quotation hover →
-        서브패널 스타일 클릭 → 텍스트 입력 → Enter×2 탈출.
-        """
+        """callout 텍스트를 일반 본문 단락으로 삽입 (이탤릭체)."""
         ActionChains(self.driver).send_keys(Keys.ENTER).perform()
-        self._delay(0.4, 0.6)
-        self._open_insert_menu()
-
-        q_btn = WebDriverWait(self.driver, 5).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, ".se-insert-menu-button-quotation")
-            )
-        )
-        ActionChains(self.driver).move_to_element(q_btn).perform()
-        self._delay(0.5, 0.7)
-
-        cls = f"se-insert-menu-sub-panel-button-quotation-{style}"
-        sub = WebDriverWait(self.driver, 5).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, f".{cls}"))
-        )
-        self.driver.execute_script("arguments[0].click();", sub)
-        self._delay(0.5, 0.8)
-        ActionChains(self.driver).send_keys(content).perform()
         self._delay(0.3, 0.5)
-        # SE One: Enter twice exits the quotation block (2nd Enter on empty line exits)
-        ActionChains(self.driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
-        self._delay(0.4, 0.6)
-        # Escape to ensure focus leaves any block-level component
-        ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
-        self._delay(0.2, 0.3)
+        # 이탤릭 on
+        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("I").key_up(Keys.CONTROL).perform()
+        self._delay(0.15, 0.25)
+        ActionChains(self.driver).send_keys(content).perform()
+        self._delay(0.3, 0.4)
+        # 이탤릭 off
+        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("I").key_up(Keys.CONTROL).perform()
+        self._delay(0.15, 0.25)
 
     def _insert_url_text(self, url: str):
-        """구매 링크 버튼 삽입 — 중앙 정렬, 굵게, 22pt, 링크 적용."""
+        """구매 링크 버튼 삽입 — 일반 본문에 중앙 정렬 굵은 텍스트 + 링크."""
         short_url = self.shorten_url(url)
+
         # 새 단락 시작
         ActionChains(self.driver).send_keys(Keys.ENTER).perform()
-        self._delay(0.3, 0.4)
+        self._delay(0.3, 0.5)
+
         # 중앙 정렬
         self._apply_text_align("center")
-        # 굵게 + 22pt
-        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("B").key_up(Keys.CONTROL).perform()
         self._delay(0.2, 0.3)
-        fs_btn = WebDriverWait(self.driver, 3).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "se-font-size-code-toolbar-button"))
-        )
-        self.driver.execute_script("arguments[0].click();", fs_btn)
-        self._delay(0.3, 0.5)
-        fs22_btn = WebDriverWait(self.driver, 3).until(
-            EC.presence_of_element_located(
-                (By.CLASS_NAME, "se-toolbar-option-font-size-code-fs22-button")
-            )
-        )
-        self.driver.execute_script("arguments[0].click();", fs22_btn)
-        self._delay(0.3, 0.5)
+
+        # 굵게
+        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("B").key_up(Keys.CONTROL).perform()
+        self._delay(0.15, 0.25)
+
         # 버튼 텍스트 입력
         ActionChains(self.driver).send_keys("🛒 최저가 구매하러 가기").perform()
         self._delay(0.4, 0.6)
-        # 방금 입력한 텍스트 전체 선택 (Home ~ Shift+End)
+
+        # 텍스트 전체 선택 (Home → Shift+End)
         ActionChains(self.driver).send_keys(Keys.HOME).perform()
-        self._delay(0.1, 0.2)
+        self._delay(0.15, 0.25)
         ActionChains(self.driver).key_down(Keys.SHIFT).send_keys(Keys.END).key_up(Keys.SHIFT).perform()
-        self._delay(0.3, 0.4)
-        # 링크 적용
-        link_btn = WebDriverWait(self.driver, 3).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "se-link-toolbar-button"))
-        )
-        self.driver.execute_script("arguments[0].click();", link_btn)
         self._delay(0.4, 0.6)
-        link_input = WebDriverWait(self.driver, 3).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "se-custom-layer-link-input"))
-        )
-        self.driver.execute_script("arguments[0].click();", link_input)
-        self._delay(0.3, 0.4)
-        ActionChains(self.driver).send_keys(short_url, Keys.ENTER).perform()
-        self._delay(0.5, 0.7)
-        # 다음 줄로 이동, 왼쪽 정렬 복원, 굵기 해제
-        ActionChains(self.driver).send_keys(Keys.ARROW_DOWN).perform()
-        self._delay(0.2, 0.3)
+
+        # 링크 적용 — Ctrl+K 단축키 우선 시도, 실패 시 툴바 버튼
+        _link_ok = False
+        try:
+            ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("k").key_up(Keys.CONTROL).perform()
+            self._delay(0.6, 0.9)
+            link_input = WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "se-custom-layer-link-input"))
+            )
+            link_input.click()
+            self._delay(0.2, 0.3)
+            ActionChains(self.driver).send_keys(short_url, Keys.ENTER).perform()
+            self._delay(0.6, 0.9)
+            _link_ok = True
+            print(f"[WRITER] url_text link applied via Ctrl+K")
+        except Exception as _ke:
+            print(f"[WRITER] url_text Ctrl+K failed: {_ke!r}, trying toolbar button")
+            ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            self._delay(0.3, 0.5)
+            # 텍스트 다시 선택
+            ActionChains(self.driver).send_keys(Keys.HOME).perform()
+            self._delay(0.15, 0.25)
+            ActionChains(self.driver).key_down(Keys.SHIFT).send_keys(Keys.END).key_up(Keys.SHIFT).perform()
+            self._delay(0.3, 0.5)
+            try:
+                link_btn = WebDriverWait(self.driver, 6).until(
+                    EC.element_to_be_clickable((By.CLASS_NAME, "se-link-toolbar-button"))
+                )
+                self.driver.execute_script("arguments[0].click();", link_btn)
+                self._delay(0.5, 0.8)
+                link_input = WebDriverWait(self.driver, 6).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "se-custom-layer-link-input"))
+                )
+                link_input.click()
+                self._delay(0.2, 0.3)
+                ActionChains(self.driver).send_keys(short_url, Keys.ENTER).perform()
+                self._delay(0.6, 0.9)
+                _link_ok = True
+                print(f"[WRITER] url_text link applied via toolbar")
+            except Exception as _le:
+                print(f"[WRITER] url_text link apply failed: {_le!r}")
+                ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+                self._delay(0.3, 0.5)
+
+        # 왼쪽 정렬 복원, 굵기 해제
+        ActionChains(self.driver).send_keys(Keys.END).perform()
+        self._delay(0.15, 0.25)
         self._apply_text_align("left")
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("B").key_up(Keys.CONTROL).perform()
         self._delay(0.2, 0.3)
@@ -547,6 +570,7 @@ class NaverBlogWriter:
         elements: list,
         thumbnail_path: str = "",
         status_cb: Optional[StatusCallback] = None,
+        tags: list | None = None,
     ) -> str:
         """Write and publish a Naver blog post. Returns the published blog URL."""
         try:
@@ -566,13 +590,30 @@ class NaverBlogWriter:
             self._delay(2, 3)
             _screenshot(self.driver, "06_in_mainframe")
 
-            try:
-                WebDriverWait(self.driver, 3).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "se-popup-button-cancel"))
-                ).click()
-                _screenshot(self.driver, "07_popup_dismissed")
-            except Exception:
-                pass
+            # Dismiss any popups (draft recovery, announcements, etc.) — up to 3 rounds
+            _POPUP_SELECTORS = (
+                ".se-popup-button-cancel",
+                ".se-popup-button-close",
+                "button[data-action='cancel']",
+                ".popup_close",
+                ".se-popup-close-button",
+            )
+            for _round in range(3):
+                _dismissed = False
+                for _sel in _POPUP_SELECTORS:
+                    try:
+                        _btn = WebDriverWait(self.driver, 2).until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, _sel))
+                        )
+                        self.driver.execute_script("arguments[0].click();", _btn)
+                        self._delay(0.5, 1.0)
+                        _dismissed = True
+                        break
+                    except Exception:
+                        continue
+                if not _dismissed:
+                    break  # no popup found this round → done
+            _screenshot(self.driver, "07_after_popup_handling")
 
             # ── Title ──────────────────────────────────────────────────────────
             _screenshot(self.driver, "08_before_title")
@@ -588,14 +629,47 @@ class NaverBlogWriter:
             _screenshot(self.driver, "09_after_title")
 
             # ── Thumbnail ──────────────────────────────────────────────────────
-            if thumbnail_path and HAS_PYAUTOGUI:
-                self.driver.find_element(By.CLASS_NAME, "se-cover-button-local-image-upload").click()
-                pyperclip.copy(thumbnail_path.replace("/", "\\"))
-                self._delay(2, 2.5)
-                pyautogui.hotkey("ctrl", "v")
-                self._delay(2, 2.5)
-                pyautogui.press("enter")
-                self._delay(2, 2.5)
+            if thumbnail_path:
+                abs_thumb = os.path.abspath(thumbnail_path)
+                _thumb_done = False
+                # Try Selenium file-input injection first (no pyautogui needed)
+                _THUMB_INPUT_SELECTORS = [
+                    "input.se-cover-image-upload-input",
+                    ".se-cover-button-area input[type='file']",
+                    ".se-cover-image-wrap input[type='file']",
+                    "input[type='file'][accept*='image']",
+                ]
+                for _sel in _THUMB_INPUT_SELECTORS:
+                    try:
+                        _finput = self.driver.find_element(By.CSS_SELECTOR, _sel)
+                        self.driver.execute_script("arguments[0].style.display='block';", _finput)
+                        _finput.send_keys(abs_thumb)
+                        self._delay(2, 3)
+                        _thumb_done = True
+                        _screenshot(self.driver, "10a_thumbnail_selenium")
+                        break
+                    except Exception:
+                        continue
+                # Fallback: click the button, then inject via the newly-created input
+                if not _thumb_done:
+                    try:
+                        _cover_btn = WebDriverWait(self.driver, 5).until(
+                            EC.element_to_be_clickable(
+                                (By.CSS_SELECTOR, ".se-cover-button-local-image-upload, .se-cover-button-area button")
+                            )
+                        )
+                        self.driver.execute_script("arguments[0].click();", _cover_btn)
+                        self._delay(1, 1.5)
+                        # After the click, the file-input should become findable
+                        _finput = WebDriverWait(self.driver, 5).until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='file']"))
+                        )
+                        self.driver.execute_script("arguments[0].style.display='block';", _finput)
+                        _finput.send_keys(abs_thumb)
+                        self._delay(2, 3)
+                        _screenshot(self.driver, "10a_thumbnail_fallback")
+                    except Exception as _thumb_err:
+                        print(f"[WRITER] thumbnail upload skipped: {_thumb_err!r}")
 
             # ── Body ───────────────────────────────────────────────────────────
             _screenshot(self.driver, "10_before_body")
@@ -666,6 +740,41 @@ class NaverBlogWriter:
                 self._delay(1, 1.5)
             except Exception:
                 pass
+
+            # ── Tags ───────────────────────────────────────────────────────────
+            _tags = [t.strip() for t in (tags or []) if t.strip()]
+            if _tags:
+                _TAG_SELECTORS = [
+                    ".se-tag-form input",
+                    "input.tag_input",
+                    ".tag_area input[type='text']",
+                    "[placeholder*='태그']",
+                    ".publishLayer_tag_area input",
+                ]
+                _tag_input = None
+                for _sel in _TAG_SELECTORS:
+                    try:
+                        _tag_input = WebDriverWait(self.driver, 3).until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, _sel))
+                        )
+                        break
+                    except Exception:
+                        continue
+                if _tag_input:
+                    for _tag in _tags:
+                        try:
+                            self.driver.execute_script("arguments[0].click();", _tag_input)
+                            self._delay(0.2, 0.3)
+                            _tag_input.send_keys(_tag)
+                            self._delay(0.2, 0.3)
+                            # SE One accepts Enter or comma to confirm a tag
+                            _tag_input.send_keys(Keys.RETURN)
+                            self._delay(0.3, 0.5)
+                        except Exception as _te:
+                            print(f"[WRITER] tag '{_tag}' input failed: {_te!r}")
+                    _screenshot(self.driver, "22a_after_tags")
+                else:
+                    print("[WRITER] tag input field not found — skipping tags")
 
             _screenshot(self.driver, "22_before_confirm")
             # 발행 확인 버튼 (data-click-area="tpb*i.publish" or data-testid="seOnePublishBtn")

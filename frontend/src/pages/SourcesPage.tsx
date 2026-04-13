@@ -4,10 +4,10 @@ import type { BlogSource } from "../lib/types";
 
 const cardStyle: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 16,
+  border: "1px solid rgba(99,102,241,0.1)",
+  borderRadius: 18,
   padding: "24px 28px",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+  boxShadow: "0 4px 20px rgba(30,27,75,0.07), 0 1px 4px rgba(30,27,75,0.04)",
   marginBottom: 16,
 };
 
