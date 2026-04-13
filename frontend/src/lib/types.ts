@@ -3,6 +3,7 @@ export interface CelebItem {
   category: string;
   product_name: string;
   image_urls: string[];
+  candidate_image_urls?: string[];
   keywords: string[];
   link_url: string;
   source_title: string;

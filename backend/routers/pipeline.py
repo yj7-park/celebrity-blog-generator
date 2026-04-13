@@ -21,6 +21,8 @@ from services.analyzer import get_trending_celebs
 from services.extractor import extract_items_from_posts
 from services.generator import generate_blog_elements
 from services.coupang import search_products, shorten_url
+from services.image_matcher import cross_match_items
+from services.image_processor import process_items_images
 from services.settings_service import load_settings
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
@@ -67,6 +69,9 @@ async def api_scrape(req: ScrapeRequest):
         filtered_items = _filter_items_by_celeb(items, req.celeb)
         if filtered_items:
             items = filtered_items
+
+    # Cross-post image matching: pick most consistent image per item
+    items = await asyncio.to_thread(cross_match_items, items)
 
     return ScrapeResponse(scraped_count=len(scraped), items=items)
 
@@ -221,6 +226,14 @@ async def run_pipeline(
             all_items = await asyncio.to_thread(extract_items_from_posts, scraped, client)
             celeb_items = _filter_items_by_celeb(all_items, celeb)
             final_items = celeb_items if celeb_items else all_items
+
+            # Cross-post image matching
+            yield _sse("progress", "이미지 매칭 중...", 66)
+            final_items = await asyncio.to_thread(cross_match_items, final_items)
+
+            # Image processing: edge-crop watermarks + add brand label
+            yield _sse("progress", "이미지 가공 중...", 70)
+            final_items = await asyncio.to_thread(process_items_images, final_items)
 
             yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 72,
                        data={"items": [it.model_dump() for it in final_items]})

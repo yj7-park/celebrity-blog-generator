@@ -33,6 +33,7 @@ class CelebItem(BaseModel):
     category: str
     product_name: str
     image_urls: List[str] = []
+    candidate_image_urls: List[str] = []   # ±N neighbor images for cross-post matching
     keywords: List[str] = []
     link_url: str = ""
     source_title: str = ""

@@ -121,7 +121,23 @@ def extract_from_post(scraped: ScrapedPostData, client: OpenAI) -> List[CelebIte
         indices = item.get("image_indices", [])
         if not isinstance(indices, list):
             indices = []
+
+        # Primary images: LLM-selected
         image_urls = [img_map[i] for i in indices if isinstance(i, int) and i in img_map]
+
+        # Candidate images: ±3 neighbors around each selected index
+        candidate_set: list[str] = []
+        max_idx = max(img_map.keys()) if img_map else -1
+        for sel_idx in (indices if indices else []):
+            if not isinstance(sel_idx, int):
+                continue
+            for offset in range(-3, 4):   # -3 to +3
+                cand_idx = sel_idx + offset
+                if cand_idx in img_map and img_map[cand_idx] not in candidate_set:
+                    candidate_set.append(img_map[cand_idx])
+        # If no LLM indices, include all images as candidates
+        if not indices:
+            candidate_set = list(img_map.values())
 
         link_text = str(item.get("link_text", ""))
         # Try to match by link_text only — no fallback to first link (avoids wrong URLs)
@@ -149,6 +165,7 @@ def extract_from_post(scraped: ScrapedPostData, client: OpenAI) -> List[CelebIte
             category=str(item.get("category", "기타")),
             product_name=product_name,
             image_urls=image_urls,
+            candidate_image_urls=candidate_set,
             keywords=[str(k) for k in keywords],
             link_url=matched_link,
             source_title=scraped.title,
