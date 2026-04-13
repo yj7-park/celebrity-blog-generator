@@ -106,6 +106,7 @@ export interface BlogSource {
   image_mapping: string;     // "두괄식" | "미괄식"
   active: boolean;
   notes: string;
+  rss_category: string;
   created_at: string;
   last_scraped_at: string | null;
 }

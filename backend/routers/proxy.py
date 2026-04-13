@@ -4,10 +4,12 @@ Fetches external images (e.g. pstatic.net) server-side and returns them
 to the browser, bypassing CORS restrictions.
 
 Usage: GET /api/proxy/image?url=https://...
+       GET /api/proxy/processed/{filename}  — serves locally-processed images
 """
 from __future__ import annotations
+import re
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import Response
+from fastapi.responses import Response, FileResponse
 import requests
 
 router = APIRouter(prefix="/api/proxy", tags=["proxy"])
@@ -52,3 +54,17 @@ async def proxy_image(url: str = Query(..., description="Image URL to proxy")):
         raise HTTPException(status_code=502, detail=f"Upstream error: {e}")
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.get("/processed/{filename}")
+async def serve_processed_image(filename: str):
+    """Serve a locally-processed image from TEMP_DIR by filename."""
+    from services.image_processor import TEMP_DIR
+    # Reject path traversal attempts
+    if not re.match(r'^[\w\-\.]+$', filename):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    path = TEMP_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(str(path), media_type="image/jpeg",
+                        headers={"Cache-Control": "public, max-age=3600"})

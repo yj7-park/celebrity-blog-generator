@@ -10,8 +10,8 @@ from bs4 import BeautifulSoup
 
 from models.schemas import OrderedBlock, PostItem, ScrapedPostData
 
-# ── Blog list (blogId, categoryFolder) ───────────────────────────────────────
-BLOGS: List[Tuple[str, str]] = [
+# ── Fallback hardcoded blog list (blogId, categoryFolder) ────────────────────
+_FALLBACK_BLOGS: List[Tuple[str, str]] = [
     ("hsh6566",     "쇼핑"),
     ("hkh443",      "코스트코"),
     ("hprbel1097",  "방송아이템"),
@@ -28,6 +28,21 @@ BLOGS: List[Tuple[str, str]] = [
     ("stylenote_kr","스타일"),
     ("kfashion_lab","패션"),
 ]
+
+# Keep BLOGS as alias for backwards compatibility
+BLOGS = _FALLBACK_BLOGS
+
+
+def _get_active_blogs() -> List[Tuple[str, str]]:
+    """Return (blog_id, rss_category) from DB active sources, falling back to hardcoded list."""
+    try:
+        import db as _db
+        sources = _db.list_sources()
+        active = [(s["url"].rstrip("/").split("/")[-1], s["rss_category"])
+                  for s in sources if s.get("active")]
+        return active if active else _FALLBACK_BLOGS
+    except Exception:
+        return _FALLBACK_BLOGS
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
@@ -76,9 +91,10 @@ def collect_posts(
     urllib3.disable_warnings()
     cutoff = time.time() - days * 86400
     all_posts: List[PostItem] = []
-    total = len(BLOGS)
+    blogs = _get_active_blogs()
+    total = len(blogs)
 
-    for i, (name, folder) in enumerate(BLOGS):
+    for i, (name, folder) in enumerate(blogs):
         posts = _get_rss(name, folder)
         all_posts.extend(posts)
         if on_progress:

@@ -125,8 +125,13 @@ async def api_process_image(req: ProcessImageRequest):
     Optionally accepts watermark_region ({x,y,w,h} as 0-1 fractions) to
     remove a detected watermark before the standard pipeline.
     """
-    wm_dict = req.watermark_region.model_dump() if req.watermark_region else None
-    local_path = await _run(process_image, req.url, wm_dict)
+    try:
+        wm_dict = req.watermark_region.model_dump() if req.watermark_region else None
+        local_path = await _run(process_image, req.url, wm_dict)
+    except Exception as e:
+        import traceback, logging
+        logging.error("process-image error: %s\n%s", e, traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"처리 오류: {e}")
     if not local_path:
         raise HTTPException(status_code=422, detail="이미지 처리 실패")
     return {"processed_path": local_path}

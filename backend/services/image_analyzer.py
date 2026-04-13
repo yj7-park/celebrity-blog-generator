@@ -200,8 +200,13 @@ def analyze_item(index: int, item: CelebItem, client) -> ItemImageAnalysis:
         for url in all_urls
     ]
 
-    # Sort by score descending
-    scored.sort(key=lambda c: c.score, reverse=True)
+    # Sort: score DESC, then prefer no-mismatch, then fewest issues overall
+    scored.sort(key=lambda c: (
+        -c.score,
+        "mismatch" in c.issues,        # False(0) before True(1) → no-mismatch first
+        "download_failed" in c.issues, # de-prioritise failed downloads
+        len(c.issues),                 # fewer issues first at same score
+    ))
 
     best = scored[0]
     needs_review = (

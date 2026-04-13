@@ -247,19 +247,42 @@ export default function PipelinePage() {
       (event) => {
         if (event.type === "progress") {
           setAnalyzeProgress(event.step);
-          // Accumulate per-item analyses as they arrive
+
+          // Per-item analysis arrived → immediately process its best image
           if (event.data?.analysis) {
+            const analysis = event.data.analysis;
+
+            // Accumulate analysis result
             setAnalyses((prev) => {
-              const existing = prev.findIndex(
-                (a) => a.item_index === event.data!.analysis!.item_index
-              );
-              if (existing >= 0) {
+              const idx = prev.findIndex((a) => a.item_index === analysis.item_index);
+              if (idx >= 0) {
                 const next = [...prev];
-                next[existing] = event.data!.analysis!;
+                next[idx] = analysis;
                 return next;
               }
-              return [...prev, event.data!.analysis!];
+              return [...prev, analysis];
             });
+
+            // Fire-and-forget: process best image right away
+            if (analysis.best_url) {
+              const bestCand = analysis.candidates.find((c) => c.url === analysis.best_url);
+              const wmRegion = bestCand?.watermark_region ?? null;
+              processImageWithWatermark(analysis.best_url, wmRegion)
+                .then((res) => {
+                  if (!res.processed_path) return;
+                  setItems((prev) =>
+                    prev.map((item, i) => {
+                      if (i !== analysis.item_index) return item;
+                      const newUrls = [
+                        analysis.best_url,
+                        ...(item.image_urls ?? []).filter((u) => u !== analysis.best_url),
+                      ];
+                      return { ...item, image_urls: newUrls, processed_image_path: res.processed_path };
+                    })
+                  );
+                })
+                .catch(() => {});
+            }
           }
         } else if (event.type === "done") {
           const finalAnalyses: ItemImageAnalysis[] = event.data?.analyses ?? [];
@@ -268,21 +291,6 @@ export default function PipelinePage() {
           setReviewCount(rc);
           setAnalyzeStatus("done");
           setAnalyzeProgress("");
-
-          // Auto-update items whose best_url differs from current image
-          setItems((prev) =>
-            prev.map((item, i) => {
-              const analysis = finalAnalyses.find((a) => a.item_index === i);
-              if (!analysis || !analysis.best_url) return item;
-              if (analysis.best_url === item.image_urls?.[0]) return item;
-              // Promote best_url to front
-              const newUrls = [
-                analysis.best_url,
-                ...(item.image_urls ?? []).filter((u) => u !== analysis.best_url),
-              ];
-              return { ...item, image_urls: newUrls, processed_image_path: "" };
-            })
-          );
         } else if (event.type === "error") {
           setAnalyzeError(event.error || "분석 오류");
           setAnalyzeStatus("error");
@@ -440,7 +448,7 @@ export default function PipelinePage() {
             fontSize: 13, color: "#7c3aed", background: "#ede9fe",
             borderRadius: 8, padding: "8px 12px", marginBottom: 10,
           }}>
-            ⏳ {analyzeProgress}
+            {analyzeProgress.includes("처리 중") ? "🖼️" : "⏳"} {analyzeProgress}
           </div>
         )}
 

@@ -1,9 +1,15 @@
 import { useState } from "react";
 import type { CelebItem, ItemImageAnalysis, WatermarkRegion } from "../lib/types";
 
-/** Proxy pstatic.net / blogfiles images through the backend to avoid CORS. */
+/** Proxy pstatic.net / blogfiles images through the backend to avoid CORS.
+ *  Also routes local processed-image file paths through the backend. */
 function proxyImageUrl(url: string): string {
   if (!url) return url;
+  // Local file path (Windows or Unix absolute) from process-image endpoint
+  if (!url.startsWith("http") && !url.startsWith("/api")) {
+    const filename = url.replace(/\\/g, "/").split("/").pop() ?? "";
+    return `/api/proxy/processed/${encodeURIComponent(filename)}`;
+  }
   const PROXIED = ["pstatic.net", "blogfiles.naver.net", "daumcdn.net"];
   if (PROXIED.some((d) => url.includes(d))) {
     return `/api/proxy/image?url=${encodeURIComponent(url)}`;

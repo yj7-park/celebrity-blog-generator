@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS blog_sources (
     image_mapping    TEXT NOT NULL DEFAULT '두괄식',
     active           INTEGER NOT NULL DEFAULT 1,
     notes            TEXT NOT NULL DEFAULT '',
+    rss_category     TEXT NOT NULL DEFAULT '',
     created_at       TEXT NOT NULL,
     last_scraped_at  TEXT
 );
@@ -89,17 +90,56 @@ CREATE INDEX IF NOT EXISTS idx_celeb_key
 """
 
 
+_SEED_BLOGS = [
+    ("hsh6566",      "쇼핑"),
+    ("hkh443",       "코스트코"),
+    ("hprbel1097",   "방송아이템"),
+    ("jsodnfak",     "먹거리"),
+    ("fashionblog",  "파트너스활동으로 소정 수익발생"),
+    ("bcf5qp11",     "쇼핑"),
+    ("celubdigging", "파트너스활동으로 소정 수익발생"),
+    ("dalcome5",     "◇궁금해◇"),
+    ("greenp77",     "쇼핑"),
+    ("jiyeon_style", "패션"),
+    ("beauty_daily", "뷰티"),
+    ("kdrama_item",  "방송아이템"),
+    ("celeb_pick",   "셀럽픽"),
+    ("stylenote_kr", "스타일"),
+    ("kfashion_lab", "패션"),
+]
+
+
+def seed_blog_sources() -> None:
+    """Insert hardcoded blogs if the blog_sources table is empty."""
+    with sqlite3.connect(DB_PATH) as conn:
+        count = conn.execute("SELECT COUNT(*) FROM blog_sources").fetchone()[0]
+        if count > 0:
+            return
+        now = _now()
+        for blog_id, rss_category in _SEED_BLOGS:
+            sid = uuid.uuid4().hex[:12]
+            url = f"https://blog.naver.com/{blog_id}"
+            conn.execute(
+                "INSERT OR IGNORE INTO blog_sources "
+                "(id, name, url, image_mapping, active, notes, rss_category, created_at) "
+                "VALUES (?,?,?,?,?,?,?,?)",
+                (sid, blog_id, url, "두괄식", 1, "", rss_category, now),
+            )
+
+
 def init_db() -> None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.executescript(_DDL)
         # Migrations — each ALTER TABLE is idempotent (silently ignored if column exists)
         for stmt in [
             "ALTER TABLE pipeline_runs ADD COLUMN elements_json TEXT NOT NULL DEFAULT '[]'",
+            "ALTER TABLE blog_sources ADD COLUMN rss_category TEXT NOT NULL DEFAULT ''",
         ]:
             try:
                 conn.execute(stmt)
             except Exception:
                 pass
+    seed_blog_sources()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -149,19 +189,20 @@ def get_source(source_id: str) -> Optional[dict]:
 
 
 def create_source(name: str, url: str, image_mapping: str = "두괄식",
-                  active: bool = True, notes: str = "") -> dict:
+                  active: bool = True, notes: str = "", rss_category: str = "") -> dict:
     sid = uuid.uuid4().hex[:12]
     url = _normalise_source_url(url)
     now = _now()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             "INSERT INTO blog_sources "
-            "(id, name, url, image_mapping, active, notes, created_at) "
-            "VALUES (?,?,?,?,?,?,?)",
-            (sid, name, url, image_mapping, 1 if active else 0, notes, now),
+            "(id, name, url, image_mapping, active, notes, rss_category, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (sid, name, url, image_mapping, 1 if active else 0, notes, rss_category, now),
         )
     return {"id": sid, "name": name, "url": url, "image_mapping": image_mapping,
-            "active": active, "notes": notes, "created_at": now, "last_scraped_at": None}
+            "active": active, "notes": notes, "rss_category": rss_category,
+            "created_at": now, "last_scraped_at": None}
 
 
 def update_source(source_id: str, **fields) -> bool:

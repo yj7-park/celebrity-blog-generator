@@ -23,6 +23,7 @@ def create_source(body: BlogSourceCreate):
             image_mapping=body.image_mapping,
             active=body.active,
             notes=body.notes,
+            rss_category=body.rss_category,
         )
     except Exception as e:
         # UNIQUE constraint on url

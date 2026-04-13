@@ -355,36 +355,37 @@ def _add_border(img: Image.Image, px: int = BORDER_PX,
 def process_image(url: str, watermark_region: Optional[dict] = None) -> Optional[str]:
     """
     Full pipeline: download → split composite → trim bg → watermark removal
-                   → edge crop → signature → border → save JPEG.
+                   → edge crop → signature → save JPEG.
 
     watermark_region: optional {x, y, w, h} as 0-1 fractions (from image_analyzer).
     For composite images (wide, clear seam) the first (left) half is used.
     Returns local file path on success, None on failure.
     """
-    img = _download(url)
-    if img is None:
-        return None
-
-    # Composite detection: use first half if split
-    parts = _detect_and_split(img)
-    img = parts[0]
-
-    img = _trim_background(img)
-
-    # Watermark removal (before edge crop so coordinates stay valid)
-    if watermark_region and watermark_region.get("w", 0) > 0:
-        img = _remove_watermark(img, watermark_region)
-
-    img = _edge_crop(img)
-    img = _add_signature(img)
-    img = _add_border(img)
-
-    filename  = _safe_filename(url) + ".jpg"
-    out_path  = TEMP_DIR / filename
     try:
+        img = _download(url)
+        if img is None:
+            return None
+
+        # Composite detection: use first half if split
+        parts = _detect_and_split(img)
+        img = parts[0]
+
+        img = _trim_background(img)
+
+        # Watermark removal (before edge crop so coordinates stay valid)
+        if watermark_region and watermark_region.get("w", 0) > 0:
+            img = _remove_watermark(img, watermark_region)
+
+        img = _edge_crop(img)
+        img = _add_signature(img)
+
+        filename  = _safe_filename(url) + ".jpg"
+        out_path  = TEMP_DIR / filename
         img.save(str(out_path), "JPEG", quality=88, optimize=True)
         return str(out_path)
     except Exception:
+        import logging, traceback
+        logging.warning("process_image failed for %s: %s", url, traceback.format_exc())
         return None
 
 

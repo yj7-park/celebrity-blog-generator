@@ -45,6 +45,7 @@ interface SourceFormData {
   image_mapping: string;
   active: boolean;
   notes: string;
+  rss_category: string;
 }
 
 const EMPTY_FORM: SourceFormData = {
@@ -53,6 +54,7 @@ const EMPTY_FORM: SourceFormData = {
   image_mapping: "두괄식",
   active: true,
   notes: "",
+  rss_category: "",
 };
 
 export default function SourcesPage() {
@@ -98,6 +100,7 @@ export default function SourcesPage() {
       image_mapping: src.image_mapping,
       active: src.active,
       notes: src.notes,
+      rss_category: src.rss_category ?? "",
     });
     setFormError(null);
     setShowForm(true);
@@ -229,6 +232,19 @@ export default function SourcesPage() {
                 style={inputStyle}
               />
             </div>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 5 }}>
+              RSS 카테고리 필터
+            </label>
+            <input
+              type="text"
+              placeholder="예: 쇼핑, 방송아이템, 패션 (RSS 피드 카테고리 이름)"
+              value={form.rss_category}
+              onChange={(e) => setForm((p) => ({ ...p, rss_category: e.target.value }))}
+              style={inputStyle}
+            />
           </div>
 
           {/* Image mapping selector */}
@@ -387,6 +403,9 @@ export default function SourcesPage() {
                       {src.url}
                     </div>
                     <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#9ca3af" }}>
+                      {src.rss_category && (
+                        <span>RSS: <span style={{ color: "#6b7280" }}>{src.rss_category}</span></span>
+                      )}
                       <span>등록: {formatDate(src.created_at)}</span>
                       <span>최근 스크랩: {formatDate(src.last_scraped_at)}</span>
                     </div>
