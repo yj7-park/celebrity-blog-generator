@@ -109,6 +109,12 @@ class NaverBlogWriter:
         opts.add_argument("--start-maximized")
         opts.add_argument(f"--user-data-dir={self.chrome_user_data_dir}")
         self.driver = webdriver.Chrome(service=Service(), options=opts)
+        # --start-maximized is unreliable on some Windows setups;
+        # maximize_window() uses the OS API and is always reliable.
+        try:
+            self.driver.maximize_window()
+        except Exception:
+            pass
 
     # ── Human-like helpers ────────────────────────────────────────────────────
 
@@ -271,10 +277,19 @@ class NaverBlogWriter:
         self._delay(0.1, 0.2)
 
     def _insert_header(self, content: str):
-        for _ in range(2):
-            ActionChains(self.driver).key_down(Keys.CONTROL).key_down(Keys.ALT).send_keys("q").key_up(Keys.CONTROL).key_up(Keys.ALT).perform()
-            self._delay(0.1, 0.2)
+        """카테고리 헤더 삽입 — SE One 인용구 스타일 + 오렌지 강조색."""
+        # SE One 인용구 단락 스타일 적용 (Ctrl+Alt+Q)
+        ActionChains(self.driver).key_down(Keys.CONTROL).key_down(Keys.ALT).send_keys("q").key_up(Keys.CONTROL).key_up(Keys.ALT).perform()
+        self._delay(0.2, 0.3)
+        # 헤더 텍스트를 오렌지 색상으로
+        self._apply_text_color("E8531A")
+        # 헤더 내용 입력
         ActionChains(self.driver).send_keys(content).perform()
+        self._delay(0.1, 0.2)
+        # 색상을 검정으로 리셋 후 단락 탈출
+        self._apply_text_color("333333")
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        self._delay(0.1, 0.2)
 
     def _insert_image(self, image_path: str):
         self._copy_image_to_clipboard(image_path)
@@ -287,6 +302,8 @@ class NaverBlogWriter:
         self._delay(0.3, 0.5)
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("v").key_up(Keys.CONTROL).perform()
         self._delay(3, 4)
+        # 이미지 삽입 후 중앙 정렬
+        self._apply_text_align("center")
 
     def _insert_url(self, url: str):
         short_url = self.shorten_url(url)
@@ -347,78 +364,180 @@ class NaverBlogWriter:
             except Exception:
                 pass
 
-    def _insert_divider(self, style: str = "line2"):
-        """구분선 삽입. style: default|line1|line2|line3|line4"""
-        btn = WebDriverWait(self.driver, 5).until(
-            EC.element_to_be_clickable(
-                (By.CSS_SELECTOR, ".se-insert-horizontal-line-default-toolbar-button")
+    def _apply_text_color(self, hex_color: str):
+        """글자색 적용 (커서 위치 또는 선택 텍스트에 적용).
+        hex_color: 'FF6B35' 형식 (# 없이).
+        실패 시 조용히 무시.
+        """
+        try:
+            btn = WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "se-font-color-toolbar-button"))
+            )
+            self.driver.execute_script("arguments[0].click();", btn)
+            self._delay(0.4, 0.7)
+            # SE One 컬러피커 hex 입력란 탐색
+            for sel in [
+                "input.se-colorpicker-custom-hex",
+                ".se-colorpicker-custom-hex",
+                "input[maxlength='6']",
+                ".se-colorpicker input[type='text']",
+            ]:
+                try:
+                    inp = self.driver.find_element(By.CSS_SELECTOR, sel)
+                    if inp.is_displayed():
+                        inp.clear()
+                        inp.send_keys(hex_color.upper())
+                        inp.send_keys(Keys.ENTER)
+                        self._delay(0.3, 0.4)
+                        return
+                except Exception:
+                    continue
+            # fallback: Escape 닫기
+            ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+        except Exception:
+            pass
+
+    def _apply_text_align(self, align: str = "center"):
+        """단락 정렬 변경. align: 'left'|'center'|'right'"""
+        shortcuts = {"left": "l", "center": "e", "right": "r"}
+        key = shortcuts.get(align, "e")
+        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys(key).key_up(Keys.CONTROL).perform()
+        self._delay(0.1, 0.2)
+
+    def _open_insert_menu(self):
+        """빈 줄의 + 버튼(se-insert-point-marker-button)을 클릭해 삽입 메뉴 열기.
+
+        The + button is hover-triggered: move the mouse near the editor body
+        first so SE One renders it, then click via JS.
+        """
+        # Escape any open panel before opening the insert menu
+        ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+        self._delay(0.2, 0.3)
+        # Move mouse to the editor area to trigger + button appearance
+        try:
+            editor_area = self.driver.find_element(
+                By.CSS_SELECTOR, ".se-main-section"
+            )
+            ActionChains(self.driver).move_to_element(editor_area).perform()
+            self._delay(0.3, 0.5)
+        except Exception:
+            pass
+        marker = WebDriverWait(self.driver, 8).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, ".se-insert-point-marker-button")
             )
         )
-        self._move(btn)
-        btn.click()
-        self._delay(0.6, 1.0)
+        self.driver.execute_script("arguments[0].click();", marker)
+        self._delay(0.5, 0.8)
+
+    def _insert_divider(self, style: str = "line2"):
+        """구분선 삽입. style: default|line1|line2|line3|line4
+
+        빈 줄 + 버튼 → se-insert-menu-button-horizontalLine hover →
+        서브패널 스타일 클릭.
+        """
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        self._delay(0.4, 0.6)
+        self._open_insert_menu()
+
+        hl_btn = WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, ".se-insert-menu-button-horizontalLine")
+            )
+        )
+        ActionChains(self.driver).move_to_element(hl_btn).perform()
+        self._delay(0.5, 0.7)
+
         cls = f"se-insert-menu-sub-panel-button-horizontalLine-{style}"
         sub = WebDriverWait(self.driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, f".{cls}"))
         )
-        sub.click()
+        self.driver.execute_script("arguments[0].click();", sub)
         self._delay(0.5, 0.8)
 
     def _insert_callout(self, content: str, style: str = "quotation_postit"):
-        """인용구(콜아웃) 블록 삽입. style: default|quotation_line|quotation_bubble|quotation_underline|quotation_postit"""
-        btn = WebDriverWait(self.driver, 5).until(
-            EC.element_to_be_clickable(
-                (By.CSS_SELECTOR, ".se-insert-quotation-default-toolbar-button")
+        """인용구(콜아웃) 블록 삽입. style: default|quotation_line|quotation_bubble|quotation_underline|quotation_postit
+
+        빈 줄 + 버튼 → se-insert-menu-button-quotation hover →
+        서브패널 스타일 클릭 → 텍스트 입력 → Enter×2 탈출.
+        """
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        self._delay(0.4, 0.6)
+        self._open_insert_menu()
+
+        q_btn = WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, ".se-insert-menu-button-quotation")
             )
         )
-        self._move(btn)
-        btn.click()
-        self._delay(0.6, 1.0)
+        ActionChains(self.driver).move_to_element(q_btn).perform()
+        self._delay(0.5, 0.7)
+
         cls = f"se-insert-menu-sub-panel-button-quotation-{style}"
         sub = WebDriverWait(self.driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, f".{cls}"))
         )
-        sub.click()
+        self.driver.execute_script("arguments[0].click();", sub)
         self._delay(0.5, 0.8)
         ActionChains(self.driver).send_keys(content).perform()
         self._delay(0.3, 0.5)
         # SE One: Enter twice exits the quotation block (2nd Enter on empty line exits)
         ActionChains(self.driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
-        self._delay(0.3, 0.5)
+        self._delay(0.4, 0.6)
+        # Escape to ensure focus leaves any block-level component
+        ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+        self._delay(0.2, 0.3)
 
     def _insert_url_text(self, url: str):
+        """구매 링크 버튼 삽입 — 중앙 정렬, 굵게, 22pt, 링크 적용."""
         short_url = self.shorten_url(url)
-        ActionChains(self.driver).send_keys(Keys.ENTER, Keys.ENTER, Keys.ARROW_UP, Keys.ARROW_UP).perform()
-        self._delay(0.4, 0.6)
+        # 새 단락 시작
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+        self._delay(0.3, 0.4)
+        # 중앙 정렬
+        self._apply_text_align("center")
+        # 굵게 + 22pt
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("B").key_up(Keys.CONTROL).perform()
-        self._delay(0.3, 0.5)
+        self._delay(0.2, 0.3)
         fs_btn = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-font-size-code-toolbar-button"))
         )
         self.driver.execute_script("arguments[0].click();", fs_btn)
         self._delay(0.3, 0.5)
-        fs38_btn = WebDriverWait(self.driver, 3).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "se-toolbar-option-font-size-code-fs38-button"))
+        fs22_btn = WebDriverWait(self.driver, 3).until(
+            EC.presence_of_element_located(
+                (By.CLASS_NAME, "se-toolbar-option-font-size-code-fs22-button")
+            )
         )
-        self.driver.execute_script("arguments[0].click();", fs38_btn)
+        self.driver.execute_script("arguments[0].click();", fs22_btn)
         self._delay(0.3, 0.5)
-        ActionChains(self.driver).send_keys(" 최저가 구매하러 가기 ").perform()
+        # 버튼 텍스트 입력
+        ActionChains(self.driver).send_keys("🛒 최저가 구매하러 가기").perform()
         self._delay(0.4, 0.6)
-        ActionChains(self.driver).key_down(Keys.SHIFT).send_keys(Keys.HOME).key_up(Keys.SHIFT).perform()
-        self._delay(0.3, 0.5)
+        # 방금 입력한 텍스트 전체 선택 (Home ~ Shift+End)
+        ActionChains(self.driver).send_keys(Keys.HOME).perform()
+        self._delay(0.1, 0.2)
+        ActionChains(self.driver).key_down(Keys.SHIFT).send_keys(Keys.END).key_up(Keys.SHIFT).perform()
+        self._delay(0.3, 0.4)
+        # 링크 적용
         link_btn = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-link-toolbar-button"))
         )
         self.driver.execute_script("arguments[0].click();", link_btn)
-        self._delay(0.3, 0.5)
+        self._delay(0.4, 0.6)
         link_input = WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "se-custom-layer-link-input"))
         )
         self.driver.execute_script("arguments[0].click();", link_input)
-        self._delay(0.3, 0.5)
+        self._delay(0.3, 0.4)
         ActionChains(self.driver).send_keys(short_url, Keys.ENTER).perform()
+        self._delay(0.5, 0.7)
+        # 다음 줄로 이동, 왼쪽 정렬 복원, 굵기 해제
         ActionChains(self.driver).send_keys(Keys.ARROW_DOWN).perform()
-        self._delay(0.4, 0.6)
+        self._delay(0.2, 0.3)
+        self._apply_text_align("left")
+        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("B").key_up(Keys.CONTROL).perform()
+        self._delay(0.2, 0.3)
 
     # ── Main write method ─────────────────────────────────────────────────────
 
@@ -519,9 +638,6 @@ class NaverBlogWriter:
                     print(f"[WRITER] element {idx} FAILED: {_elem_err!r}")
                     _screenshot(self.driver, f"err_{idx:02d}_{el_type}")
                     raise
-
-                ActionChains(self.driver).key_down(Keys.CONTROL).key_down(Keys.ALT).send_keys("h").key_up(Keys.CONTROL).key_up(Keys.ALT).perform()
-                self._delay(0.1, 0.2)
 
             # ── Publish ────────────────────────────────────────────────────────
             # Stay inside mainFrame — the entire editor page is inside it

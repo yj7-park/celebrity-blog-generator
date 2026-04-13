@@ -7,4 +7,12 @@ __pycache__/
 *.egg-info/
 .venv/
 dist/
-.claude/backend/settings.json
+backend/settings.json
+chrome-user-data/
+chrome-temp-explore/
+debug-screenshots/
+backend/pipeline_runs.db
+pipeline_runs.db
+backend/server.log
+frontend/server.log
+backend/explore_editor.py
