@@ -24,6 +24,7 @@ from services.coupang import search_products, shorten_url
 from services.image_matcher import cross_match_items
 from services.image_processor import process_items_images
 from services.settings_service import load_settings
+import db as _db
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
 
@@ -260,6 +261,18 @@ async def run_pipeline(
                 "trending": trending,
                 "posts_count": len(posts_result),
             })
+
+            # Auto-save run to DB (non-blocking, failures are silently ignored)
+            try:
+                await asyncio.to_thread(
+                    _db.save_run,
+                    celeb,
+                    [it.model_dump() for it in enriched_items],
+                    result["blog_post"],
+                    result["title"],
+                )
+            except Exception:
+                pass
 
         except Exception as e:
             yield _sse("error", error=str(e))

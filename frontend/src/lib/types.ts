@@ -55,6 +55,22 @@ export interface AppSettings {
   chrome_user_data_dir: string;
 }
 
+export interface PipelineRun {
+  id: string;
+  celeb: string;
+  created_at: string;
+  title: string;
+  item_count: number;
+  days_ago?: number;
+  items?: CelebItem[];
+  blog_post?: string;
+}
+
+export interface CheckRunResponse {
+  found: boolean;
+  run: PipelineRun | null;
+}
+
 // SSE Pipeline Events — matches backend _sse() format:
 // { type, step, percent, data, error }
 export interface PipelineEvent {

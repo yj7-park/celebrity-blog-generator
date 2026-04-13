@@ -6,6 +6,7 @@ import {
   ShoppingBag,
   PenLine,
   Clock,
+  History,
   Settings,
 } from "lucide-react";
 
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
   { to: "/coupang", icon: ShoppingBag, label: "쿠팡 상품" },
   { to: "/blog-writer", icon: PenLine, label: "블로그 작성" },
   { to: "/scheduler", icon: Clock, label: "스케줄러" },
+  { to: "/history", icon: History, label: "히스토리" },
   { to: "/settings", icon: Settings, label: "설정" },
 ];
 
@@ -24,6 +26,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/coupang": "쿠팡 상품",
   "/blog-writer": "블로그 작성",
   "/scheduler": "스케줄러",
+  "/history": "히스토리",
   "/settings": "설정",
 };
 

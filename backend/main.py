@@ -13,6 +13,8 @@ from routers.naver import router as naver_router
 from routers.scheduler import router as scheduler_router
 from routers.settings import router as settings_router
 from routers.proxy import router as proxy_router
+from routers.db import router as db_router
+import db as _db
 
 # Global APScheduler instance (imported by scheduler router)
 scheduler = AsyncIOScheduler(timezone="Asia/Seoul")
@@ -20,6 +22,7 @@ scheduler = AsyncIOScheduler(timezone="Asia/Seoul")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _db.init_db()
     scheduler.start()
     yield
     scheduler.shutdown(wait=False)
@@ -45,6 +48,7 @@ app.include_router(naver_router)
 app.include_router(scheduler_router)
 app.include_router(settings_router)
 app.include_router(proxy_router)
+app.include_router(db_router)
 
 
 @app.get("/api/health")

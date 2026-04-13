@@ -6,6 +6,7 @@ import CoupangPage from "./pages/CoupangPage";
 import BlogWriterPage from "./pages/BlogWriterPage";
 import SchedulerPage from "./pages/SchedulerPage";
 import SettingsPage from "./pages/SettingsPage";
+import HistoryPage from "./pages/HistoryPage";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/coupang" element={<CoupangPage />} />
           <Route path="/blog-writer" element={<BlogWriterPage />} />
           <Route path="/scheduler" element={<SchedulerPage />} />
+          <Route path="/history" element={<HistoryPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

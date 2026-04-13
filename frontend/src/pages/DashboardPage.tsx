@@ -1,12 +1,12 @@
-import { useRef, useState } from "react";
-import { runPipelineSSE } from "../lib/api";
-import type { CelebItem } from "../lib/types";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { runPipelineSSE, checkRecentRun, deleteRun } from "../lib/api";
+import type { CelebItem, PipelineRun } from "../lib/types";
 import ProgressBar from "../components/ProgressBar";
 import ItemsPanel from "../components/ItemsPanel";
 
 type StepStatus = "idle" | "running" | "done" | "error";
 
-// 5-phase pipeline (RSS → 분석 → 스크랩 → 쿠팡 → 생성)
 const STEP_LABELS = ["RSS 수집", "연예인 분석", "스크랩+추출", "쿠팡 연동", "블로그 생성"];
 
 const inputStyle: React.CSSProperties = {
@@ -27,7 +27,6 @@ const cardStyle: React.CSSProperties = {
   boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
 };
 
-/** Derive which step (0-4) is active from SSE progress percent. */
 function pctToStep(pct: number): number {
   if (pct < 22) return 0;
   if (pct < 42) return 1;
@@ -44,11 +43,20 @@ function buildStepStatus(activeStep: number, running: boolean): StepStatus[] {
   });
 }
 
+function formatDaysAgo(daysAgo: number): string {
+  if (daysAgo === 0) return "오늘";
+  if (daysAgo === 1) return "어제";
+  return `${daysAgo}일 전`;
+}
+
 export default function DashboardPage() {
+  const location = useLocation();
+
   const [apiKey, setApiKey] = useState(() => sessionStorage.getItem("dash_apiKey") ?? "");
   const [days, setDays] = useState(2);
   const [maxPosts, setMaxPosts] = useState(10);
   const [topCelebs, setTopCelebs] = useState(3);
+  const [celebFilter, setCelebFilter] = useState("");
 
   const [stepStatus, setStepStatus] = useState<StepStatus[]>(STEP_LABELS.map(() => "idle"));
   const [currentStep, setCurrentStep] = useState(-1);
@@ -56,20 +64,75 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
 
-  // Collected results
   const [postCount, setPostCount] = useState<number | null>(null);
   const [trending, setTrending] = useState<string[]>([]);
   const [items, setItems] = useState<CelebItem[]>([]);
   const [blogPost, setBlogPost] = useState<{ celeb: string; title: string; post: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Cache-hit modal state
+  const [cacheModal, setCacheModal] = useState<PipelineRun | null>(null);
+  // Overwrite banner: shown after fresh run when same celeb had a previous run
+  const [overwriteBanner, setOverwriteBanner] = useState<{ previousRunId: string; celeb: string } | null>(null);
+  // Track if this result was loaded from cache
+  const [fromCache, setFromCache] = useState<string | null>(null); // celeb name if from cache
+
   const esRef = useRef<EventSource | null>(null);
 
-  const handleStart = () => {
+  // Load run from history page navigation
+  useEffect(() => {
+    const state = location.state as { loadedRun?: PipelineRun } | null;
+    if (state?.loadedRun) {
+      const run = state.loadedRun;
+      setItems((run.items ?? []) as CelebItem[]);
+      setBlogPost({ celeb: run.celeb, title: run.title, post: run.blog_post ?? "" });
+      setTrending([run.celeb]);
+      setStepStatus(STEP_LABELS.map(() => "done" as StepStatus));
+      setFromCache(run.celeb);
+      setOverwriteBanner(null);
+      window.history.replaceState({}, "");
+    }
+  }, [location.state]);
+
+  const loadCachedRun = (run: PipelineRun) => {
+    setItems((run.items ?? []) as CelebItem[]);
+    setBlogPost({ celeb: run.celeb, title: run.title, post: run.blog_post ?? "" });
+    setTrending([run.celeb]);
+    setStepStatus(STEP_LABELS.map(() => "done" as StepStatus));
+    setPostCount(null);
+    setFromCache(run.celeb);
+    setOverwriteBanner(null);
+    setCacheModal(null);
+  };
+
+  const proceedWithFreshRun = (cachedRun: PipelineRun | null) => {
+    setCacheModal(null);
+    doRunPipeline(cachedRun);
+  };
+
+  const handleStart = async () => {
     if (!apiKey.trim()) {
       setError("OpenAI API 키를 입력해주세요.");
       return;
     }
+
+    // If a specific celeb is entered, check DB first
+    if (celebFilter.trim()) {
+      try {
+        const res = await checkRecentRun(celebFilter.trim());
+        if (res.found && res.run) {
+          setCacheModal(res.run);
+          return;
+        }
+      } catch {
+        // DB check 실패해도 그냥 진행
+      }
+    }
+
+    doRunPipeline(null);
+  };
+
+  const doRunPipeline = (previousRun: PipelineRun | null) => {
     if (esRef.current) esRef.current.close();
 
     sessionStorage.setItem("dash_apiKey", apiKey.trim());
@@ -79,9 +142,11 @@ export default function DashboardPage() {
     setTrending([]);
     setItems([]);
     setBlogPost(null);
+    setFromCache(null);
     setCurrentStep(0);
     setStepStatus(buildStepStatus(0, true));
     setProgress(null);
+    setOverwriteBanner(null);
 
     esRef.current = runPipelineSSE(
       { days, max_posts: maxPosts, top_celebs: topCelebs, openai_api_key: apiKey.trim() },
@@ -93,8 +158,6 @@ export default function DashboardPage() {
           const activeStep = pctToStep(percent);
           setCurrentStep(activeStep);
           setStepStatus(buildStepStatus(activeStep, true));
-
-          // Extract incremental data from progress events
           if (data) {
             if (data.posts) setPostCount(data.posts.length);
             if (data.trending) setTrending(data.trending);
@@ -111,6 +174,10 @@ export default function DashboardPage() {
                 title: data.title ?? "",
                 post: data.blog_post,
               });
+            }
+            // If there was a previous run for the same celeb, show overwrite banner
+            if (previousRun && data.celeb) {
+              setOverwriteBanner({ previousRunId: previousRun.id, celeb: data.celeb });
             }
           }
           setStepStatus(STEP_LABELS.map(() => "done" as StepStatus));
@@ -166,13 +233,78 @@ export default function DashboardPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* 실행 카드 */}
+
+      {/* ── 기존 데이터 캐시 모달 ── */}
+      {cacheModal && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 300,
+          background: "rgba(0,0,0,0.45)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: 20, padding: "32px 36px",
+            maxWidth: 460, width: "90%",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+          }}>
+            <div style={{ fontSize: 28, marginBottom: 12 }}>💾</div>
+            <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 700, color: "#1e1b4b" }}>
+              기존 데이터가 있습니다
+            </h3>
+            <p style={{ margin: "0 0 6px", fontSize: 14, color: "#374151" }}>
+              <strong>{cacheModal.celeb}</strong> 관련 데이터가{" "}
+              <strong>{formatDaysAgo(cacheModal.days_ago ?? 0)}</strong> 저장되어 있습니다.
+            </p>
+            {cacheModal.title && (
+              <p style={{ margin: "0 0 4px", fontSize: 13, color: "#6b7280" }}>
+                제목: {cacheModal.title}
+              </p>
+            )}
+            <p style={{ margin: "0 0 24px", fontSize: 13, color: "#6b7280" }}>
+              아이템 {cacheModal.item_count}개 저장됨
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => loadCachedRun(cacheModal)}
+                style={{
+                  flex: 1, padding: "11px", fontSize: 14, fontWeight: 700,
+                  background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
+                  color: "#fff", border: "none", borderRadius: 10, cursor: "pointer",
+                }}
+              >
+                기존 데이터 사용
+              </button>
+              <button
+                onClick={() => proceedWithFreshRun(cacheModal)}
+                style={{
+                  flex: 1, padding: "11px", fontSize: 14, fontWeight: 600,
+                  background: "#f3f4f6", color: "#374151",
+                  border: "none", borderRadius: 10, cursor: "pointer",
+                }}
+              >
+                다시 생성
+              </button>
+            </div>
+            <button
+              onClick={() => setCacheModal(null)}
+              style={{
+                marginTop: 10, width: "100%", padding: "8px",
+                fontSize: 13, color: "#9ca3af", background: "none",
+                border: "none", cursor: "pointer",
+              }}
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── 실행 카드 ── */}
       <div style={cardStyle}>
         <h2 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 700, color: "#1e1b4b" }}>
           전체 파이프라인 실행
         </h2>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
           <div>
             <label style={{ display: "block", fontSize: 12, color: "#6b7280", marginBottom: 6 }}>수집 기간 (일)</label>
             <select value={days} onChange={(e) => setDays(Number(e.target.value))} style={inputStyle}>
@@ -193,6 +325,20 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* 연예인 필터 (선택) */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: "block", fontSize: 12, color: "#6b7280", marginBottom: 6 }}>
+            연예인 이름 <span style={{ color: "#9ca3af" }}>(선택 — 입력 시 기존 데이터 먼저 확인)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="예: 한소희, 아이유 ..."
+            value={celebFilter}
+            onChange={(e) => setCelebFilter(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: "block", fontSize: 12, color: "#6b7280", marginBottom: 6 }}>OpenAI API Key</label>
           <input
@@ -209,14 +355,10 @@ export default function DashboardPage() {
             onClick={handleStart}
             disabled={running}
             style={{
-              flex: 1,
-              padding: "12px",
+              flex: 1, padding: "12px",
               background: running ? "#a5b4fc" : "linear-gradient(90deg, #6366f1, #8b5cf6)",
-              color: "#fff",
-              border: "none",
-              borderRadius: 10,
-              fontSize: 15,
-              fontWeight: 600,
+              color: "#fff", border: "none", borderRadius: 10,
+              fontSize: 15, fontWeight: 600,
               cursor: running ? "not-allowed" : "pointer",
             }}
           >
@@ -226,14 +368,8 @@ export default function DashboardPage() {
             <button
               onClick={handleStop}
               style={{
-                padding: "12px 20px",
-                background: "#fee2e2",
-                color: "#dc2626",
-                border: "none",
-                borderRadius: 10,
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: "pointer",
+                padding: "12px 20px", background: "#fee2e2", color: "#dc2626",
+                border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer",
               }}
             >
               중단
@@ -243,15 +379,9 @@ export default function DashboardPage() {
             <button
               onClick={handleExportJSON}
               style={{
-                padding: "12px 20px",
-                background: "#f0fdf4",
-                color: "#16a34a",
-                border: "1px solid #bbf7d0",
-                borderRadius: 10,
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
+                padding: "12px 20px", background: "#f0fdf4", color: "#16a34a",
+                border: "1px solid #bbf7d0", borderRadius: 10,
+                fontSize: 14, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
               }}
             >
               JSON 내보내기
@@ -260,7 +390,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 단계 상태 — 5단계 */}
+      {/* ── 단계 상태 ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
         {STEP_LABELS.map((label, i) => {
           const s = stepStatus[i];
@@ -269,9 +399,7 @@ export default function DashboardPage() {
             <div
               key={i}
               style={{
-                background: colors.bg,
-                borderRadius: 12,
-                padding: "14px 10px",
+                background: colors.bg, borderRadius: 12, padding: "14px 10px",
                 textAlign: "center",
                 border: currentStep === i ? "2px solid #6366f1" : "2px solid transparent",
                 transition: "all 0.2s",
@@ -283,38 +411,80 @@ export default function DashboardPage() {
               <div style={{ fontSize: 12, fontWeight: 600, color: "#1e1b4b", marginBottom: 2 }}>
                 {i + 1}. {label}
               </div>
-              <div style={{ fontSize: 10, color: colors.color, fontWeight: 500 }}>
-                {colors.label}
-              </div>
+              <div style={{ fontSize: 10, color: colors.color, fontWeight: 500 }}>{colors.label}</div>
             </div>
           );
         })}
       </div>
 
-      {/* 진행 바 */}
+      {/* ── 진행 바 ── */}
       {progress && (
         <div style={cardStyle}>
           <ProgressBar percent={progress.percent} step={progress.step} />
         </div>
       )}
 
-      {/* 에러 */}
+      {/* ── 에러 ── */}
       {error && (
         <div style={{
-          background: "#fef2f2",
-          border: "1px solid #fecaca",
-          borderRadius: 10,
-          padding: "12px 16px",
-          color: "#dc2626",
-          fontSize: 14,
+          background: "#fef2f2", border: "1px solid #fecaca",
+          borderRadius: 10, padding: "12px 16px", color: "#dc2626", fontSize: 14,
         }}>
           ⚠️ {error}
         </div>
       )}
 
-      {/* 결과 요약 */}
+      {/* ── 덮어쓰기 배너 ── */}
+      {overwriteBanner && (
+        <div style={{
+          background: "#fffbeb", border: "1px solid #fde68a",
+          borderRadius: 10, padding: "12px 16px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+        }}>
+          <span style={{ fontSize: 13, color: "#92400e" }}>
+            💡 <strong>{overwriteBanner.celeb}</strong>의 이전 데이터가 DB에 남아 있습니다. 새 결과로 교체하시겠습니까?
+          </span>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={async () => {
+                await deleteRun(overwriteBanner.previousRunId).catch(() => {});
+                setOverwriteBanner(null);
+              }}
+              style={{
+                padding: "6px 14px", fontSize: 12, fontWeight: 600,
+                background: "#fef3c7", color: "#92400e",
+                border: "1px solid #fde68a", borderRadius: 7, cursor: "pointer",
+              }}
+            >
+              이전 데이터 삭제
+            </button>
+            <button
+              onClick={() => setOverwriteBanner(null)}
+              style={{
+                padding: "6px 14px", fontSize: 12, color: "#9ca3af",
+                background: "none", border: "none", cursor: "pointer",
+              }}
+            >
+              유지
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── 결과 ── */}
       {hasResults && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* 캐시 출처 표시 */}
+          {fromCache && (
+            <div style={{
+              background: "#eff6ff", border: "1px solid #bfdbfe",
+              borderRadius: 10, padding: "10px 16px",
+              fontSize: 13, color: "#1d4ed8",
+            }}>
+              📂 <strong>{fromCache}</strong> 기존 저장 데이터를 불러왔습니다.
+            </div>
+          )}
+
           {/* 숫자 요약 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
             <div style={{ ...cardStyle, textAlign: "center" }}>
@@ -339,8 +509,7 @@ export default function DashboardPage() {
                 {trending.map((c) => (
                   <span key={c} style={{
                     background: "#ede9fe", color: "#7c3aed",
-                    padding: "4px 12px", borderRadius: 99,
-                    fontSize: 13, fontWeight: 500,
+                    padding: "4px 12px", borderRadius: 99, fontSize: 13, fontWeight: 500,
                   }}>
                     {c}
                   </span>
@@ -378,9 +547,7 @@ export default function DashboardPage() {
                     setTimeout(() => setCopied(false), 2000);
                   }}
                   style={{
-                    padding: "6px 14px",
-                    fontSize: 13,
-                    borderRadius: 8,
+                    padding: "6px 14px", fontSize: 13, borderRadius: 8,
                     border: "1px solid #d1d5db",
                     background: copied ? "#d1fae5" : "#fff",
                     cursor: "pointer",
@@ -392,17 +559,10 @@ export default function DashboardPage() {
                 </button>
               </div>
               <pre style={{
-                margin: 0,
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                fontSize: 13.5,
-                lineHeight: 1.8,
-                color: "#1f2937",
-                background: "#f9fafb",
-                padding: 16,
-                borderRadius: 8,
-                maxHeight: 500,
-                overflowY: "auto",
+                margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word",
+                fontSize: 13.5, lineHeight: 1.8, color: "#1f2937",
+                background: "#f9fafb", padding: 16, borderRadius: 8,
+                maxHeight: 500, overflowY: "auto",
               }}>
                 {blogPost.post}
               </pre>

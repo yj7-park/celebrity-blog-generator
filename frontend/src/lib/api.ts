@@ -5,6 +5,8 @@ import type {
   ScheduleJob,
   AppSettings,
   PipelineEvent,
+  PipelineRun,
+  CheckRunResponse,
 } from "./types";
 
 export const BASE_URL = "http://localhost:8000";
@@ -142,6 +144,23 @@ export async function saveSettings(settings: AppSettings): Promise<{ status: str
     method: "POST",
     body: JSON.stringify(settings),
   });
+}
+
+// --- DB / History ---
+export async function checkRecentRun(celeb: string, days = 7): Promise<CheckRunResponse> {
+  return apiFetch(`/api/db/check?celeb=${encodeURIComponent(celeb)}&days=${days}`);
+}
+
+export async function listRuns(): Promise<{ runs: PipelineRun[] }> {
+  return apiFetch("/api/db/runs");
+}
+
+export async function getRun(id: string): Promise<PipelineRun> {
+  return apiFetch(`/api/db/runs/${id}`);
+}
+
+export async function deleteRun(id: string): Promise<void> {
+  await apiFetch(`/api/db/runs/${id}`, { method: "DELETE" });
 }
 
 // --- SSE Pipeline ---

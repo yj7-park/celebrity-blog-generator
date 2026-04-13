@@ -50,8 +50,13 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
         grouped[it.celeb].append(it)
     main_celeb, main_items = max(grouped.items(), key=lambda kv: len(kv[1]))
 
+    def _sanitize(s: str) -> str:
+        """Remove control characters (NUL, etc.) that break JSON serialization."""
+        return "".join(c for c in s if c >= " " or c in "\n\r\t")
+
     items_text = "\n".join(
-        f"- [{it.category}] {it.product_name} (키워드: {', '.join(it.keywords[:3])})"
+        f"- [{_sanitize(it.category)}] {_sanitize(it.product_name)}"
+        f" (키워드: {', '.join(_sanitize(k) for k in it.keywords[:3])})"
         for it in main_items[:10]
     )
 
