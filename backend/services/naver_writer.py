@@ -201,6 +201,43 @@ class NaverBlogWriter:
             ActionChains(self.driver).send_keys(short_url + "\n").perform()
             self._delay(2, 3)
 
+    def _insert_video(self, video_path: str):
+        """Upload a local video file to Naver Blog using the video insert button."""
+        if not HAS_PYAUTOGUI:
+            raise RuntimeError("pyautogui 없음 (Windows 전용 기능)")
+        try:
+            # Click video insert toolbar button
+            video_btn = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.CLASS_NAME, "se-video-toolbar-button"))
+            )
+            self._move(video_btn)
+            video_btn.click()
+            self._delay(1.5, 2.0)
+
+            # Click "내 PC에서 올리기" (local file upload)
+            local_btn = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.CLASS_NAME, "se-video-local-button"))
+            )
+            self._move(local_btn)
+            local_btn.click()
+            self._delay(2.0, 2.5)
+
+            # Paste file path into the OS file-picker dialog
+            pyperclip.copy(video_path.replace("/", "\\"))
+            pyautogui.hotkey("ctrl", "v")
+            self._delay(0.5, 1.0)
+            pyautogui.press("enter")
+            self._delay(5, 8)  # Wait for upload
+        except Exception as e:
+            # Fallback: skip video and continue
+            try:
+                close = WebDriverWait(self.driver, 3).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "se-popup-close-button"))
+                )
+                close.click()
+            except Exception:
+                pass
+
     def _insert_url_text(self, url: str):
         """Insert large '최저가 구매하러 가기' bold link."""
         short_url = self.shorten_url(url)
@@ -304,6 +341,8 @@ class NaverBlogWriter:
                     self._insert_url(str(content))
                 elif el_type == "url_text":
                     self._insert_url_text(str(content))
+                elif el_type == "video":
+                    self._insert_video(str(content))
 
                 # Press Enter to move to next line
                 ActionChains(self.driver).key_down(Keys.CONTROL).key_down(Keys.ALT).send_keys("h").key_up(Keys.CONTROL).key_up(Keys.ALT).perform()

@@ -91,7 +91,9 @@ class GenerateRequest(BaseModel):
 
 class GenerateResponse(BaseModel):
     celeb: str
+    title: str = ""
     blog_post: str
+    elements: List["BlogElement"] = []
 
 
 # ── Coupang endpoints ─────────────────────────────────────────────────────────

@@ -16,3 +16,5 @@ pyautogui==0.9.54
 Pillow==10.4.0
 python-dotenv==1.0.1
 aiofiles==23.2.1
+# ffmpeg must be installed separately and available in PATH (video_maker.py)
+# Windows: winget install ffmpeg  or  https://ffmpeg.org/download.html

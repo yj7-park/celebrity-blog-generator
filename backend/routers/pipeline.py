@@ -1,11 +1,11 @@
 """
-Pipeline router: collect → analyze → scrape → extract → generate
+Pipeline router: collect → analyze → scrape → extract → coupang → generate
 Supports both REST and Server-Sent Events (SSE) streaming.
 """
 from __future__ import annotations
 import asyncio, json
 from typing import AsyncGenerator, List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from openai import OpenAI
 
@@ -19,7 +19,8 @@ from models.schemas import (
 from services.collector import collect_posts, scrape_multiple_posts
 from services.analyzer import get_trending_celebs
 from services.extractor import extract_items_from_posts
-from services.generator import generate_blog_post
+from services.generator import generate_blog_elements
+from services.coupang import search_products, shorten_url
 from services.settings_service import load_settings
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
@@ -74,10 +75,44 @@ async def api_scrape(req: ScrapeRequest):
 
 @router.post("/generate", response_model=GenerateResponse)
 async def api_generate(req: GenerateRequest):
+    settings = load_settings()
     client = _get_client(req.openai_api_key)
-    post = await asyncio.to_thread(generate_blog_post, req.items, client)
-    celeb = req.items[0].celeb if req.items else ""
-    return GenerateResponse(celeb=celeb, blog_post=post)
+
+    # Enrich items with Coupang affiliate URLs if not already set
+    enriched = await asyncio.to_thread(_enrich_with_coupang, req.items, settings)
+
+    result = await asyncio.to_thread(generate_blog_elements, enriched, client)
+    celeb = enriched[0].celeb if enriched else ""
+    return GenerateResponse(
+        celeb=celeb,
+        title=result["title"],
+        blog_post=result["blog_post"],
+        elements=result["elements"],
+    )
+
+
+# ── Coupang enrichment helper ─────────────────────────────────────────────────
+
+def _enrich_with_coupang(items, settings: AppSettings):
+    """Search Coupang for each item and attach affiliate URL to link_url."""
+    if not settings.coupang_access_key or not settings.coupang_secret_key:
+        return items
+
+    enriched = []
+    for item in items:
+        if item.link_url and "coupang.com" in item.link_url:
+            enriched.append(item)
+            continue
+        try:
+            products = search_products(item.product_name, settings, limit=1)
+            if products:
+                affiliate = products[0].affiliate_url or products[0].product_url
+                short = shorten_url(affiliate)
+                item = item.model_copy(update={"link_url": short or affiliate})
+        except Exception:
+            pass
+        enriched.append(item)
+    return enriched
 
 
 # ── SSE full pipeline ─────────────────────────────────────────────────────────
@@ -107,23 +142,20 @@ async def run_pipeline(
 
             # ── Phase 1: Collect RSS ──────────────────────────────────────────
             yield _sse("progress", "RSS 수집 중...", 5)
-            posts_result: list = []
 
             def do_collect():
-                def prog(done, total):
-                    pass  # We'll emit a single done event
-                return collect_posts(days, prog)
+                return collect_posts(days)
 
             posts_result = await asyncio.to_thread(do_collect)
             if not posts_result:
                 yield _sse("error", error="게시글을 찾을 수 없습니다.")
                 return
 
-            yield _sse("progress", f"RSS 수집 완료: {len(posts_result)}개", 22,
+            yield _sse("progress", f"RSS 수집 완료: {len(posts_result)}개", 18,
                        data={"posts": [p.model_dump() for p in posts_result[:20]]})
 
             # ── Phase 2: Trending analysis ────────────────────────────────────
-            yield _sse("progress", "트렌딩 연예인 분석 중...", 25)
+            yield _sse("progress", "트렌딩 연예인 분석 중...", 22)
             trending = await asyncio.to_thread(
                 get_trending_celebs, posts_result, client, top_celebs
             )
@@ -132,33 +164,44 @@ async def run_pipeline(
                 return
 
             celeb = trending[0]
-            yield _sse("progress", f"분석 완료: {', '.join(trending)}", 42,
+            yield _sse("progress", f"분석 완료: {', '.join(trending)}", 38,
                        data={"trending": trending, "selected": celeb})
 
             # ── Phase 3: Scrape + Extract ─────────────────────────────────────
-            yield _sse("progress", f"{celeb} 포스트 스크랩 중...", 45)
+            yield _sse("progress", f"{celeb} 포스트 스크랩 중...", 42)
             target_posts = [p for p in posts_result if celeb in p.title] or posts_result
             scraped = await asyncio.to_thread(
                 scrape_multiple_posts, target_posts, min(max_posts, len(target_posts))
             )
-            yield _sse("progress", f"스크랩 완료: {len(scraped)}개", 65)
+            yield _sse("progress", f"스크랩 완료: {len(scraped)}개", 58)
 
-            yield _sse("progress", "LLM 아이템 추출 중...", 68)
+            yield _sse("progress", "LLM 아이템 추출 중...", 62)
             all_items = await asyncio.to_thread(extract_items_from_posts, scraped, client)
             celeb_items = [it for it in all_items if celeb in it.celeb or it.celeb in celeb]
             final_items = celeb_items if celeb_items else all_items
 
-            yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 80,
+            yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 72,
                        data={"items": [it.model_dump() for it in final_items]})
 
-            # ── Phase 4: Generate blog post ───────────────────────────────────
-            yield _sse("progress", "블로그 포스트 생성 중...", 85)
-            blog_post = await asyncio.to_thread(generate_blog_post, final_items, client)
+            # ── Phase 4: Coupang affiliate search ─────────────────────────────
+            yield _sse("progress", "쿠팡 어필리에이션 URL 생성 중...", 76)
+            enriched_items = await asyncio.to_thread(
+                _enrich_with_coupang, final_items, settings
+            )
+            linked_count = sum(1 for it in enriched_items if it.link_url)
+            yield _sse("progress", f"쿠팡 링크 완료: {linked_count}/{len(enriched_items)}개", 82,
+                       data={"items": [it.model_dump() for it in enriched_items]})
+
+            # ── Phase 5: Generate blog post ───────────────────────────────────
+            yield _sse("progress", "블로그 포스트 생성 중...", 86)
+            result = await asyncio.to_thread(generate_blog_elements, enriched_items, client)
 
             yield _sse("done", "완료!", 100, data={
                 "celeb": celeb,
-                "blog_post": blog_post,
-                "items": [it.model_dump() for it in final_items],
+                "title": result["title"],
+                "blog_post": result["blog_post"],
+                "elements": [el.model_dump() for el in result["elements"]],
+                "items": [it.model_dump() for it in enriched_items],
                 "trending": trending,
                 "posts_count": len(posts_result),
             })
