@@ -198,6 +198,97 @@ def _trim_background(img: Image.Image, threshold: int = 18) -> Image.Image:
     ))
 
 
+# ── Watermark removal ────────────────────────────────────────────────────────
+
+def _remove_watermark(img: Image.Image, region: dict) -> Image.Image:
+    """
+    Reduce watermark visibility in a detected region.
+
+    Strategy:
+    1. Expand region slightly for clean edges
+    2. Apply strong MedianFilter to remove text artifacts
+    3. Blend result with surrounding pixel average for natural look
+    4. Soft-edge the patch boundary with GaussianBlur on a mask
+
+    region: {x, y, w, h} as 0-1 fractions of image dimensions.
+    Not perfect — effectively reduces text/logo watermarks; logo inpainting
+    requires external ML APIs (LaMa / ClipDrop).
+    """
+    from PIL import ImageDraw, ImageChops
+
+    iw, ih = img.size
+    x1 = max(0, int(region["x"] * iw) - 4)
+    y1 = max(0, int(region["y"] * ih) - 4)
+    x2 = min(iw, int((region["x"] + region["w"]) * iw) + 4)
+    y2 = min(ih, int((region["y"] + region["h"]) * ih) + 4)
+
+    if x2 <= x1 or y2 <= y1 or (x2 - x1) < 4 or (y2 - y1) < 4:
+        return img
+
+    rw, rh = x2 - x1, y2 - y1
+
+    # Sample surrounding border pixels (12px ring outside the box)
+    ring_px = 12
+    sx1, sy1 = max(0, x1 - ring_px), max(0, y1 - ring_px)
+    sx2, sy2 = min(iw, x2 + ring_px), min(ih, y2 + ring_px)
+
+    ring_pixels: list[tuple] = []
+    for bx in range(sx1, sx2, 2):
+        for by in range(sy1, sy2, 2):
+            if not (x1 <= bx < x2 and y1 <= by < y2):
+                ring_pixels.append(img.getpixel((bx, by)))
+
+    # Compute surrounding average colour
+    if ring_pixels:
+        avg_r = sum(p[0] for p in ring_pixels) // len(ring_pixels)
+        avg_g = sum(p[1] for p in ring_pixels) // len(ring_pixels)
+        avg_b = sum(p[2] for p in ring_pixels) // len(ring_pixels)
+        fill_color = (avg_r, avg_g, avg_b)
+    else:
+        fill_color = (255, 255, 255)
+
+    # ── Build patch ───────────────────────────────────────────────────────────
+    patch = img.crop((x1, y1, x2, y2)).convert("RGB")
+
+    # Step 1: heavy median to destroy text pixels
+    patch_filtered = patch.filter(ImageFilter.MedianFilter(size=9))
+    patch_filtered = patch_filtered.filter(ImageFilter.MedianFilter(size=7))
+
+    # Step 2: blend toward surrounding average (reduces colour cast from text)
+    avg_layer = Image.new("RGB", (rw, rh), fill_color)
+    patch_blended = Image.blend(patch_filtered, avg_layer, alpha=0.35)
+
+    # Step 3: light Gaussian for smoothness
+    patch_blended = patch_blended.filter(ImageFilter.GaussianBlur(radius=2))
+
+    # Step 4: paste patch, then soft-edge the boundary
+    result = img.copy()
+    result.paste(patch_blended, (x1, y1))
+
+    # Feather the boundary by blurring a narrow band around the patch
+    feather = 6
+    fx1, fy1 = max(0, x1 - feather), max(0, y1 - feather)
+    fx2, fy2 = min(iw, x2 + feather), min(ih, y2 + feather)
+    band = result.crop((fx1, fy1, fx2, fy2))
+    band_blur = band.filter(ImageFilter.GaussianBlur(radius=feather // 2))
+
+    # Only apply blur to the feather ring, not the inner patch
+    mask = Image.new("L", (fx2 - fx1, fy2 - fy1), 0)
+    draw = ImageDraw.Draw(mask)
+    # Fill the outer ring (white=use blurred version), inner patch (black=keep sharp)
+    draw.rectangle([0, 0, fx2 - fx1, fy2 - fy1], fill=255)
+    inner_x1 = x1 - fx1 + feather // 2
+    inner_y1 = y1 - fy1 + feather // 2
+    inner_x2 = inner_x1 + rw - feather
+    inner_y2 = inner_y1 + rh - feather
+    draw.rectangle([inner_x1, inner_y1, inner_x2, inner_y2], fill=0)
+
+    band_composite = Image.composite(band_blur, band, mask)
+    result.paste(band_composite, (fx1, fy1))
+
+    return result
+
+
 # ── Edge crop ─────────────────────────────────────────────────────────────────
 
 def _edge_crop(img: Image.Image, px: int = EDGE_CROP_PX) -> Image.Image:
@@ -261,11 +352,12 @@ def _add_border(img: Image.Image, px: int = BORDER_PX,
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def process_image(url: str) -> Optional[str]:
+def process_image(url: str, watermark_region: Optional[dict] = None) -> Optional[str]:
     """
-    Full pipeline: download → split composite → trim bg → edge crop
-                   → signature → border → save JPEG.
+    Full pipeline: download → split composite → trim bg → watermark removal
+                   → edge crop → signature → border → save JPEG.
 
+    watermark_region: optional {x, y, w, h} as 0-1 fractions (from image_analyzer).
     For composite images (wide, clear seam) the first (left) half is used.
     Returns local file path on success, None on failure.
     """
@@ -278,6 +370,11 @@ def process_image(url: str) -> Optional[str]:
     img = parts[0]
 
     img = _trim_background(img)
+
+    # Watermark removal (before edge crop so coordinates stay valid)
+    if watermark_region and watermark_region.get("w", 0) > 0:
+        img = _remove_watermark(img, watermark_region)
+
     img = _edge_crop(img)
     img = _add_signature(img)
     img = _add_border(img)

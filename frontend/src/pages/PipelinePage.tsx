@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   collectPosts,
   analyzeCelebs,
   scrapePosts,
   generatePost,
   processImage,
+  processImageWithWatermark,
+  analyzeItemImages,
+  cancelPipeline,
 } from "../lib/api";
-import type { PostItem, CelebItem } from "../lib/types";
+import type { PostItem, CelebItem, ItemImageAnalysis, WatermarkRegion } from "../lib/types";
 import ItemsPanel from "../components/ItemsPanel";
 import TrendingPanel from "../components/TrendingPanel";
 import BlogPostPanel from "../components/BlogPostPanel";
@@ -137,6 +140,14 @@ export default function PipelinePage() {
   const [items, setItems] = useState<CelebItem[]>([]);
   const [step3Error, setStep3Error] = useState<string | null>(null);
 
+  // Step 3.5 – AI 이미지 분석
+  const [analyzeStatus, setAnalyzeStatus] = useState<StepState>("idle");
+  const [analyzeProgress, setAnalyzeProgress] = useState<string>("");
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [analyses, setAnalyses] = useState<ItemImageAnalysis[]>([]);
+  const [reviewCount, setReviewCount] = useState<number>(0);
+  const analyzeControllerRef = useRef<AbortController | null>(null);
+
   // Step 4
   const [step4Status, setStep4Status] = useState<StepState>("idle");
   const [blogPost, setBlogPost] = useState<{ celeb: string; post: string } | null>(null);
@@ -194,13 +205,103 @@ export default function PipelinePage() {
       setItems((prev) =>
         prev.map((item, i) =>
           i === index
-            ? { ...item, image_urls: [newImageUrl, ...(item.image_urls ?? []).filter((u) => u !== newImageUrl)], processed_image_path: res.processed_path }
+            ? {
+                ...item,
+                image_urls: [newImageUrl, ...(item.image_urls ?? []).filter((u) => u !== newImageUrl)],
+                processed_image_path: res.processed_path,
+              }
             : item
         )
       );
     } catch {
       // silently ignore — user can try another image
     }
+  };
+
+  // Watermark removal callback
+  const handleRemoveWatermark = async (index: number, url: string, region: WatermarkRegion) => {
+    try {
+      const res = await processImageWithWatermark(url, region);
+      setItems((prev) =>
+        prev.map((item, i) =>
+          i === index ? { ...item, processed_image_path: res.processed_path } : item
+        )
+      );
+    } catch {
+      // silently ignore
+    }
+  };
+
+  // AI image analysis
+  const handleAnalyzeImages = () => {
+    if (!items.length) return;
+    setAnalyzeStatus("running");
+    setAnalyzeProgress("분석 준비 중...");
+    setAnalyzeError(null);
+    setAnalyses([]);
+    setReviewCount(0);
+
+    const ctrl = analyzeItemImages(
+      items,
+      "",
+      (event) => {
+        if (event.type === "progress") {
+          setAnalyzeProgress(event.step);
+          // Accumulate per-item analyses as they arrive
+          if (event.data?.analysis) {
+            setAnalyses((prev) => {
+              const existing = prev.findIndex(
+                (a) => a.item_index === event.data!.analysis!.item_index
+              );
+              if (existing >= 0) {
+                const next = [...prev];
+                next[existing] = event.data!.analysis!;
+                return next;
+              }
+              return [...prev, event.data!.analysis!];
+            });
+          }
+        } else if (event.type === "done") {
+          const finalAnalyses: ItemImageAnalysis[] = event.data?.analyses ?? [];
+          const rc = event.data?.review_count ?? 0;
+          setAnalyses(finalAnalyses);
+          setReviewCount(rc);
+          setAnalyzeStatus("done");
+          setAnalyzeProgress("");
+
+          // Auto-update items whose best_url differs from current image
+          setItems((prev) =>
+            prev.map((item, i) => {
+              const analysis = finalAnalyses.find((a) => a.item_index === i);
+              if (!analysis || !analysis.best_url) return item;
+              if (analysis.best_url === item.image_urls?.[0]) return item;
+              // Promote best_url to front
+              const newUrls = [
+                analysis.best_url,
+                ...(item.image_urls ?? []).filter((u) => u !== analysis.best_url),
+              ];
+              return { ...item, image_urls: newUrls, processed_image_path: "" };
+            })
+          );
+        } else if (event.type === "error") {
+          setAnalyzeError(event.error || "분석 오류");
+          setAnalyzeStatus("error");
+        }
+      },
+      (err) => {
+        setAnalyzeError(err);
+        setAnalyzeStatus("error");
+      }
+    );
+
+    analyzeControllerRef.current = ctrl;
+  };
+
+  const handleCancelAnalyze = () => {
+    analyzeControllerRef.current?.abort();
+    cancelPipeline().catch(() => {});
+    setAnalyzeStatus("idle");
+    setAnalyzeProgress("");
   };
 
   // Step 4: 블로그 생성
@@ -316,9 +417,70 @@ export default function PipelinePage() {
             <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 10 }}>
               총 {items.length}개 아이템 추출됨
             </div>
-            <ItemsPanel items={items} onUpdateItem={handleUpdateItemImage} />
+            <ItemsPanel
+              items={items}
+              analyses={analyses}
+              onUpdateItem={handleUpdateItemImage}
+              onRemoveWatermark={handleRemoveWatermark}
+            />
           </div>
         )}
+      </div>
+
+      {/* Step 3.5: AI 이미지 분석 */}
+      <div style={{ ...cardStyle, opacity: step3Status !== "done" ? 0.6 : 1 }}>
+        <StepHeader step={3.5 as unknown as number} title="AI 이미지 분석 (선택)" status={analyzeStatus} />
+
+        {analyzeError && (
+          <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 10 }}>⚠️ {analyzeError}</div>
+        )}
+
+        {analyzeStatus === "running" && analyzeProgress && (
+          <div style={{
+            fontSize: 13, color: "#7c3aed", background: "#ede9fe",
+            borderRadius: 8, padding: "8px 12px", marginBottom: 10,
+          }}>
+            ⏳ {analyzeProgress}
+          </div>
+        )}
+
+        {analyzeStatus === "done" && (
+          <div style={{
+            fontSize: 13, background: reviewCount > 0 ? "#fff7ed" : "#d1fae5",
+            color: reviewCount > 0 ? "#c2410c" : "#065f46",
+            border: `1px solid ${reviewCount > 0 ? "#fed7aa" : "#a7f3d0"}`,
+            borderRadius: 8, padding: "8px 12px", marginBottom: 10,
+          }}>
+            {reviewCount > 0
+              ? `⚠️ ${items.length}개 아이템 중 ${reviewCount}개 검토 필요 — 아래에서 이미지를 직접 선택해주세요`
+              : `✅ ${items.length}개 아이템 모두 양호 — AI 추천 이미지로 자동 업데이트됨`}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <RunButton
+            onClick={handleAnalyzeImages}
+            disabled={step3Status !== "done" || analyzeStatus === "running"}
+            loading={analyzeStatus === "running"}
+            label="AI 이미지 분석 시작"
+          />
+          {analyzeStatus === "running" && (
+            <button
+              onClick={handleCancelAnalyze}
+              style={{
+                padding: "10px 16px", background: "#fee2e2", color: "#dc2626",
+                border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              중단
+            </button>
+          )}
+          {analyzeStatus !== "running" && step3Status === "done" && (
+            <span style={{ fontSize: 12, color: "#9ca3af" }}>
+              GPT-4o Vision 사용 · 분석 없이 Step 4로 바로 진행 가능
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Step 4: 블로그 생성 */}

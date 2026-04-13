@@ -97,6 +97,32 @@ export interface CheckRunResponse {
   run: PipelineRun | null;
 }
 
+// ── Image analysis ─────────────────────────────────────────────────────────
+
+export interface WatermarkRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  description?: string;
+}
+
+export interface CandidateScore {
+  url: string;
+  score: number;
+  issues: string[];            // "watermark"|"mismatch"|"low_quality"|"cropped"
+  explanation: string;
+  watermark_region?: WatermarkRegion | null;
+}
+
+export interface ItemImageAnalysis {
+  item_index: number;
+  best_url: string;
+  best_score: number;
+  needs_review: boolean;
+  candidates: CandidateScore[];
+}
+
 /** Element consumed by NaverBlogWriter.write() */
 export interface NaverBlogElement {
   type: "text" | "header" | "image" | "url" | "url_text" | "video";
@@ -120,5 +146,9 @@ export interface PipelineEvent {
     blog_post?: string;
     elements?: NaverBlogElement[];
     posts_count?: number;
+    // image analysis events
+    analysis?: ItemImageAnalysis;
+    analyses?: ItemImageAnalysis[];
+    review_count?: number;
   } | null;
 }

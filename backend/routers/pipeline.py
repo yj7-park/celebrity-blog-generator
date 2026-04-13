@@ -35,13 +35,16 @@ async def _run(fn, *args, **kw):
 
 from models.schemas import (
     AnalyzeRequest, AnalyzeResponse,
+    AnalyzeItemsRequest,
     CelebItem,
     CollectRequest, CollectResponse,
     GenerateRequest, GenerateResponse,
+    ProcessImageRequest,
     ScrapeRequest, ScrapeResponse,
     AppSettings,
 )
 from services.collector import collect_posts, scrape_multiple_posts
+from services.image_analyzer import analyze_item as _analyze_item
 from services.analyzer import get_trending_celebs
 from services.extractor import extract_items_from_posts
 from services.generator import generate_blog_elements
@@ -50,10 +53,6 @@ from services.image_matcher import cross_match_items
 from services.image_processor import process_image, process_items_images
 from services.settings_service import load_settings
 import db as _db
-
-class ProcessImageRequest(_BaseModel):
-    url: str
-
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
 
@@ -122,11 +121,77 @@ async def api_generate(req: GenerateRequest):
 
 @router.post("/process-image")
 async def api_process_image(req: ProcessImageRequest):
-    """Download and process a single image URL. Returns the local file path."""
-    local_path = await _run(process_image, req.url)
+    """Download and process a single image URL. Returns the local file path.
+    Optionally accepts watermark_region ({x,y,w,h} as 0-1 fractions) to
+    remove a detected watermark before the standard pipeline.
+    """
+    wm_dict = req.watermark_region.model_dump() if req.watermark_region else None
+    local_path = await _run(process_image, req.url, wm_dict)
     if not local_path:
         raise HTTPException(status_code=422, detail="이미지 처리 실패")
     return {"processed_path": local_path}
+
+
+@router.post("/analyze-items")
+async def api_analyze_items(req: AnalyzeItemsRequest):
+    """SSE: analyze all items' images via GPT-4o vision.
+
+    Streams per-item progress events, then a final 'done' event with
+    full analysis results and review_count.
+    """
+    client = _get_client(req.openai_api_key)
+
+    async def generate() -> AsyncGenerator[str, None]:
+        _ct.pipeline.reset()
+        try:
+            total = len(req.items)
+            yield _sse("progress", f"이미지 분석 시작 (총 {total}개 아이템)", 0)
+
+            analyses = []
+            for idx, item in enumerate(req.items):
+                _ct.pipeline.check()
+                yield _sse(
+                    "progress",
+                    f"[{idx+1}/{total}] {item.product_name} 분석 중...",
+                    percent=int(idx / total * 100),
+                )
+
+                analysis = await _run(_analyze_item, idx, item, client)
+                analyses.append(analysis)
+
+                score_pct = f"{analysis.best_score:.0%}"
+                review_flag = " ⚠️ 검토 필요" if analysis.needs_review else " ✅"
+                yield _sse(
+                    "progress",
+                    f"[{idx+1}/{total}] {item.product_name} — {score_pct}{review_flag}",
+                    percent=int((idx + 1) / total * 100),
+                    data={"analysis": analysis.model_dump()},
+                )
+
+            review_count = sum(1 for a in analyses if a.needs_review)
+            yield _sse(
+                "done",
+                f"분석 완료: {total}개 중 {review_count}개 검토 필요",
+                100,
+                data={
+                    "analyses": [a.model_dump() for a in analyses],
+                    "review_count": review_count,
+                },
+            )
+
+        except InterruptedError:
+            yield _sse("error", error="작업이 취소되었습니다.")
+        except asyncio.CancelledError:
+            _ct.pipeline.cancel()
+            raise
+        except Exception as e:
+            yield _sse("error", error=str(e))
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/cancel")

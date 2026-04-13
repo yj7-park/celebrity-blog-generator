@@ -166,6 +166,42 @@ class ScheduleJobCreate(BaseModel):
     auto_publish: bool = False
 
 
+# ── Image analysis ────────────────────────────────────────────────────────────
+
+class WatermarkRegion(BaseModel):
+    x: float               # 0-1 relative to image width
+    y: float               # 0-1 relative to image height
+    w: float               # 0-1 width fraction
+    h: float               # 0-1 height fraction
+    description: str = ""
+
+
+class CandidateScore(BaseModel):
+    url: str
+    score: float                              # 0-1 relevance
+    issues: List[str] = []                    # "watermark"|"mismatch"|"low_quality"|"cropped"
+    explanation: str = ""
+    watermark_region: Optional[WatermarkRegion] = None
+
+
+class ItemImageAnalysis(BaseModel):
+    item_index: int
+    best_url: str
+    best_score: float
+    needs_review: bool
+    candidates: List[CandidateScore] = []
+
+
+class AnalyzeItemsRequest(BaseModel):
+    items: List[CelebItem]
+    openai_api_key: str = ""
+
+
+class ProcessImageRequest(BaseModel):
+    url: str
+    watermark_region: Optional[WatermarkRegion] = None
+
+
 # ── Settings ──────────────────────────────────────────────────────────────────
 
 class AppSettings(BaseModel):

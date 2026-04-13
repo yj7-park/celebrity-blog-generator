@@ -9,6 +9,7 @@ import type {
   PipelineEvent,
   PipelineRun,
   CheckRunResponse,
+  WatermarkRegion,
 } from "./types";
 
 export const BASE_URL = "http://localhost:8000";
@@ -71,6 +72,70 @@ export async function processImage(url: string): Promise<{ processed_path: strin
     method: "POST",
     body: JSON.stringify({ url }),
   });
+}
+
+export async function processImageWithWatermark(
+  url: string,
+  watermarkRegion?: WatermarkRegion | null
+): Promise<{ processed_path: string }> {
+  return apiFetch("/api/pipeline/process-image", {
+    method: "POST",
+    body: JSON.stringify({ url, watermark_region: watermarkRegion ?? null }),
+  });
+}
+
+/** SSE-based image analysis for all items. Returns AbortController to cancel. */
+export function analyzeItemImages(
+  items: CelebItem[],
+  apiKey: string,
+  onEvent: (event: PipelineEvent) => void,
+  onError: (err: string) => void
+): AbortController {
+  const controller = new AbortController();
+
+  fetch(`${BASE_URL}/api/pipeline/analyze-items`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items, openai_api_key: apiKey }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        const text = await res.text();
+        onError(text || `HTTP ${res.status}`);
+        return;
+      }
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+        for (const part of parts) {
+          const line = part.trim();
+          if (line.startsWith("data: ")) {
+            try {
+              const event: PipelineEvent = JSON.parse(line.slice(6));
+              onEvent(event);
+              if (event.type === "done" || event.type === "error") return;
+            } catch {
+              // parse error 무시
+            }
+          }
+        }
+      }
+    })
+    .catch((err) => {
+      if ((err as Error).name !== "AbortError") {
+        onError(String(err));
+      }
+    });
+
+  return controller;
 }
 
 export async function cancelPipeline(): Promise<{ status: string }> {
