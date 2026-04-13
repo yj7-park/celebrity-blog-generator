@@ -73,9 +73,15 @@ def generate_blog_post(items: List[CelebItem], client: OpenAI) -> str:
     return _generate(items, client)["blog_post"]
 
 
-def generate_blog_elements(items: List[CelebItem], client: OpenAI) -> dict:
-    """Return {'title', 'blog_post', 'elements': List[BlogElement]}."""
-    return _generate(items, client)
+def generate_blog_elements(items: List[CelebItem], client: OpenAI,
+                           image_placement: str = "두괄식") -> dict:
+    """Return {'title', 'blog_post', 'elements': List[BlogElement]}.
+
+    image_placement:
+        "두괄식" — image appears BEFORE the body text (default, visual-first)
+        "미괄식" — image appears AFTER  the body text (narrative-first)
+    """
+    return _generate(items, client, image_placement=image_placement)
 
 
 # ── Internal ───────────────────────────────────────────────────────────────────
@@ -85,7 +91,8 @@ def _sanitize(s: str) -> str:
     return "".join(c for c in s if c >= " " or c in "\n\r\t")
 
 
-def _generate(items: List[CelebItem], client: OpenAI) -> dict:
+def _generate(items: List[CelebItem], client: OpenAI,
+              image_placement: str = "두괄식") -> dict:
     if not items:
         empty: List[BlogElement] = [
             BlogElement(type="text", content="생성할 아이템 정보가 없습니다.")
@@ -181,7 +188,11 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
     if intro:
         elements.append(BlogElement(type="text", content=intro))
 
-    # 아이템별 블록: header → image → body → honest_note → 구매 버튼
+    # 아이템별 블록 조립
+    # 두괄식: divider → header → 이미지 → 본문 → callout → 구매버튼
+    # 미괄식: divider → header → 본문 → callout → 이미지 → 구매버튼
+    is_dugowal = (image_placement != "미괄식")
+
     for idx, item_obj in enumerate(item_blocks):
         src = main_items[idx] if idx < len(main_items) else None
 
@@ -189,29 +200,50 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
         body = item_obj.get("body", "")
         honest_note = item_obj.get("honest_note", "")
 
+        # 이미지 element 조립 (공통)
+        def _img_el():
+            if src and src.processed_image_path:
+                return BlogElement(type="image", content=src.processed_image_path)
+            elif src and src.image_urls:
+                return BlogElement(type="image", content=src.image_urls[0])
+            return None
+
+        # 아이템 구분선
+        elements.append(BlogElement(type="divider", content="line2"))
+
         if header_text:
             elements.append(BlogElement(type="header", content=header_text))
 
-        # 처리된 이미지 삽입
-        if src and src.processed_image_path:
-            elements.append(BlogElement(type="image", content=src.processed_image_path))
-        elif src and src.image_urls:
-            # 처리 전 상태라면 네트워크 URL도 시도
-            elements.append(BlogElement(type="image", content=src.image_urls[0]))
+        if is_dugowal:
+            # 두괄식: 이미지 먼저
+            img_el = _img_el()
+            if img_el:
+                elements.append(img_el)
+            if body.strip():
+                elements.append(BlogElement(type="text", content=body.strip()))
+        else:
+            # 미괄식: 본문 먼저
+            if body.strip():
+                elements.append(BlogElement(type="text", content=body.strip()))
+            img_el = _img_el()
+            if img_el:
+                elements.append(img_el)
 
-        # 설명 + 솔직한 한마디 합치기
-        body_full = body
-        if honest_note:
-            body_full = body + "\n\n" + honest_note
-        if body_full.strip():
-            elements.append(BlogElement(type="text", content=body_full.strip()))
+        # 솔직한 한마디 → postit callout (항상 이미지 뒤)
+        if honest_note.strip():
+            elements.append(BlogElement(
+                type="callout",
+                content=honest_note.strip(),
+                style="quotation_postit",
+            ))
 
-        # 쿠팡 구매 버튼 (link_url이 있을 때만)
+        # 쿠팡 구매 버튼
         if src and src.link_url:
             elements.append(BlogElement(type="url_text", content=src.link_url))
 
-    # 마무리
+    # 마무리 앞 구분선
     if outro:
+        elements.append(BlogElement(type="divider", content="line2"))
         elements.append(BlogElement(type="text", content=outro))
 
     # 해시태그
@@ -225,7 +257,11 @@ def _generate(items: List[CelebItem], client: OpenAI) -> dict:
             lines.append(f"\n### {el.content}")
         elif el.type == "image":
             lines.append(f"[이미지: {el.content}]")
-        elif el.type == "text" and el.content not in (AFFILIATE_DISCLOSURE, intro, outro, hashtags):
+        elif el.type == "divider":
+            lines.append("\n─────────────────────────────\n")
+        elif el.type == "callout":
+            lines.append(f"\n💡 {el.content}\n")
+        elif el.type == "text" and el.content not in (intro, outro, hashtags):
             lines.append(el.content)
         elif el.type == "url_text":
             lines.append(f"[최저가 구매하러 가기]({el.content})")

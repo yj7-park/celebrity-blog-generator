@@ -77,6 +77,7 @@ export interface AppSettings {
   pipeline_max_posts: number;
   pipeline_top_celebs: number;
   chrome_user_data_dir: string;
+  image_placement: string;  // "두괄식" | "미괄식"
 }
 
 export interface PipelineRun {

@@ -340,6 +340,45 @@ class NaverBlogWriter:
             except Exception:
                 pass
 
+    def _insert_divider(self, style: str = "line2"):
+        """구분선 삽입. style: default|line1|line2|line3|line4"""
+        btn = WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable(
+                (By.CSS_SELECTOR, ".se-insert-horizontal-line-default-toolbar-button")
+            )
+        )
+        self._move(btn)
+        btn.click()
+        self._delay(0.6, 1.0)
+        cls = f"se-insert-menu-sub-panel-button-horizontalLine-{style}"
+        sub = WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, f".{cls}"))
+        )
+        sub.click()
+        self._delay(0.5, 0.8)
+
+    def _insert_callout(self, content: str, style: str = "quotation_postit"):
+        """인용구(콜아웃) 블록 삽입. style: default|quotation_line|quotation_bubble|quotation_underline|quotation_postit"""
+        btn = WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable(
+                (By.CSS_SELECTOR, ".se-insert-quotation-default-toolbar-button")
+            )
+        )
+        self._move(btn)
+        btn.click()
+        self._delay(0.6, 1.0)
+        cls = f"se-insert-menu-sub-panel-button-quotation-{style}"
+        sub = WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, f".{cls}"))
+        )
+        sub.click()
+        self._delay(0.5, 0.8)
+        ActionChains(self.driver).send_keys(content).perform()
+        self._delay(0.3, 0.5)
+        # SE One: Enter twice exits the quotation block (2nd Enter on empty line exits)
+        ActionChains(self.driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
+        self._delay(0.3, 0.5)
+
     def _insert_url_text(self, url: str):
         short_url = self.shorten_url(url)
         ActionChains(self.driver).send_keys(Keys.ENTER, Keys.ENTER, Keys.ARROW_UP, Keys.ARROW_UP).perform()
@@ -447,6 +486,11 @@ class NaverBlogWriter:
                     self._insert_url_text(str(content))
                 elif el_type == "video":
                     self._insert_video(str(content))
+                elif el_type == "divider":
+                    self._insert_divider(str(content) if content else "line2")
+                elif el_type == "callout":
+                    style = el.get("style", "quotation_postit")
+                    self._insert_callout(str(content), style)
 
                 ActionChains(self.driver).key_down(Keys.CONTROL).key_down(Keys.ALT).send_keys("h").key_up(Keys.CONTROL).key_up(Keys.ALT).perform()
                 self._delay(0.1, 0.2)

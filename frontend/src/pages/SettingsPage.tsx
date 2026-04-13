@@ -32,6 +32,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   pipeline_max_posts: 10,
   pipeline_top_celebs: 3,
   chrome_user_data_dir: "",
+  image_placement: "두괄식",
 };
 
 interface FieldProps {
@@ -192,10 +193,10 @@ export default function SettingsPage() {
             style={inputStyle}
           />
         </Field>
-        <Field label="Chrome User Data 경로" hint="기존 Chrome 프로필 사용 시 입력 (선택)">
+        <Field label="Chrome User Data 경로" hint="비워두면 프로젝트 내 chrome-user-data/ 자동 사용">
           <input
             type="text"
-            placeholder="예: C:\\Users\\user\\AppData\\Local\\Google\\Chrome\\User Data"
+            placeholder="비워두면 프로젝트 내 chrome-user-data/ 자동 사용"
             value={settings.chrome_user_data_dir}
             onChange={update("chrome_user_data_dir")}
             style={inputStyle}
@@ -208,7 +209,7 @@ export default function SettingsPage() {
         <h2 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "#1e1b4b" }}>
           파이프라인 기본값
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
           <Field label="수집 기간 (일)">
             <select value={settings.pipeline_days} onChange={update("pipeline_days")} style={inputStyle}>
               {[1, 2, 3, 5, 7].map((d) => <option key={d} value={d}>{d}일</option>)}
@@ -225,6 +226,12 @@ export default function SettingsPage() {
             </select>
           </Field>
         </div>
+        <Field label="블로그 이미지 배치 방식" hint="두괄식: 이미지→텍스트 순서 / 미괄식: 텍스트→이미지 순서">
+          <select value={settings.image_placement} onChange={update("image_placement")} style={inputStyle}>
+            <option value="두괄식">두괄식 (이미지 먼저)</option>
+            <option value="미괄식">미괄식 (텍스트 먼저)</option>
+          </select>
+        </Field>
       </div>
 
       {/* 저장 버튼 */}

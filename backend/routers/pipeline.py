@@ -109,7 +109,8 @@ async def api_generate(req: GenerateRequest):
 
     enriched = await _run(_enrich_with_coupang, req.items, settings)
     enriched = await _run(process_items_images, enriched)
-    result   = await _run(generate_blog_elements, enriched, client)
+    placement = req.image_placement or settings.image_placement or "두괄식"
+    result   = await _run(generate_blog_elements, enriched, client, placement)
     celeb    = enriched[0].celeb if enriched else ""
     return GenerateResponse(
         celeb=celeb,
@@ -352,7 +353,8 @@ async def run_pipeline(
             # ── Phase 6: Generate blog post ───────────────────────────────────
             yield _sse("progress", "블로그 포스트 생성 중...", 86)
             _ct.pipeline.check()
-            result = await _run(generate_blog_elements, enriched_items, client)
+            placement = settings.image_placement or "두괄식"
+            result = await _run(generate_blog_elements, enriched_items, client, placement)
 
             yield _sse("done", "완료!", 100, data={
                 "celeb": celeb,

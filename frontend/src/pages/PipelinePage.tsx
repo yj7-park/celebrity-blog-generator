@@ -141,6 +141,7 @@ export default function PipelinePage() {
   const [step4Status, setStep4Status] = useState<StepState>("idle");
   const [blogPost, setBlogPost] = useState<{ celeb: string; post: string } | null>(null);
   const [step4Error, setStep4Error] = useState<string | null>(null);
+  const [imagePlacement, setImagePlacement] = useState<"두괄식" | "미괄식">("두괄식");
 
   // Step 1: RSS 수집
   const handleCollect = async () => {
@@ -207,7 +208,7 @@ export default function PipelinePage() {
     setStep4Status("running");
     setStep4Error(null);
     try {
-      const res = await generatePost(items, "");
+      const res = await generatePost(items, "", imagePlacement);
       setBlogPost({ celeb: res.celeb, post: res.blog_post });
       setStep4Status("done");
     } catch (e) {
@@ -326,6 +327,29 @@ export default function PipelinePage() {
         {step4Error && (
           <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 10 }}>⚠️ {step4Error}</div>
         )}
+        {/* 이미지 배치 선택 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 600 }}>이미지 배치:</span>
+          {(["두괄식", "미괄식"] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setImagePlacement(mode)}
+              style={{
+                padding: "6px 16px",
+                borderRadius: 8,
+                border: "1.5px solid",
+                borderColor: imagePlacement === mode ? "#7c3aed" : "#d1d5db",
+                background: imagePlacement === mode ? "#ede9fe" : "#fff",
+                color: imagePlacement === mode ? "#7c3aed" : "#6b7280",
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              {mode === "두괄식" ? "두괄식 (이미지→텍스트)" : "미괄식 (텍스트→이미지)"}
+            </button>
+          ))}
+        </div>
         <RunButton
           onClick={handleGenerate}
           disabled={step3Status !== "done" || step4Status === "running"}

@@ -119,6 +119,10 @@ def _detect_and_split(img: Image.Image) -> List[Image.Image]:
     If the image is wide (aspect > 1.6) and has a clear vertical seam,
     split it and return [left_half, right_half].
     Otherwise return [img].
+
+    Both halves must be at least 30 % of the original width (and at least
+    150 px) — this prevents false-positive splits on blog-header images
+    where a narrow sidebar column happens to have low pixel variance.
     """
     w, h = img.size
     if w / h < 1.6:
@@ -131,8 +135,9 @@ def _detect_and_split(img: Image.Image) -> List[Image.Image]:
     left  = img.crop((0, 0, seam, h))
     right = img.crop((seam, 0, w, h))
 
-    # Reject halves that are too narrow
-    if left.width < 80 or right.width < 80:
+    # Reject if either half is too narrow relative to the original
+    min_half_w = max(150, int(w * 0.30))
+    if left.width < min_half_w or right.width < min_half_w:
         return [img]
 
     return [left, right]

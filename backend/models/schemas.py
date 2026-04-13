@@ -89,6 +89,7 @@ class ScrapeResponse(BaseModel):
 class GenerateRequest(BaseModel):
     items: List[CelebItem]
     openai_api_key: str = ""
+    image_placement: str = "두괄식"   # "두괄식" (image→text) | "미괄식" (text→image)
 
 
 class GenerateResponse(BaseModel):
@@ -122,8 +123,9 @@ class ShortenResponse(BaseModel):
 # ── Naver blog writer ─────────────────────────────────────────────────────────
 
 class BlogElement(BaseModel):
-    type: str       # text | header | image | url | url_text
-    content: Any    # str for text/header/url/url_text; file-path str for image
+    type: str           # text | header | image | url | url_text | divider | callout
+    content: Any        # str for text/header/url/url_text; file-path str for image; style name for divider
+    style: Optional[str] = None  # callout style: quotation_postit|quotation_bubble|quotation_line|etc.
 
 
 class NaverWriteRequest(BaseModel):
@@ -177,3 +179,4 @@ class AppSettings(BaseModel):
     pipeline_max_posts: int = 10
     pipeline_top_celebs: int = 5
     chrome_user_data_dir: str = "C:/Utilities/Blog/chrome-user-data"
+    image_placement: str = "두괄식"   # "두괄식" (image→text) | "미괄식" (text→image)

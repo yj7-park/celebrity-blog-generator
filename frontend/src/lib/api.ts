@@ -57,11 +57,12 @@ export async function scrapePosts(
 
 export async function generatePost(
   items: CelebItem[],
-  apiKey: string
+  apiKey: string,
+  imagePlacement = "두괄식"
 ): Promise<{ celeb: string; blog_post: string }> {
   return apiFetch("/api/pipeline/generate", {
     method: "POST",
-    body: JSON.stringify({ items, openai_api_key: apiKey }),
+    body: JSON.stringify({ items, openai_api_key: apiKey, image_placement: imagePlacement }),
   });
 }
 
