@@ -14,6 +14,7 @@ from routers.scheduler import router as scheduler_router
 from routers.settings import router as settings_router
 from routers.proxy import router as proxy_router
 from routers.db import router as db_router
+from routers.sources import router as sources_router
 import db as _db
 from services import cancel_token as _ct
 
@@ -53,6 +54,7 @@ app.include_router(scheduler_router)
 app.include_router(settings_router)
 app.include_router(proxy_router)
 app.include_router(db_router)
+app.include_router(sources_router)
 
 
 @app.get("/api/health")

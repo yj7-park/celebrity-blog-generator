@@ -166,6 +166,35 @@ class ScheduleJobCreate(BaseModel):
     auto_publish: bool = False
 
 
+# ── Blog source registry ──────────────────────────────────────────────────────
+
+class BlogSource(BaseModel):
+    id: str = ""
+    name: str
+    url: str
+    image_mapping: str = "두괄식"    # "두괄식" (text→image) | "미괄식" (image→text)
+    active: bool = True
+    notes: str = ""
+    created_at: str = ""
+    last_scraped_at: Optional[str] = None
+
+
+class BlogSourceCreate(BaseModel):
+    name: str
+    url: str
+    image_mapping: str = "두괄식"
+    active: bool = True
+    notes: str = ""
+
+
+class BlogSourceUpdate(BaseModel):
+    name: Optional[str] = None
+    url: Optional[str] = None
+    image_mapping: Optional[str] = None
+    active: Optional[bool] = None
+    notes: Optional[str] = None
+
+
 # ── Image analysis ────────────────────────────────────────────────────────────
 
 class WatermarkRegion(BaseModel):

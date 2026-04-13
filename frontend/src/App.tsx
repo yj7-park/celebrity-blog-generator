@@ -8,6 +8,7 @@ import SchedulerPage from "./pages/SchedulerPage";
 import SettingsPage from "./pages/SettingsPage";
 import HistoryPage from "./pages/HistoryPage";
 import CollectedDataPage from "./pages/CollectedDataPage";
+import SourcesPage from "./pages/SourcesPage";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/scheduler" element={<SchedulerPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/data" element={<CollectedDataPage />} />
+          <Route path="/sources" element={<SourcesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

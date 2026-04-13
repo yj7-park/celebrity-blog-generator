@@ -301,9 +301,18 @@ def _scrape_and_extract_cached(target_posts, max_posts: int, client) -> tuple:
             continue
 
         # Cache miss — run LLM extraction
+        # Look up per-source image_mapping setting
+        source = _db.get_source_for_post_url(post.url)
+        src_image_mapping = source["image_mapping"] if source else "두괄식"
+        if source:
+            try:
+                _db.touch_source_scraped(source["id"])
+            except Exception:
+                pass
+
         from services.extractor import extract_from_post as _extract_one
         try:
-            post_items = _extract_one(scraped, client)
+            post_items = _extract_one(scraped, client, src_image_mapping)
         except Exception:
             post_items = []
 

@@ -97,6 +97,19 @@ export interface CheckRunResponse {
   run: PipelineRun | null;
 }
 
+// ── Blog source registry ───────────────────────────────────────────────────
+
+export interface BlogSource {
+  id: string;
+  name: string;
+  url: string;
+  image_mapping: string;     // "두괄식" | "미괄식"
+  active: boolean;
+  notes: string;
+  created_at: string;
+  last_scraped_at: string | null;
+}
+
 // ── Image analysis ─────────────────────────────────────────────────────────
 
 export interface WatermarkRegion {

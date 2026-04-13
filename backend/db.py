@@ -17,6 +17,18 @@ from typing import Optional
 DB_PATH = os.path.join(os.path.dirname(__file__), "pipeline_runs.db")
 
 _DDL = """
+-- ── 0. Blog source registry ───────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS blog_sources (
+    id               TEXT PRIMARY KEY,
+    name             TEXT NOT NULL DEFAULT '',
+    url              TEXT NOT NULL UNIQUE,
+    image_mapping    TEXT NOT NULL DEFAULT '두괄식',
+    active           INTEGER NOT NULL DEFAULT 1,
+    notes            TEXT NOT NULL DEFAULT '',
+    created_at       TEXT NOT NULL,
+    last_scraped_at  TEXT
+);
+
 -- ── 1. Scraped-post cache ─────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS scraped_posts (
     id           TEXT PRIMARY KEY,
@@ -80,13 +92,14 @@ CREATE INDEX IF NOT EXISTS idx_celeb_key
 def init_db() -> None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.executescript(_DDL)
-        # Migrate: add elements_json to existing pipeline_runs if missing
-        try:
-            conn.execute(
-                "ALTER TABLE pipeline_runs ADD COLUMN elements_json TEXT NOT NULL DEFAULT '[]'"
-            )
-        except Exception:
-            pass
+        # Migrations — each ALTER TABLE is idempotent (silently ignored if column exists)
+        for stmt in [
+            "ALTER TABLE pipeline_runs ADD COLUMN elements_json TEXT NOT NULL DEFAULT '[]'",
+        ]:
+            try:
+                conn.execute(stmt)
+            except Exception:
+                pass
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -106,6 +119,95 @@ def content_hash(data) -> str:
     else:
         raw = json.dumps(data, ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+# ── Blog source registry ─────────────────────────────────────────────────────
+
+def _normalise_source_url(url: str) -> str:
+    """Strip trailing slash and normalise mobile → desktop for Naver."""
+    url = url.rstrip("/")
+    url = url.replace("://m.blog.naver.com/", "://blog.naver.com/")
+    return url
+
+
+def list_sources() -> list[dict]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT * FROM blog_sources ORDER BY created_at DESC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_source(source_id: str) -> Optional[dict]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT * FROM blog_sources WHERE id=?", (source_id,)
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def create_source(name: str, url: str, image_mapping: str = "두괄식",
+                  active: bool = True, notes: str = "") -> dict:
+    sid = uuid.uuid4().hex[:12]
+    url = _normalise_source_url(url)
+    now = _now()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "INSERT INTO blog_sources "
+            "(id, name, url, image_mapping, active, notes, created_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (sid, name, url, image_mapping, 1 if active else 0, notes, now),
+        )
+    return {"id": sid, "name": name, "url": url, "image_mapping": image_mapping,
+            "active": active, "notes": notes, "created_at": now, "last_scraped_at": None}
+
+
+def update_source(source_id: str, **fields) -> bool:
+    if "url" in fields:
+        fields["url"] = _normalise_source_url(fields["url"])
+    if "active" in fields:
+        fields["active"] = 1 if fields["active"] else 0
+    if not fields:
+        return False
+    set_clause = ", ".join(f"{k}=?" for k in fields)
+    values = list(fields.values()) + [source_id]
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.execute(
+            f"UPDATE blog_sources SET {set_clause} WHERE id=?", values
+        )
+    return cur.rowcount > 0
+
+
+def delete_source(source_id: str) -> bool:
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.execute("DELETE FROM blog_sources WHERE id=?", (source_id,))
+    return cur.rowcount > 0
+
+
+def touch_source_scraped(source_id: str) -> None:
+    """Update last_scraped_at to now."""
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "UPDATE blog_sources SET last_scraped_at=? WHERE id=?",
+            (_now(), source_id),
+        )
+
+
+def get_source_for_post_url(post_url: str) -> Optional[dict]:
+    """Return the blog_sources row whose url is a prefix of post_url, or None."""
+    normalised = _normalise_source_url(post_url)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT * FROM blog_sources WHERE active=1"
+        ).fetchall()
+    for row in rows:
+        src_url = row["url"].rstrip("/")
+        if normalised.startswith(src_url):
+            return dict(row)
+    return None
 
 
 # ── Scraped-post cache ────────────────────────────────────────────────────────

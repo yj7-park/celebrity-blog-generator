@@ -6,6 +6,7 @@ import type {
   CoupangProduct,
   ScheduleJob,
   AppSettings,
+  BlogSource,
   PipelineEvent,
   PipelineRun,
   CheckRunResponse,
@@ -275,6 +276,28 @@ export async function listScrapedPosts(): Promise<{ posts: ScrapedPostRecord[] }
 
 export async function deleteScrapedPost(id: string): Promise<void> {
   await apiFetch(`/api/db/scraped-posts/${id}`, { method: "DELETE" });
+}
+
+// --- Blog Sources ---
+export async function listSources(): Promise<BlogSource[]> {
+  return apiFetch("/api/sources");
+}
+
+export async function createSource(
+  body: Omit<BlogSource, "id" | "created_at" | "last_scraped_at">
+): Promise<BlogSource> {
+  return apiFetch("/api/sources", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function updateSource(
+  id: string,
+  body: Partial<Omit<BlogSource, "id" | "created_at" | "last_scraped_at">>
+): Promise<BlogSource> {
+  return apiFetch(`/api/sources/${id}`, { method: "PUT", body: JSON.stringify(body) });
+}
+
+export async function deleteSource(id: string): Promise<void> {
+  await apiFetch(`/api/sources/${id}`, { method: "DELETE" });
 }
 
 // --- SSE Pipeline ---

@@ -8,12 +8,14 @@ import {
   Clock,
   History,
   Database,
+  Rss,
   Settings,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, label: "대시보드" },
   { to: "/pipeline", icon: Play, label: "파이프라인" },
+  { to: "/sources", icon: Rss, label: "소스 관리" },
   { to: "/coupang", icon: ShoppingBag, label: "쿠팡 상품" },
   { to: "/blog-writer", icon: PenLine, label: "블로그 작성" },
   { to: "/scheduler", icon: Clock, label: "스케줄러" },
@@ -25,6 +27,7 @@ const NAV_ITEMS = [
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "대시보드",
   "/pipeline": "파이프라인",
+  "/sources": "소스 관리",
   "/coupang": "쿠팡 상품",
   "/blog-writer": "블로그 작성",
   "/scheduler": "스케줄러",
