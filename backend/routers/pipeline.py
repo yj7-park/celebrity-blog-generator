@@ -107,7 +107,7 @@ async def api_generate(req: GenerateRequest):
     client = _get_client(req.openai_api_key)
 
     enriched = await _run(_enrich_with_coupang, req.items, settings)
-    enriched = await _run(process_items_images, enriched)
+    enriched = await _run(process_items_images, enriched, settings.openai_api_key)
     placement = req.image_placement or settings.image_placement or "두괄식"
     result   = await _run(generate_blog_elements, enriched, client, placement)
     celeb    = enriched[0].celeb if enriched else ""
@@ -126,8 +126,9 @@ async def api_process_image(req: ProcessImageRequest):
     remove a detected watermark before the standard pipeline.
     """
     try:
+        settings = load_settings()
         wm_dict = req.watermark_region.model_dump() if req.watermark_region else None
-        local_path = await _run(process_image, req.url, wm_dict)
+        local_path = await _run(process_image, req.url, wm_dict, settings.openai_api_key)
     except Exception as e:
         import traceback, logging
         logging.error("process-image error: %s\n%s", e, traceback.format_exc())
@@ -410,7 +411,7 @@ async def run_pipeline(
 
             yield _sse("progress", "이미지 가공 중...", 58)
             _ct.pipeline.check()
-            final_items = await _run(process_items_images, final_items)
+            final_items = await _run(process_items_images, final_items, settings.openai_api_key)
 
             yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 61,
                        data={"items": [it.model_dump() for it in final_items]})

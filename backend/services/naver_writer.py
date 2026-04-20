@@ -106,8 +106,12 @@ class NaverBlogWriter:
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-gpu")
         opts.add_argument("--disable-dev-shm-usage")
-        opts.add_argument("--start-maximized")
         opts.add_argument(f"--user-data-dir={self.chrome_user_data_dir}")
+        if os.environ.get("CHROME_HEADLESS"):
+            opts.add_argument("--headless=new")
+            opts.add_argument("--window-size=1920,1080")
+        else:
+            opts.add_argument("--start-maximized")
         self.driver = webdriver.Chrome(service=Service(), options=opts)
         # --start-maximized is unreliable on some Windows setups;
         # maximize_window() uses the OS API and is always reliable.
@@ -310,16 +314,54 @@ class NaverBlogWriter:
         self._delay(0.1, 0.2)
 
     def _insert_image(self, image_path: str):
-        self._copy_image_to_clipboard(image_path)
-        # win32clipboard can steal window focus — refocus via JS (do NOT call
-        # switch_to.window() here as it would reset the mainFrame context)
+        """SE One 이미지 툴바 버튼 → 파일 input으로 삽입."""
+        abs_path = str(Path(image_path).resolve())
+
+        # 이미지 툴바 버튼 클릭 (+ 메뉴 없이 상단 툴바에서 직접)
         try:
-            self.driver.execute_script("window.focus();")
+            img_btn = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, ".se-image-toolbar-button"))
+            )
+            self.driver.execute_script("arguments[0].click();", img_btn)
+            self._delay(0.8, 1.2)
+        except Exception as _e:
+            print(f"[WRITER] image toolbar btn failed: {_e!r}")
+            return
+
+        # 파일 선택 input에 경로 전송 (dialog가 열리지 않아도 hidden input이 존재)
+        _uploaded = False
+        for _sel in [
+            "input[type='file'][accept*='image']",
+            "input[type='file']",
+        ]:
+            try:
+                file_input = WebDriverWait(self.driver, 4).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, _sel))
+                )
+                file_input.send_keys(abs_path)
+                self._delay(2.5, 3.5)
+                _uploaded = True
+                break
+            except Exception:
+                continue
+
+        if not _uploaded:
+            print(f"[WRITER] image file input not found, skipping: {abs_path}")
+            ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            self._delay(0.3, 0.5)
+            return
+
+        # 업로드 완료 후 확인 버튼 (있는 경우)
+        try:
+            confirm = WebDriverWait(self.driver, 4).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, ".se-popup-button-confirm"))
+            )
+            self.driver.execute_script("arguments[0].click();", confirm)
+            self._delay(1.0, 1.5)
         except Exception:
-            pass
-        self._delay(0.3, 0.5)
-        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("v").key_up(Keys.CONTROL).perform()
-        self._delay(3, 4)
+            pass  # 확인 버튼 없으면 자동 삽입됨
+
+        self._delay(1.0, 1.5)
         # 이미지 삽입 후 중앙 정렬
         self._apply_text_align("center")
 
@@ -487,7 +529,14 @@ class NaverBlogWriter:
         self._delay(0.15, 0.25)
 
     def _insert_url_text(self, url: str):
-        """구매 링크 버튼 삽입 — 일반 본문에 중앙 정렬 굵은 텍스트 + 링크."""
+        """구매 링크 버튼 삽입 — 일반 본문에 중앙 정렬 굵은 텍스트 + 링크.
+
+        링크 적용 전략:
+        1. JS로 텍스트 선택 + mouseup 디스패치로 SE One 플로팅 툴바 트리거
+        2. setTimeout 내에서 selection 복원 후 링크 버튼 클릭
+           (선택 영역이 유실되기 전에 복원하여 링크가 기존 텍스트에 적용되도록)
+        3. 실패 시 단순 텍스트로 URL 노출 (fallback)
+        """
         short_url = self.shorten_url(url)
 
         # 새 단락 시작
@@ -498,68 +547,71 @@ class NaverBlogWriter:
         self._apply_text_align("center")
         self._delay(0.2, 0.3)
 
-        # 굵게
+        # 굵게 on
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("B").key_up(Keys.CONTROL).perform()
         self._delay(0.15, 0.25)
 
         # 버튼 텍스트 입력
         ActionChains(self.driver).send_keys("🛒 최저가 구매하러 가기").perform()
-        self._delay(0.4, 0.6)
+        self._delay(0.5, 0.7)
 
-        # 텍스트 전체 선택 (Home → Shift+End)
-        ActionChains(self.driver).send_keys(Keys.HOME).perform()
-        self._delay(0.15, 0.25)
-        ActionChains(self.driver).key_down(Keys.SHIFT).send_keys(Keys.END).key_up(Keys.SHIFT).perform()
-        self._delay(0.4, 0.6)
-
-        # 링크 적용 — Ctrl+K 단축키 우선 시도, 실패 시 툴바 버튼
+        # ── JS selection + setTimeout으로 selection 유지하며 링크 버튼 클릭 ──────
+        # 플로팅 툴바가 렌더된 뒤 selection을 복원하고 클릭 → 기존 텍스트에 링크 적용
         _link_ok = False
         try:
-            ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("k").key_up(Keys.CONTROL).perform()
-            self._delay(0.6, 0.9)
+            self.driver.execute_script("""
+                var paras = document.querySelectorAll(
+                    '.se-component.se-text .se-text-paragraph'
+                );
+                if (paras.length > 0) {
+                    var last = paras[paras.length - 1];
+                    last.focus();
+                    var range = document.createRange();
+                    range.selectNodeContents(last);
+                    var sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    last.dispatchEvent(
+                        new MouseEvent('mouseup', {bubbles: true, cancelable: true})
+                    );
+                    // 플로팅 툴바 렌더 후 selection 복원 + 링크 버튼 클릭
+                    setTimeout(function() {
+                        var linkBtn = document.querySelector('.se-link-toolbar-button');
+                        if (linkBtn) {
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                            linkBtn.click();
+                        }
+                    }, 600);
+                }
+            """)
+            # setTimeout(600ms) + 링크 다이얼로그 렌더 대기
+            self._delay(1.4, 1.8)
+
+            # 링크 입력창에 URL 직접 입력 (ActionChains 아닌 element.send_keys 사용)
             link_input = WebDriverWait(self.driver, 5).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "se-custom-layer-link-input"))
             )
-            link_input.click()
+            link_input.clear()
+            link_input.send_keys(short_url)
             self._delay(0.2, 0.3)
-            ActionChains(self.driver).send_keys(short_url, Keys.ENTER).perform()
+            link_input.send_keys(Keys.ENTER)
             self._delay(0.6, 0.9)
             _link_ok = True
-            print(f"[WRITER] url_text link applied via Ctrl+K")
-        except Exception as _ke:
-            print(f"[WRITER] url_text Ctrl+K failed: {_ke!r}, trying toolbar button")
+            print(f"[WRITER] url_text link applied via JS selection+restore")
+        except Exception as _e:
+            print(f"[WRITER] url_text link apply failed: {_e!r}")
             ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
             self._delay(0.3, 0.5)
-            # 텍스트 다시 선택
-            ActionChains(self.driver).send_keys(Keys.HOME).perform()
-            self._delay(0.15, 0.25)
-            ActionChains(self.driver).key_down(Keys.SHIFT).send_keys(Keys.END).key_up(Keys.SHIFT).perform()
-            self._delay(0.3, 0.5)
-            try:
-                link_btn = WebDriverWait(self.driver, 6).until(
-                    EC.element_to_be_clickable((By.CLASS_NAME, "se-link-toolbar-button"))
-                )
-                self.driver.execute_script("arguments[0].click();", link_btn)
-                self._delay(0.5, 0.8)
-                link_input = WebDriverWait(self.driver, 6).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "se-custom-layer-link-input"))
-                )
-                link_input.click()
-                self._delay(0.2, 0.3)
-                ActionChains(self.driver).send_keys(short_url, Keys.ENTER).perform()
-                self._delay(0.6, 0.9)
-                _link_ok = True
-                print(f"[WRITER] url_text link applied via toolbar")
-            except Exception as _le:
-                print(f"[WRITER] url_text link apply failed: {_le!r}")
-                ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
-                self._delay(0.3, 0.5)
 
         # 왼쪽 정렬 복원, 굵기 해제
         ActionChains(self.driver).send_keys(Keys.END).perform()
         self._delay(0.15, 0.25)
         self._apply_text_align("left")
         ActionChains(self.driver).key_down(Keys.CONTROL).send_keys("B").key_up(Keys.CONTROL).perform()
+        self._delay(0.2, 0.3)
+        # 다음 element가 새 단락에서 시작하도록 엔터
+        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
         self._delay(0.2, 0.3)
 
     # ── Main write method ─────────────────────────────────────────────────────

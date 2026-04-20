@@ -9,6 +9,8 @@ import {
   getSettings,
   cancelPipeline,
   cancelNaver,
+  processImage,
+  processImageWithWatermark,
 } from "../lib/api";
 import type {
   CelebItem,
@@ -16,6 +18,7 @@ import type {
   NaverBlogElement,
   PostItem,
   PipelineRun,
+  WatermarkRegion,
 } from "../lib/types";
 import ItemsPanel from "../components/ItemsPanel";
 import TrendingPanel from "../components/TrendingPanel";
@@ -281,6 +284,26 @@ export default function DashboardPage() {
                 if (i >= 0) { const n = [...prev]; n[i] = a; return n; }
                 return [...prev, a];
               });
+              // 분석 완료 즉시 best 이미지로 items 자동 업데이트
+              if (a.best_url) {
+                const bestCand = a.candidates.find(c => c.url === a.best_url);
+                const wmRegion = bestCand?.watermark_region ?? null;
+                processImageWithWatermark(a.best_url, wmRegion)
+                  .then(res => {
+                    if (!res.processed_path) return;
+                    setItems(prev =>
+                      prev.map((item, i) => {
+                        if (i !== a.item_index) return item;
+                        return {
+                          ...item,
+                          image_urls: [a.best_url, ...(item.image_urls ?? []).filter(u => u !== a.best_url)],
+                          processed_image_path: res.processed_path,
+                        };
+                      })
+                    );
+                  })
+                  .catch(() => {});
+              }
             }
           }
 
@@ -345,6 +368,34 @@ export default function DashboardPage() {
     setS4(s => s === "running" ? "idle" : s);
     setS5(s => s === "running" ? "idle" : s);
     setS6(s => s === "running" ? "idle" : s);
+  };
+
+  const handleUpdateItemImage = async (index: number, newImageUrl: string) => {
+    try {
+      const res = await processImage(newImageUrl);
+      setItems(prev =>
+        prev.map((item, i) =>
+          i === index
+            ? {
+                ...item,
+                image_urls: [newImageUrl, ...(item.image_urls ?? []).filter(u => u !== newImageUrl)],
+                processed_image_path: res.processed_path,
+              }
+            : item
+        )
+      );
+    } catch { /* ignore */ }
+  };
+
+  const handleRemoveWatermark = async (index: number, url: string, region: WatermarkRegion) => {
+    try {
+      const res = await processImageWithWatermark(url, region);
+      setItems(prev =>
+        prev.map((item, i) =>
+          i === index ? { ...item, processed_image_path: res.processed_path } : item
+        )
+      );
+    } catch { /* ignore */ }
   };
 
   const handleExportJSON = () => {
@@ -588,7 +639,12 @@ export default function DashboardPage() {
               <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 10 }}>
                 총 {items.length}개 아이템 추출됨
               </div>
-              <ItemsPanel items={items} analyses={analyses} />
+              <ItemsPanel
+                items={items}
+                analyses={analyses}
+                onUpdateItem={handleUpdateItemImage}
+                onRemoveWatermark={handleRemoveWatermark}
+              />
             </div>
           )}
         </div>

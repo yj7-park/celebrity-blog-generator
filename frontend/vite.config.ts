@@ -6,9 +6,10 @@ export default defineConfig({
   // GitHub Pages serves from /celebrity-blog-generator/ in CI
   base: process.env.GITHUB_ACTIONS ? "/celebrity-blog-generator/" : "/",
   server: {
+    host: true,
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        target: process.env.BACKEND_URL ?? "http://localhost:8000",
         changeOrigin: true,
       },
     },

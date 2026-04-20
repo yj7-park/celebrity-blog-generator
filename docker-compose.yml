@@ -1,0 +1,32 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - TZ=Asia/Seoul
+      - CHROME_HEADLESS=1
+    shm_size: "2gb"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Isolate node_modules inside the container so host never overwrites them
+      - /app/node_modules
+    environment:
+      - BACKEND_URL=http://backend:8000
+      # WSL2/Windows 파일 변경 감지를 위한 폴링 활성화
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+    restart: unless-stopped

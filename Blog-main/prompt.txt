@@ -1,8 +1,0 @@
-https://www.coupang.com/vp/products/8380374581
-
-위 URL로부터 아래 내용을 찾아서 분리해줘.
-
-1. 제품명
-2. 모델명
-3. 브랜드
-4. alt="thumb image"인 img

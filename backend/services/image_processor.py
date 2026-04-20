@@ -5,11 +5,9 @@ Pipeline per image:
 1. Download the URL
 2. Composite detection: wide images (aspect > 1.6) with a clear vertical seam
    are split at the seam and the first half is used
-3. Background trim: solid-colour borders (white / near-black) are removed
-4. Edge crop: strip outermost N pixels (removes corner watermarks)
-5. Add modern minimal signature bar at the bottom
-6. Add thin outer border / matte
-7. Save as JPEG
+3. Watermark removal (optional, only when region provided)
+4. Add modern minimal signature bar at the bottom
+5. Save as JPEG
 
 Returns a local file path (saved to TEMP_DIR) or None on failure.
 """
@@ -26,9 +24,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 TEMP_DIR = Path(tempfile.gettempdir()) / "cbg_images"
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
-
-# Edge pixels to crop on each side (removes corner/edge watermarks)
-EDGE_CROP_PX = 14
 
 # ── Signature design ──────────────────────────────────────────────────────────
 SIGNATURE_TEXT       = "celeb.picks"
@@ -143,159 +138,85 @@ def _detect_and_split(img: Image.Image) -> List[Image.Image]:
     return [left, right]
 
 
-# ── Background trimming ───────────────────────────────────────────────────────
+# ── Watermark removal (DALL-E 2 inpainting) ─────────────────────────────────
 
-def _trim_background(img: Image.Image, threshold: int = 18) -> Image.Image:
+def _remove_watermark(img: Image.Image, region: dict, api_key: str = "") -> Image.Image:
     """
-    Remove solid-colour borders/background. Only acts when corner pixels are
-    near-white (>220) or near-black (<35) — avoids cropping actual content.
-    """
-    w, h = img.size
-    corners = [
-        img.getpixel((0, 0)),
-        img.getpixel((w - 1, 0)),
-        img.getpixel((0, h - 1)),
-        img.getpixel((w - 1, h - 1)),
-    ]
-    avg = tuple(sum(c[i] for c in corners) // 4 for i in range(3))
+    Inpaint the watermark region using OpenAI DALL-E 2 images.edit.
 
-    is_white = all(v > 220 for v in avg)
-    is_dark  = all(v < 35  for v in avg)
-    if not (is_white or is_dark):
+    Sends the full image + a mask (transparent = fill) to DALL-E 2 and pastes
+    the inpainted patch back onto the original at full resolution.
+
+    Falls back to returning the unmodified image if api_key is missing or the
+    API call fails.
+    """
+    if not api_key:
         return img
 
-    bg = avg
-
-    def _is_bg_row(y: int) -> bool:
-        step = max(1, w // 25)
-        return all(abs(img.getpixel((x, y))[i] - bg[i]) <= threshold
-                   for x in range(0, w, step) for i in range(3))
-
-    def _is_bg_col(x: int) -> bool:
-        step = max(1, h // 25)
-        return all(abs(img.getpixel((x, y))[i] - bg[i]) <= threshold
-                   for y in range(0, h, step) for i in range(3))
-
-    top    = 0
-    while top    < h // 3 and _is_bg_row(top):   top    += 1
-    bottom = h - 1
-    while bottom > 2 * h // 3 and _is_bg_row(bottom): bottom -= 1
-    left   = 0
-    while left   < w // 3 and _is_bg_col(left):  left   += 1
-    right  = w - 1
-    while right  > 2 * w // 3 and _is_bg_col(right):  right  -= 1
-
-    # Only apply if we found meaningful borders (≥ 5px)
-    if top < 5 and bottom > h - 6 and left < 5 and right > w - 6:
-        return img
-
-    pad = 2
-    return img.crop((
-        max(0, left  - pad),
-        max(0, top   - pad),
-        min(w, right + pad + 1),
-        min(h, bottom + pad + 1),
-    ))
-
-
-# ── Watermark removal ────────────────────────────────────────────────────────
-
-def _remove_watermark(img: Image.Image, region: dict) -> Image.Image:
-    """
-    Reduce watermark visibility in a detected region.
-
-    Strategy:
-    1. Expand region slightly for clean edges
-    2. Apply strong MedianFilter to remove text artifacts
-    3. Blend result with surrounding pixel average for natural look
-    4. Soft-edge the patch boundary with GaussianBlur on a mask
-
-    region: {x, y, w, h} as 0-1 fractions of image dimensions.
-    Not perfect — effectively reduces text/logo watermarks; logo inpainting
-    requires external ML APIs (LaMa / ClipDrop).
-    """
-    from PIL import ImageDraw, ImageChops
+    import base64
+    from openai import OpenAI
 
     iw, ih = img.size
-    x1 = max(0, int(region["x"] * iw) - 4)
-    y1 = max(0, int(region["y"] * ih) - 4)
-    x2 = min(iw, int((region["x"] + region["w"]) * iw) + 4)
-    y2 = min(ih, int((region["y"] + region["h"]) * ih) + 4)
 
-    if x2 <= x1 or y2 <= y1 or (x2 - x1) < 4 or (y2 - y1) < 4:
+    # Pixel coords of watermark region (with small padding)
+    pad = 6
+    x1 = max(0,  int(region["x"] * iw) - pad)
+    y1 = max(0,  int(region["y"] * ih) - pad)
+    x2 = min(iw, int((region["x"] + region["w"]) * iw) + pad)
+    y2 = min(ih, int((region["y"] + region["h"]) * ih) + pad)
+
+    if x2 <= x1 or y2 <= y1:
         return img
 
-    rw, rh = x2 - x1, y2 - y1
+    # DALL-E 2 requires square PNG at 256 / 512 / 1024 px
+    side = max(iw, ih)
+    target = 256 if side <= 256 else (512 if side <= 512 else 1024)
 
-    # Sample surrounding border pixels (12px ring outside the box)
-    ring_px = 12
-    sx1, sy1 = max(0, x1 - ring_px), max(0, y1 - ring_px)
-    sx2, sy2 = min(iw, x2 + ring_px), min(ih, y2 + ring_px)
+    scale_x, scale_y = target / iw, target / ih
+    mx1 = int(x1 * scale_x)
+    my1 = int(y1 * scale_y)
+    mx2 = min(target, int(x2 * scale_x))
+    my2 = min(target, int(y2 * scale_y))
 
-    ring_pixels: list[tuple] = []
-    for bx in range(sx1, sx2, 2):
-        for by in range(sy1, sy2, 2):
-            if not (x1 <= bx < x2 and y1 <= by < y2):
-                ring_pixels.append(img.getpixel((bx, by)))
+    # Resize image to square RGBA
+    img_sq = img.convert("RGBA").resize((target, target), Image.LANCZOS)
 
-    # Compute surrounding average colour
-    if ring_pixels:
-        avg_r = sum(p[0] for p in ring_pixels) // len(ring_pixels)
-        avg_g = sum(p[1] for p in ring_pixels) // len(ring_pixels)
-        avg_b = sum(p[2] for p in ring_pixels) // len(ring_pixels)
-        fill_color = (avg_r, avg_g, avg_b)
-    else:
-        fill_color = (255, 255, 255)
+    # Mask: fully opaque everywhere except watermark region (transparent = fill)
+    mask = Image.new("RGBA", (target, target), (0, 0, 0, 255))
+    mask.paste(Image.new("RGBA", (mx2 - mx1, my2 - my1), (0, 0, 0, 0)), (mx1, my1))
 
-    # ── Build patch ───────────────────────────────────────────────────────────
-    patch = img.crop((x1, y1, x2, y2)).convert("RGB")
+    img_buf = io.BytesIO()
+    img_sq.save(img_buf, format="PNG")
+    img_buf.seek(0)
 
-    # Step 1: heavy median to destroy text pixels
-    patch_filtered = patch.filter(ImageFilter.MedianFilter(size=9))
-    patch_filtered = patch_filtered.filter(ImageFilter.MedianFilter(size=7))
+    mask_buf = io.BytesIO()
+    mask.save(mask_buf, format="PNG")
+    mask_buf.seek(0)
 
-    # Step 2: blend toward surrounding average (reduces colour cast from text)
-    avg_layer = Image.new("RGB", (rw, rh), fill_color)
-    patch_blended = Image.blend(patch_filtered, avg_layer, alpha=0.35)
-
-    # Step 3: light Gaussian for smoothness
-    patch_blended = patch_blended.filter(ImageFilter.GaussianBlur(radius=2))
-
-    # Step 4: paste patch, then soft-edge the boundary
-    result = img.copy()
-    result.paste(patch_blended, (x1, y1))
-
-    # Feather the boundary by blurring a narrow band around the patch
-    feather = 6
-    fx1, fy1 = max(0, x1 - feather), max(0, y1 - feather)
-    fx2, fy2 = min(iw, x2 + feather), min(ih, y2 + feather)
-    band = result.crop((fx1, fy1, fx2, fy2))
-    band_blur = band.filter(ImageFilter.GaussianBlur(radius=feather // 2))
-
-    # Only apply blur to the feather ring, not the inner patch
-    mask = Image.new("L", (fx2 - fx1, fy2 - fy1), 0)
-    draw = ImageDraw.Draw(mask)
-    # Fill the outer ring (white=use blurred version), inner patch (black=keep sharp)
-    draw.rectangle([0, 0, fx2 - fx1, fy2 - fy1], fill=255)
-    inner_x1 = x1 - fx1 + feather // 2
-    inner_y1 = y1 - fy1 + feather // 2
-    inner_x2 = inner_x1 + rw - feather
-    inner_y2 = inner_y1 + rh - feather
-    draw.rectangle([inner_x1, inner_y1, inner_x2, inner_y2], fill=0)
-
-    band_composite = Image.composite(band_blur, band, mask)
-    result.paste(band_composite, (fx1, fy1))
-
-    return result
-
-
-# ── Edge crop ─────────────────────────────────────────────────────────────────
-
-def _edge_crop(img: Image.Image, px: int = EDGE_CROP_PX) -> Image.Image:
-    w, h = img.size
-    if w <= px * 4 or h <= px * 4:
+    try:
+        client = OpenAI(api_key=api_key)
+        response = client.images.edit(
+            model="dall-e-2",
+            image=img_buf,
+            mask=mask_buf,
+            prompt="seamless background, no watermark, no text overlay, natural texture",
+            n=1,
+            size=f"{target}x{target}",
+            response_format="b64_json",
+        )
+        result_sq = Image.open(io.BytesIO(base64.b64decode(response.data[0].b64_json))).convert("RGB")
+    except Exception:
+        import logging, traceback
+        logging.warning("DALL-E watermark removal failed: %s", traceback.format_exc())
         return img
-    return img.crop((px, px, w - px, h - px))
+
+    # Paste only the inpainted region back onto the original-size image
+    # (avoids degrading the rest of the image through resize round-trips)
+    result_sq_full = result_sq.resize((iw, ih), Image.LANCZOS)
+    out = img.copy()
+    patch = result_sq_full.crop((x1, y1, x2, y2))
+    out.paste(patch, (x1, y1))
+    return out
 
 
 # ── Signature bar (modern minimal) ───────────────────────────────────────────
@@ -352,35 +273,32 @@ def _add_border(img: Image.Image, px: int = BORDER_PX,
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def process_image(url: str, watermark_region: Optional[dict] = None) -> Optional[str]:
+def process_image(
+    url: str,
+    watermark_region: Optional[dict] = None,
+    openai_api_key: str = "",
+) -> Optional[str]:
     """
-    Full pipeline: download → split composite → trim bg → watermark removal
-                   → edge crop → signature → save JPEG.
+    Full pipeline: download → split composite → watermark removal → signature → save JPEG.
 
     watermark_region: optional {x, y, w, h} as 0-1 fractions (from image_analyzer).
-    For composite images (wide, clear seam) the first (left) half is used.
-    Returns local file path on success, None on failure.
+    openai_api_key: used for DALL-E 2 inpainting; skips watermark removal if empty.
     """
     try:
         img = _download(url)
         if img is None:
             return None
 
-        # Composite detection: use first half if split
         parts = _detect_and_split(img)
         img = parts[0]
 
-        img = _trim_background(img)
-
-        # Watermark removal (before edge crop so coordinates stay valid)
         if watermark_region and watermark_region.get("w", 0) > 0:
-            img = _remove_watermark(img, watermark_region)
+            img = _remove_watermark(img, watermark_region, openai_api_key)
 
-        img = _edge_crop(img)
         img = _add_signature(img)
 
-        filename  = _safe_filename(url) + ".jpg"
-        out_path  = TEMP_DIR / filename
+        filename = _safe_filename(url) + ".jpg"
+        out_path = TEMP_DIR / filename
         img.save(str(out_path), "JPEG", quality=88, optimize=True)
         return str(out_path)
     except Exception:
@@ -389,11 +307,10 @@ def process_image(url: str, watermark_region: Optional[dict] = None) -> Optional
         return None
 
 
-def process_items_images(items) -> list:
+def process_items_images(items, openai_api_key: str = "") -> list:
     """
     For each CelebItem without a processed_image_path, process image_urls[0].
     Checks the pipeline cancel token between items — exits early if cancelled.
-    Returns the updated list (may be partial if cancelled).
     """
     from services.cancel_token import pipeline as _pipeline_cancel
 
@@ -401,7 +318,7 @@ def process_items_images(items) -> list:
     for item in items:
         _pipeline_cancel.check()
         if item.image_urls and not item.processed_image_path:
-            local_path = process_image(item.image_urls[0])
+            local_path = process_image(item.image_urls[0], openai_api_key=openai_api_key)
             if local_path:
                 item = item.model_copy(update={"processed_image_path": local_path})
         result.append(item)

@@ -11,6 +11,11 @@ RUN npm run build
 # ── Stage 2: Python backend + serve frontend ─────────────────────
 FROM python:3.11-slim
 
+# Install Chromium for Selenium (Naver blog writer)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
 # HuggingFace Spaces runs as non-root user 1000
 RUN useradd -m -u 1000 appuser
 
@@ -28,6 +33,9 @@ COPY --from=frontend-builder /build/frontend/dist ./static
 
 RUN chown -R appuser:appuser /app
 USER appuser
+
+# Enable headless Chrome by default in containerised environments
+ENV CHROME_HEADLESS=1
 
 EXPOSE 7860
 
