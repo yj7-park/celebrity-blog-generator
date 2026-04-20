@@ -237,3 +237,4 @@ hf_token=hf_...       # HuggingFace (미사용)
 ```python
 ("새블로그ID", "카테고리폴더명")
 ```
+ 

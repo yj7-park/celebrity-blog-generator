@@ -1,4 +1,5 @@
 Blog-main/
+.claude/
 node_modules/
 frontend/dist/
 backend/static/
@@ -15,5 +16,7 @@ debug-screenshots/
 backend/pipeline_runs.db
 pipeline_runs.db
 backend/server.log
+backend/.uvicorn.log
 frontend/server.log
+*.db
 backend/explore_editor.py
