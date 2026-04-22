@@ -73,6 +73,8 @@ export interface AppSettings {
   coupang_domain: string;
   naver_id: string;
   naver_pw: string;
+  naver_client_id: string;
+  naver_client_secret: string;
   pipeline_days: number;
   pipeline_max_posts: number;
   pipeline_top_celebs: number;
@@ -126,7 +128,7 @@ export interface CandidateScore {
   score: number;
   issues: string[];            // "watermark"|"mismatch"|"low_quality"|"cropped"
   explanation: string;
-  watermark_region?: WatermarkRegion | null;
+  watermark_regions?: WatermarkRegion[];
 }
 
 export interface ItemImageAnalysis {
@@ -141,6 +143,14 @@ export interface ItemImageAnalysis {
 export interface NaverBlogElement {
   type: "text" | "header" | "image" | "url" | "url_text" | "video";
   content: string;
+}
+
+export interface SimilarImageSearchResult {
+  processed_path: string | null;
+  similar_urls: string[];
+  blog_urls: string[];
+  new_sources: string[];
+  method: "median" | "fill" | "none";
 }
 
 // SSE Pipeline Events — matches backend _sse() format:
@@ -160,6 +170,7 @@ export interface PipelineEvent {
     blog_post?: string;
     elements?: NaverBlogElement[];
     posts_count?: number;
+    tags?: string[];
     // image analysis events
     analysis?: ItemImageAnalysis;
     analyses?: ItemImageAnalysis[];

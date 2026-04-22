@@ -287,8 +287,8 @@ export default function DashboardPage() {
               // 분석 완료 즉시 best 이미지로 items 자동 업데이트
               if (a.best_url) {
                 const bestCand = a.candidates.find(c => c.url === a.best_url);
-                const wmRegion = bestCand?.watermark_region ?? null;
-                processImageWithWatermark(a.best_url, wmRegion)
+                const wmRegions = bestCand?.watermark_regions ?? [];
+                processImageWithWatermark(a.best_url, wmRegions)
                   .then(res => {
                     if (!res.processed_path) return;
                     setItems(prev =>
@@ -387,9 +387,9 @@ export default function DashboardPage() {
     } catch { /* ignore */ }
   };
 
-  const handleRemoveWatermark = async (index: number, url: string, region: WatermarkRegion) => {
+  const handleRemoveWatermark = async (index: number, url: string, regions: WatermarkRegion[]) => {
     try {
-      const res = await processImageWithWatermark(url, region);
+      const res = await processImageWithWatermark(url, regions);
       setItems(prev =>
         prev.map((item, i) =>
           i === index ? { ...item, processed_image_path: res.processed_path } : item

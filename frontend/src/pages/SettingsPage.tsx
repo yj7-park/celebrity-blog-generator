@@ -31,11 +31,13 @@ const DEFAULT_SETTINGS: AppSettings = {
   coupang_domain: "",
   naver_id: "",
   naver_pw: "",
+  naver_client_id: "",
+  naver_client_secret: "",
   pipeline_days: 2,
   pipeline_max_posts: 10,
   pipeline_top_celebs: 3,
   chrome_user_data_dir: "",
-  image_placement: "두괄식",
+  image_placement: "미괄식",
 };
 
 interface FieldProps {
@@ -193,6 +195,24 @@ export default function SettingsPage() {
             placeholder="네이버 비밀번호"
             value={settings.naver_pw}
             onChange={update("naver_pw")}
+            style={inputStyle}
+          />
+        </Field>
+        <Field label="Naver Client ID" hint="네이버 개발자센터(developers.naver.com)에서 발급 — 블로그 검색 API에 사용됩니다.">
+          <input
+            type="text"
+            placeholder="네이버 Client ID"
+            value={settings.naver_client_id}
+            onChange={update("naver_client_id")}
+            style={inputStyle}
+          />
+        </Field>
+        <Field label="Naver Client Secret">
+          <input
+            type="password"
+            placeholder="네이버 Client Secret"
+            value={settings.naver_client_secret}
+            onChange={update("naver_client_secret")}
             style={inputStyle}
           />
         </Field>

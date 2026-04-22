@@ -123,7 +123,7 @@ def seed_blog_sources() -> None:
                 "INSERT OR IGNORE INTO blog_sources "
                 "(id, name, url, image_mapping, active, notes, rss_category, created_at) "
                 "VALUES (?,?,?,?,?,?,?,?)",
-                (sid, blog_id, url, "두괄식", 1, "", rss_category, now),
+                (sid, blog_id, url, "미괄식", 1, "", rss_category, now),
             )
 
 
@@ -134,6 +134,7 @@ def init_db() -> None:
         for stmt in [
             "ALTER TABLE pipeline_runs ADD COLUMN elements_json TEXT NOT NULL DEFAULT '[]'",
             "ALTER TABLE blog_sources ADD COLUMN rss_category TEXT NOT NULL DEFAULT ''",
+            "UPDATE blog_sources SET image_mapping = '미괄식'",
         ]:
             try:
                 conn.execute(stmt)
@@ -188,7 +189,7 @@ def get_source(source_id: str) -> Optional[dict]:
     return dict(row) if row else None
 
 
-def create_source(name: str, url: str, image_mapping: str = "두괄식",
+def create_source(name: str, url: str, image_mapping: str = "미괄식",
                   active: bool = True, notes: str = "", rss_category: str = "") -> dict:
     sid = uuid.uuid4().hex[:12]
     url = _normalise_source_url(url)

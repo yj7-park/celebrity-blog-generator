@@ -89,7 +89,7 @@ class ScrapeResponse(BaseModel):
 class GenerateRequest(BaseModel):
     items: List[CelebItem]
     openai_api_key: str = ""
-    image_placement: str = "두괄식"   # "두괄식" (image→text) | "미괄식" (text→image)
+    image_placement: str = "미괄식"   # "두괄식" (image→text) | "미괄식" (text→image)
 
 
 class GenerateResponse(BaseModel):
@@ -172,7 +172,7 @@ class BlogSource(BaseModel):
     id: str = ""
     name: str
     url: str
-    image_mapping: str = "두괄식"    # "두괄식" (text→image) | "미괄식" (image→text)
+    image_mapping: str = "미괄식"    # "두괄식" (text→image) | "미괄식" (image→text)
     active: bool = True
     notes: str = ""
     rss_category: str = ""
@@ -183,7 +183,7 @@ class BlogSource(BaseModel):
 class BlogSourceCreate(BaseModel):
     name: str
     url: str
-    image_mapping: str = "두괄식"
+    image_mapping: str = "미괄식"
     active: bool = True
     notes: str = ""
     rss_category: str = ""
@@ -213,7 +213,7 @@ class CandidateScore(BaseModel):
     score: float                              # 0-1 relevance
     issues: List[str] = []                    # "watermark"|"mismatch"|"low_quality"|"cropped"
     explanation: str = ""
-    watermark_region: Optional[WatermarkRegion] = None
+    watermark_regions: List[WatermarkRegion] = []  # all detected watermarks (may be multiple)
 
 
 class ItemImageAnalysis(BaseModel):
@@ -231,7 +231,23 @@ class AnalyzeItemsRequest(BaseModel):
 
 class ProcessImageRequest(BaseModel):
     url: str
-    watermark_region: Optional[WatermarkRegion] = None
+    watermark_regions: List[WatermarkRegion] = []
+
+
+class ReverseSearchRequest(BaseModel):
+    url: str
+    max_results: int = 12
+    keywords: List[str] = []
+
+
+class SimilarImageSearchRequest(BaseModel):
+    celeb: str
+    product_name: str
+    keywords: List[str] = []
+    orig_url: str
+    watermark_regions: List[WatermarkRegion] = []
+    max_posts: int = 8
+    openai_api_key: str = ""
 
 
 # ── Settings ──────────────────────────────────────────────────────────────────
@@ -243,8 +259,10 @@ class AppSettings(BaseModel):
     coupang_domain: str = "https://api-gateway.coupang.com"
     naver_id: str = ""
     naver_pw: str = ""
+    naver_client_id: str = ""
+    naver_client_secret: str = ""
     pipeline_days: int = 2
     pipeline_max_posts: int = 10
     pipeline_top_celebs: int = 5
     chrome_user_data_dir: str = "C:/Utilities/Blog/chrome-user-data"
-    image_placement: str = "두괄식"   # "두괄식" (image→text) | "미괄식" (text→image)
+    image_placement: str = "미괄식"   # "두괄식" (image→text) | "미괄식" (text→image)

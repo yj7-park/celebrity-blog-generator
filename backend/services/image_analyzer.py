@@ -77,14 +77,7 @@ def _make_prompt(item: CelebItem) -> str:
   "score": <0.0~1.0>,
   "issues": [<"watermark"|"mismatch"|"low_quality"|"cropped" 해당 항목들>],
   "explanation": "<한 문장 한국어 설명>",
-  "watermark": {{
-    "detected": <true|false>,
-    "x": <0.0~1.0>,
-    "y": <0.0~1.0>,
-    "w": <0.0~1.0>,
-    "h": <0.0~1.0>,
-    "description": "<설명>"
-  }}
+  "watermark_detected": <true|false>
 }}
 
 score 기준:
@@ -100,10 +93,204 @@ issues 기준:
 - "cropped": 제품이 잘려서 보임"""
 
 
+_WATERMARK_LOCALIZE_PROMPT = """이 이미지에서 제3자가 삽입한 워터마크를 모두 찾아 각각의 정확한 바운딩박스를 반환하세요.
+
+좌표 체계: 이미지 좌상단 (0,0) → 우하단 (1,1)
+x = 워터마크 왼쪽 경계, y = 워터마크 위쪽 경계, w = 너비, h = 높이
+
+JSON으로만 응답 (마크다운 없이):
+{
+  "watermarks": [
+    {
+      "x": <0.0~1.0>,
+      "y": <0.0~1.0>,
+      "w": <0.0~1.0>,
+      "h": <0.0~1.0>,
+      "description": "<위치와 내용 설명>"
+    }
+  ]
+}
+
+워터마크가 없으면: {"watermarks": []}
+
+★ 워터마크로 판단하는 것:
+- 이미지 위에 겹쳐진 반투명 또는 불투명 텍스트 (한글 쇼핑몰명, 블로그명, URL, © 표시 등)
+- 이미지 모서리/중앙에 삽입된 로고나 도장
+- 예: "궁금e장9포켓", "gettyimages", "shutterstock", "©", "www.xxx.com" 등
+
+★ 워터마크가 아닌 것 (절대 포함 금지):
+- "celeb.picks" — 이것은 이미지 하단 바에 있는 당사 서명이므로 반드시 제외
+- 이미지의 실제 피사체 (제품, 의류, 인물, 배경)
+- 이미지에 원래 포함된 브랜드 태그/라벨
+
+★ 좌표 정확도:
+- 텍스트/로고를 최대한 꼭 맞게 감싸도록 바운딩박스를 지정
+- 여백을 너무 많이 주지 말 것 (정확할수록 제거 품질이 높아짐)
+- 이미지 가장자리를 벗어나지 않도록 주의"""
+
+
 # ── Single image analysis ─────────────────────────────────────────────────────
 
+_CROP_REFINE_PROMPT = """이 이미지는 원본 이미지에서 잘라낸 부분입니다.
+이 크롭 안에서 워터마크 텍스트/로고의 정확한 위치를 알려주세요.
+
+좌표 체계: 이 크롭 이미지의 좌상단 (0,0) → 우하단 (1,1)
+
+JSON으로만 응답 (마크다운 없이):
+{
+  "found": true,
+  "x": <워터마크 왼쪽 경계, 0.0~1.0>,
+  "y": <워터마크 위쪽 경계, 0.0~1.0>,
+  "w": <너비, 0.0~1.0>,
+  "h": <높이, 0.0~1.0>
+}
+
+워터마크가 없으면: {"found": false}
+
+주의: "celeb.picks" 바는 워터마크가 아닙니다. 반드시 제외하세요.
+텍스트를 최대한 꼭 맞게 감싸세요. 여백 최소화."""
+
+
+def _ask_gpt_for_watermarks(b64: str, mime: str, client, detail: str = "high") -> list[dict]:
+    """Single GPT call → raw list of watermark dicts."""
+    try:
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image_url",
+                     "image_url": {"url": f"data:{mime};base64,{b64}", "detail": detail}},
+                    {"type": "text", "text": _WATERMARK_LOCALIZE_PROMPT},
+                ],
+            }],
+            max_tokens=400, temperature=0,
+            response_format={"type": "json_object"},
+        )
+        data = json.loads(resp.choices[0].message.content or "{}")
+        return data.get("watermarks", [])
+    except Exception:
+        return []
+
+
+def _crop_and_refine(raw_b64: str, region: dict, client) -> Optional[dict]:
+    """
+    Crop the image to the rough region (with padding), ask GPT to precisely
+    locate the watermark within the crop, then transform back to full coords.
+    """
+    try:
+        raw_bytes = base64.b64decode(raw_b64)
+        img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+        iw, ih = img.size
+
+        # Expand region by 20% on each side for context
+        pad = 0.20
+        cx1 = max(0.0, region["x"] - pad)
+        cy1 = max(0.0, region["y"] - pad)
+        cx2 = min(1.0, region["x"] + region["w"] + pad)
+        cy2 = min(1.0, region["y"] + region["h"] + pad)
+
+        # Crop must be at least 80×40 px to be useful
+        crop_w = int((cx2 - cx1) * iw)
+        crop_h = int((cy2 - cy1) * ih)
+        if crop_w < 80 or crop_h < 40:
+            return None
+
+        crop = img.crop((int(cx1 * iw), int(cy1 * ih),
+                         int(cx2 * iw), int(cy2 * ih)))
+
+        # Encode crop
+        buf = io.BytesIO()
+        crop.save(buf, format="JPEG", quality=90)
+        crop_b64 = base64.b64encode(buf.getvalue()).decode()
+
+        # Ask GPT for precise location within crop
+        resp = _ask_gpt_single_refine(crop_b64, client)
+        if not resp or not resp.get("found"):
+            return None
+
+        # Transform crop-relative coords → full image coords
+        rx, ry = float(resp.get("x", 0)), float(resp.get("y", 0))
+        rw, rh = float(resp.get("w", 0)), float(resp.get("h", 0))
+
+        fx = cx1 + rx * (cx2 - cx1)
+        fy = cy1 + ry * (cy2 - cy1)
+        fw = rw * (cx2 - cx1)
+        fh = rh * (cy2 - cy1)
+
+        return {"x": fx, "y": fy, "w": fw, "h": fh,
+                "description": region.get("description", "")}
+    except Exception:
+        return None
+
+
+def _ask_gpt_single_refine(crop_b64: str, client) -> Optional[dict]:
+    """Precise localization within a crop image."""
+    try:
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image_url",
+                     "image_url": {"url": f"data:image/jpeg;base64,{crop_b64}",
+                                   "detail": "high"}},
+                    {"type": "text", "text": _CROP_REFINE_PROMPT},
+                ],
+            }],
+            max_tokens=120, temperature=0,
+            response_format={"type": "json_object"},
+        )
+        return json.loads(resp.choices[0].message.content or "{}")
+    except Exception:
+        return None
+
+
+def _localize_watermarks(b64: str, mime: str, client) -> List[WatermarkRegion]:
+    """
+    Three-pass localization:
+      Pass A: full image, high detail  → rough regions
+      Pass B: per-region crop, high detail  → refined coordinates
+    Returns WatermarkRegion list with sub-pixel-accurate boxes.
+    """
+    # Pass A: full image rough detection
+    rough_list = _ask_gpt_for_watermarks(b64, mime, client, detail="high")
+    if not rough_list:
+        return []
+
+    regions: List[WatermarkRegion] = []
+    for rough in rough_list:
+        rw = float(rough.get("w", 0))
+        rh = float(rough.get("h", 0))
+        if rw < 0.005 or rh < 0.005:
+            continue
+
+        # Pass B: crop refinement
+        refined = _crop_and_refine(b64, rough, client)
+        final = refined if refined else rough
+
+        fw = float(final.get("w", 0))
+        fh = float(final.get("h", 0))
+        if fw < 0.005 or fh < 0.005:
+            continue
+
+        regions.append(WatermarkRegion(
+            x=max(0.0, min(1.0, float(final.get("x", 0)))),
+            y=max(0.0, min(1.0, float(final.get("y", 0)))),
+            w=max(0.005, min(1.0, fw)),
+            h=max(0.005, min(1.0, fh)),
+            description=str(final.get("description", rough.get("description", ""))),
+        ))
+
+    return regions
+
+
 def _analyze_single(url: str, item: CelebItem, client) -> CandidateScore:
-    """Call GPT-4o vision to score one image against item context."""
+    """
+    Two-pass analysis:
+      Pass 1 (low detail): scoring + issue detection (cheap)
+      Pass 2 (high detail): watermark localization, only if watermark flagged
+    """
     fetched = _fetch_base64(url)
     if fetched is None:
         return CandidateScore(
@@ -113,8 +300,8 @@ def _analyze_single(url: str, item: CelebItem, client) -> CandidateScore:
         )
 
     b64, mime = fetched
-    prompt = _make_prompt(item)
 
+    # ── Pass 1: scoring ──────────────────────────────────────────────────────
     try:
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -123,51 +310,36 @@ def _analyze_single(url: str, item: CelebItem, client) -> CandidateScore:
                 "content": [
                     {
                         "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{mime};base64,{b64}",
-                            "detail": "low",      # low detail = fewer tokens
-                        },
+                        "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "low"},
                     },
-                    {"type": "text", "text": prompt},
+                    {"type": "text", "text": _make_prompt(item)},
                 ],
             }],
-            max_tokens=350,
+            max_tokens=200,
             temperature=0,
             response_format={"type": "json_object"},
         )
-        raw = (resp.choices[0].message.content or "{}").strip()
-        data = json.loads(raw)
+        data = json.loads(resp.choices[0].message.content or "{}")
     except Exception as e:
-        return CandidateScore(
-            url=url, score=0.4,
-            issues=[],
-            explanation=f"분석 오류: {e}",
-        )
+        return CandidateScore(url=url, score=0.4, issues=[], explanation=f"분석 오류: {e}")
 
-    score = float(data.get("score", 0.4))
-    score = max(0.0, min(1.0, score))
+    score = max(0.0, min(1.0, float(data.get("score", 0.4))))
     issues: list[str] = data.get("issues", [])
     explanation: str = data.get("explanation", "")
 
-    watermark_region: Optional[WatermarkRegion] = None
-    wm = data.get("watermark", {})
-    if wm.get("detected") and wm.get("w", 0) > 0.01 and wm.get("h", 0) > 0.01:
-        watermark_region = WatermarkRegion(
-            x=float(wm.get("x", 0.0)),
-            y=float(wm.get("y", 0.0)),
-            w=float(wm.get("w", 0.1)),
-            h=float(wm.get("h", 0.05)),
-            description=str(wm.get("description", "")),
-        )
+    # ── Pass 2: watermark localization (high detail) ─────────────────────────
+    watermark_regions: List[WatermarkRegion] = []
+    if data.get("watermark_detected") or "watermark" in issues:
         if "watermark" not in issues:
             issues.append("watermark")
+        watermark_regions = _localize_watermarks(b64, mime, client)
 
     return CandidateScore(
         url=url,
         score=score,
         issues=issues,
         explanation=explanation,
-        watermark_region=watermark_region,
+        watermark_regions=watermark_regions,
     )
 
 

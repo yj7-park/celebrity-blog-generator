@@ -40,6 +40,8 @@ from models.schemas import (
     CollectRequest, CollectResponse,
     GenerateRequest, GenerateResponse,
     ProcessImageRequest,
+    ReverseSearchRequest,
+    SimilarImageSearchRequest,
     ScrapeRequest, ScrapeResponse,
     AppSettings,
 )
@@ -50,7 +52,8 @@ from services.extractor import extract_items_from_posts
 from services.generator import generate_blog_elements
 from services.coupang import search_products, shorten_url
 from services.image_matcher import cross_match_items
-from services.image_processor import process_image, process_items_images
+from services.image_processor import process_image, process_items_images, reverse_search_candidates
+from services.image_search import search_and_reconstruct as _search_and_reconstruct
 from services.settings_service import load_settings
 import db as _db
 
@@ -121,14 +124,11 @@ async def api_generate(req: GenerateRequest):
 
 @router.post("/process-image")
 async def api_process_image(req: ProcessImageRequest):
-    """Download and process a single image URL. Returns the local file path.
-    Optionally accepts watermark_region ({x,y,w,h} as 0-1 fractions) to
-    remove a detected watermark before the standard pipeline.
-    """
+    """Process a single image with optional watermark removal (all detected regions)."""
     try:
         settings = load_settings()
-        wm_dict = req.watermark_region.model_dump() if req.watermark_region else None
-        local_path = await _run(process_image, req.url, wm_dict, settings.openai_api_key)
+        regions = [r.model_dump() for r in req.watermark_regions] if req.watermark_regions else None
+        local_path = await _run(process_image, req.url, regions, settings.openai_api_key)
     except Exception as e:
         import traceback, logging
         logging.error("process-image error: %s\n%s", e, traceback.format_exc())
@@ -136,6 +136,68 @@ async def api_process_image(req: ProcessImageRequest):
     if not local_path:
         raise HTTPException(status_code=422, detail="이미지 처리 실패")
     return {"processed_path": local_path}
+
+
+@router.post("/reverse-search")
+async def api_reverse_search(req: ReverseSearchRequest):
+    """Naver keyword image search (or Google reverse if no keywords)."""
+    try:
+        candidates = await _run(
+            reverse_search_candidates, req.url, req.max_results,
+            req.keywords or None,
+        )
+    except Exception as e:
+        import logging
+        logging.warning("reverse-search error: %s", e)
+        candidates = []
+    return {"candidates": candidates, "count": len(candidates)}
+
+
+@router.post("/find-similar-images")
+async def api_find_similar_images(req: SimilarImageSearchRequest):
+    """
+    Search Naver blogs for similar product images, reconstruct clean version.
+
+    Returns:
+      processed_path  – local path to the clean JPEG (if reconstruction succeeded)
+      similar_urls    – list of similar image URLs found
+      blog_urls       – blog base URLs discovered
+      new_sources     – newly registered blog sources
+      method          – "median" | "fill" | "none"
+    """
+    import logging, io as _io
+    from services.image_processor import TEMP_DIR, _safe_filename, _add_signature
+    from services.settings_service import load_settings
+
+    wm_regions = [r.model_dump() for r in req.watermark_regions]
+
+    result = await _run(
+        _search_and_reconstruct,
+        req.celeb, req.product_name, req.keywords,
+        req.orig_url, wm_regions,
+        req.max_posts,
+    )
+
+    processed_path: str | None = None
+    clean: object = result.get("clean_image")
+    if clean is not None:
+        try:
+            img_with_sig = _add_signature(clean)
+            filename = "similar_" + _safe_filename(req.orig_url) + ".jpg"
+            out_path = TEMP_DIR / filename
+            img_with_sig.save(str(out_path), "JPEG", quality=88, optimize=True)
+            processed_path = str(out_path)
+            logging.info("find-similar-images: saved clean image to %s", processed_path)
+        except Exception as e:
+            logging.warning("find-similar-images: failed to save: %s", e)
+
+    return {
+        "processed_path": processed_path,
+        "similar_urls": result.get("similar_urls", []),
+        "blog_urls": result.get("blog_urls", []),
+        "new_sources": result.get("new_sources", []),
+        "method": result.get("method", "none"),
+    }
 
 
 @router.post("/analyze-items")

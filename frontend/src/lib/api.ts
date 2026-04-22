@@ -11,6 +11,7 @@ import type {
   PipelineRun,
   CheckRunResponse,
   WatermarkRegion,
+  SimilarImageSearchResult,
 } from "./types";
 
 export const BASE_URL = "http://localhost:8000";
@@ -24,6 +25,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     const text = await res.text();
     throw new Error(text || `HTTP ${res.status}`);
   }
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
@@ -77,11 +79,37 @@ export async function processImage(url: string): Promise<{ processed_path: strin
 
 export async function processImageWithWatermark(
   url: string,
-  watermarkRegion?: WatermarkRegion | null
+  watermarkRegions?: WatermarkRegion[] | null
 ): Promise<{ processed_path: string }> {
   return apiFetch("/api/pipeline/process-image", {
     method: "POST",
-    body: JSON.stringify({ url, watermark_region: watermarkRegion ?? null }),
+    body: JSON.stringify({ url, watermark_regions: watermarkRegions ?? [] }),
+  });
+}
+
+export async function reverseSearch(url: string): Promise<{ candidates: string[]; count: number }> {
+  return apiFetch("/api/pipeline/reverse-search", {
+    method: "POST",
+    body: JSON.stringify({ url, max_results: 12 }),
+  });
+}
+
+export async function findSimilarImages(
+  item: CelebItem,
+  origUrl: string,
+  watermarkRegions: WatermarkRegion[] = [],
+  maxPosts = 8,
+): Promise<SimilarImageSearchResult> {
+  return apiFetch("/api/pipeline/find-similar-images", {
+    method: "POST",
+    body: JSON.stringify({
+      celeb: item.celeb,
+      product_name: item.product_name,
+      keywords: item.keywords,
+      orig_url: origUrl,
+      watermark_regions: watermarkRegions,
+      max_posts: maxPosts,
+    }),
   });
 }
 

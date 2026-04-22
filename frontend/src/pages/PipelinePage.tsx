@@ -7,9 +7,10 @@ import {
   processImage,
   processImageWithWatermark,
   analyzeItemImages,
+  findSimilarImages,
   cancelPipeline,
 } from "../lib/api";
-import type { PostItem, CelebItem, ItemImageAnalysis, WatermarkRegion } from "../lib/types";
+import type { PostItem, CelebItem, ItemImageAnalysis, WatermarkRegion, SimilarImageSearchResult } from "../lib/types";
 import ItemsPanel from "../components/ItemsPanel";
 import TrendingPanel from "../components/TrendingPanel";
 import BlogPostPanel from "../components/BlogPostPanel";
@@ -159,11 +160,14 @@ export default function PipelinePage() {
   const [reviewCount, setReviewCount] = useState<number>(0);
   const analyzeControllerRef = useRef<AbortController | null>(null);
 
+  // 유사 이미지 검색 결과 (item index → result)
+  const [simResults, setSimResults] = useState<Record<number, { loading: boolean; result: SimilarImageSearchResult | null }>>({});
+
   // Step 4
   const [step4Status, setStep4Status] = useState<StepState>("idle");
   const [blogPost, setBlogPost] = useState<{ celeb: string; post: string } | null>(null);
   const [step4Error, setStep4Error] = useState<string | null>(null);
-  const [imagePlacement, setImagePlacement] = useState<"두괄식" | "미괄식">("두괄식");
+  const [imagePlacement, setImagePlacement] = useState<"두괄식" | "미괄식">("미괄식");
 
   // Step 1: RSS 수집
   const handleCollect = async () => {
@@ -230,9 +234,9 @@ export default function PipelinePage() {
   };
 
   // Watermark removal callback
-  const handleRemoveWatermark = async (index: number, url: string, region: WatermarkRegion) => {
+  const handleRemoveWatermark = async (index: number, url: string, regions: WatermarkRegion[]) => {
     try {
-      const res = await processImageWithWatermark(url, region);
+      const res = await processImageWithWatermark(url, regions);
       setItems((prev) =>
         prev.map((item, i) =>
           i === index ? { ...item, processed_image_path: res.processed_path } : item
@@ -274,16 +278,19 @@ export default function PipelinePage() {
               return [...prev, analysis];
             });
 
-            // Fire-and-forget: process best image right away
+            // Fire-and-forget: process best image + auto similar search
             if (analysis.best_url) {
               const bestCand = analysis.candidates.find((c) => c.url === analysis.best_url);
-              const wmRegion = bestCand?.watermark_region ?? null;
-              processImageWithWatermark(analysis.best_url, wmRegion)
+              const wmRegions = bestCand?.watermark_regions ?? [];
+              const itemIdx = analysis.item_index;
+
+              // Process image (watermark removal / resize)
+              processImageWithWatermark(analysis.best_url, wmRegions)
                 .then((res) => {
                   if (!res.processed_path) return;
                   setItems((prev) =>
                     prev.map((item, i) => {
-                      if (i !== analysis.item_index) return item;
+                      if (i !== itemIdx) return item;
                       const newUrls = [
                         analysis.best_url,
                         ...(item.image_urls ?? []).filter((u) => u !== analysis.best_url),
@@ -293,6 +300,29 @@ export default function PipelinePage() {
                   );
                 })
                 .catch(() => {});
+
+              // Auto-trigger similar image search for this item
+              setSimResults((prev) => ({ ...prev, [itemIdx]: { loading: true, result: null } }));
+              setItems((prevItems) => {
+                const theItem = prevItems[itemIdx];
+                if (theItem) {
+                  findSimilarImages(theItem, analysis.best_url, wmRegions, 8)
+                    .then((simRes) => {
+                      setSimResults((prev) => ({ ...prev, [itemIdx]: { loading: false, result: simRes } }));
+                      if (simRes.processed_path) {
+                        setItems((prev) =>
+                          prev.map((item, i) =>
+                            i === itemIdx ? { ...item, processed_image_path: simRes.processed_path! } : item
+                          )
+                        );
+                      }
+                    })
+                    .catch(() => {
+                      setSimResults((prev) => ({ ...prev, [itemIdx]: { loading: false, result: null } }));
+                    });
+                }
+                return prevItems;
+              });
             }
           }
         } else if (event.type === "done") {
@@ -441,8 +471,26 @@ export default function PipelinePage() {
             <ItemsPanel
               items={items}
               analyses={analyses}
+              simResults={simResults}
               onUpdateItem={handleUpdateItemImage}
               onRemoveWatermark={handleRemoveWatermark}
+              onSimSearch={(itemIdx, item, origUrl, regions) => {
+                setSimResults((prev) => ({ ...prev, [itemIdx]: { loading: true, result: null } }));
+                findSimilarImages(item, origUrl, regions, 8)
+                  .then((simRes) => {
+                    setSimResults((prev) => ({ ...prev, [itemIdx]: { loading: false, result: simRes } }));
+                    if (simRes.processed_path) {
+                      setItems((prev) =>
+                        prev.map((it, i) =>
+                          i === itemIdx ? { ...it, processed_image_path: simRes.processed_path! } : it
+                        )
+                      );
+                    }
+                  })
+                  .catch(() => {
+                    setSimResults((prev) => ({ ...prev, [itemIdx]: { loading: false, result: null } }));
+                  });
+              }}
             />
           </div>
         )}

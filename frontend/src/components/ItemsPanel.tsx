@@ -1,5 +1,22 @@
-import { useState } from "react";
-import type { CelebItem, ItemImageAnalysis, WatermarkRegion } from "../lib/types";
+import { useState, useEffect } from "react";
+import type { CelebItem, ItemImageAnalysis, WatermarkRegion, SimilarImageSearchResult } from "../lib/types";
+
+async function fetchSimilarImages(item: CelebItem, origUrl: string, regions: WatermarkRegion[]): Promise<SimilarImageSearchResult> {
+  const res = await fetch("/api/pipeline/find-similar-images", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      celeb: item.celeb,
+      product_name: item.product_name,
+      keywords: item.keywords,
+      orig_url: origUrl,
+      watermark_regions: regions,
+      max_posts: 8,
+    }),
+  });
+  if (!res.ok) return { processed_path: null, similar_urls: [], blog_urls: [], new_sources: [], method: "none" };
+  return res.json();
+}
 
 /** Proxy pstatic.net / blogfiles images through the backend to avoid CORS.
  *  Also routes local processed-image file paths through the backend. */
@@ -17,15 +34,18 @@ function proxyImageUrl(url: string): string {
   return url;
 }
 
+interface SimilarSearchState {
+  loading: boolean;
+  result: SimilarImageSearchResult | null;
+}
+
 interface Props {
   items: CelebItem[];
   analyses?: ItemImageAnalysis[];
+  simResults?: Record<number, { loading: boolean; result: SimilarImageSearchResult | null }>;
   onUpdateItem?: (index: number, newImageUrl: string) => Promise<void>;
-  onRemoveWatermark?: (
-    index: number,
-    url: string,
-    region: WatermarkRegion
-  ) => Promise<void>;
+  onRemoveWatermark?: (index: number, url: string, regions: WatermarkRegion[]) => Promise<void>;
+  onSimSearch?: (itemIndex: number, item: CelebItem, origUrl: string, regions: WatermarkRegion[]) => void;
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
@@ -101,11 +121,26 @@ function IssueTags({ issues }: { issues: string[] }) {
   );
 }
 
-export default function ItemsPanel({ items, analyses, onUpdateItem, onRemoveWatermark }: Props) {
-  const [openPickerIdx, setOpenPickerIdx] = useState<number | null>(null);
-  const [loadingIdx, setLoadingIdx]       = useState<number | null>(null);
-  const [wmLoadingKey, setWmLoadingKey]   = useState<string | null>(null);
-  const [customUrls, setCustomUrls]       = useState<Record<number, string>>({});
+export default function ItemsPanel({ items, analyses, simResults, onUpdateItem, onRemoveWatermark, onSimSearch }: Props) {
+  const [openPickerIdx, setOpenPickerIdx]         = useState<number | null>(null);
+  const [loadingIdx, setLoadingIdx]               = useState<number | null>(null);
+  const [wmLoadingKey, setWmLoadingKey]           = useState<string | null>(null);
+  const [customUrls, setCustomUrls]               = useState<Record<number, string>>({});
+  const [zoomedUrl, setZoomedUrl]                 = useState<string | null>(null);
+  // similar image search state — merge external (from parent) + local manual triggers
+  const [simSearch, setSimSearch]                 = useState<Record<number, SimilarSearchState>>({});
+
+  // Sync external simResults into local simSearch state
+  useEffect(() => {
+    if (!simResults) return;
+    setSimSearch((prev) => {
+      const merged = { ...prev };
+      for (const [idxStr, state] of Object.entries(simResults)) {
+        merged[Number(idxStr)] = state;
+      }
+      return merged;
+    });
+  }, [simResults]);
 
   if (items.length === 0) {
     return (
@@ -137,25 +172,89 @@ export default function ItemsPanel({ items, analyses, onUpdateItem, onRemoveWate
   const handleRemoveWatermark = async (
     itemIndex: number,
     url: string,
-    region: WatermarkRegion
+    regions: WatermarkRegion[]
   ) => {
     if (!onRemoveWatermark) return;
     const key = `${itemIndex}_${url}`;
     setWmLoadingKey(key);
     try {
-      await onRemoveWatermark(itemIndex, url, region);
+      await onRemoveWatermark(itemIndex, url, regions);
     } finally {
       setWmLoadingKey(null);
     }
   };
 
+  const handleSimilarSearch = (
+    itemIndex: number,
+    item: CelebItem,
+    origUrl: string,
+    regions: WatermarkRegion[],
+  ) => {
+    if (onSimSearch) {
+      // Delegate to parent (PipelinePage manages state + auto-applies results)
+      onSimSearch(itemIndex, item, origUrl, regions);
+    } else {
+      // Standalone mode (DashboardPage): manage locally
+      setSimSearch((prev) => ({ ...prev, [itemIndex]: { loading: true, result: null } }));
+      fetchSimilarImages(item, origUrl, regions)
+        .then((result) => {
+          setSimSearch((prev) => ({ ...prev, [itemIndex]: { loading: false, result } }));
+          if (result.processed_path && onUpdateItem) {
+            onUpdateItem(itemIndex, result.processed_path).catch(() => {});
+          }
+        })
+        .catch(() => {
+          setSimSearch((prev) => ({ ...prev, [itemIndex]: { loading: false, result: null } }));
+        });
+    }
+  };
+
   return (
+    <>
+    {/* ── Zoom modal ──────────────────────────────────────────────────── */}
+    {zoomedUrl && (
+      <div
+        onClick={() => setZoomedUrl(null)}
+        style={{
+          position: "fixed", inset: 0,
+          background: "rgba(0,0,0,0.88)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 9999, cursor: "zoom-out",
+        }}
+      >
+        <img
+          src={proxyImageUrl(zoomedUrl)}
+          alt="확대 보기"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: "90vw", maxHeight: "90vh",
+            objectFit: "contain", borderRadius: 10,
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            cursor: "default",
+          }}
+        />
+        <button
+          onClick={() => setZoomedUrl(null)}
+          style={{
+            position: "fixed", top: 20, right: 24,
+            background: "rgba(255,255,255,0.15)", border: "none",
+            color: "#fff", fontSize: 22, borderRadius: "50%",
+            width: 40, height: 40, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          ✕
+        </button>
+      </div>
+    )}
+
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {items.map((item, i) => {
-        const catStyle   = getCategoryStyle(item.category);
-        const analysis   = analyses?.find((a) => a.item_index === i);
+        const catStyle     = getCategoryStyle(item.category);
+        const analysis     = analyses?.find((a) => a.item_index === i);
         const isPickerOpen = openPickerIdx === i;
         const isLoading    = loadingIdx === i;
+        const simState     = simSearch[i] ?? { loading: false, result: null };
 
         // Merge image_urls + candidate_image_urls, deduplicated
         const allCandidates = Array.from(
@@ -192,12 +291,14 @@ export default function ItemsPanel({ items, analyses, onUpdateItem, onRemoveWate
                   <img
                     src={proxyImageUrl(currentUrl)}
                     alt={item.product_name}
+                    onClick={() => setZoomedUrl(currentUrl)}
                     style={{
                       width: 80, height: 80,
                       borderRadius: 8, objectFit: "cover",
                       background: "#f3f4f6",
                       opacity: isLoading ? 0.4 : 1,
                       transition: "opacity 0.2s",
+                      cursor: "zoom-in",
                     }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
@@ -355,7 +456,8 @@ export default function ItemsPanel({ items, analyses, onUpdateItem, onRemoveWate
                     const isCurrent    = url === item.image_urls?.[0];
                     const isBest       = url === analysis?.best_url;
                     const candidate    = scoreMap[url];
-                    const wmRegion     = candidate?.watermark_region;
+                    const wmRegions    = candidate?.watermark_regions ?? [];
+                    const hasWm        = wmRegions.length > 0;
                     const wmKey        = `${i}_${url}`;
                     const isWmLoading  = wmLoadingKey === wmKey;
 
@@ -436,17 +538,37 @@ export default function ItemsPanel({ items, analyses, onUpdateItem, onRemoveWate
                             </div>
                           )}
 
-                          {/* Watermark indicator */}
-                          {wmRegion && (
+                          {/* Watermark count badge */}
+                          {hasWm && (
                             <div style={{
                               position: "absolute", top: 3, left: 3,
-                              background: "rgba(180,83,9,0.85)",
+                              background: "rgba(180,83,9,0.9)",
                               color: "#fff", fontSize: 9, fontWeight: 700,
                               padding: "1px 5px", borderRadius: 99,
+                              zIndex: 3,
                             }}>
-                              WM
+                              WM{wmRegions.length > 1 ? ` ×${wmRegions.length}` : ""}
                             </div>
                           )}
+
+                          {/* Watermark rectangles — one per detected region */}
+                          {wmRegions.map((r, ri) => (
+                            <div
+                              key={ri}
+                              style={{
+                                position: "absolute",
+                                left:   `${r.x * 100}%`,
+                                top:    `${r.y * 100}%`,
+                                width:  `${r.w * 100}%`,
+                                height: `${r.h * 100}%`,
+                                border: "2px solid #ef4444",
+                                boxSizing: "border-box",
+                                pointerEvents: "none",
+                                zIndex: 2,
+                              }}
+                              title={r.description || `워터마크 ${ri + 1}`}
+                            />
+                          ))}
                         </div>
 
                         {/* Issue tags for this candidate */}
@@ -467,10 +589,10 @@ export default function ItemsPanel({ items, analyses, onUpdateItem, onRemoveWate
                           </div>
                         )}
 
-                        {/* Watermark remove button */}
-                        {wmRegion && onRemoveWatermark && (
+                        {/* WM 제거 버튼 (워터마크 있을 때만) */}
+                        {hasWm && onRemoveWatermark && (
                           <button
-                            onClick={() => handleRemoveWatermark(i, url, wmRegion)}
+                            onClick={() => handleRemoveWatermark(i, url, wmRegions)}
                             disabled={isWmLoading}
                             style={{
                               padding: "3px 6px", fontSize: 9, fontWeight: 600,
@@ -487,6 +609,85 @@ export default function ItemsPanel({ items, analyses, onUpdateItem, onRemoveWate
                       </div>
                     );
                   })}
+                </div>
+
+                {/* ── 유사 이미지 검색 버튼 + 결과 ────────────────── */}
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #f3f4f6" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <button
+                      onClick={() => {
+                        const bestWmRegions = analysis?.candidates[0]?.watermark_regions ?? [];
+                        // Use original image URL (not processed path) for similarity search
+                        const searchUrl = item.image_urls?.[0] || currentUrl;
+                        handleSimilarSearch(i, item, searchUrl, bestWmRegions);
+                      }}
+                      disabled={simState.loading}
+                      style={{
+                        padding: "5px 12px", fontSize: 11, fontWeight: 600,
+                        background: simState.loading ? "#f3f4f6" : "#ecfdf5",
+                        color: simState.loading ? "#9ca3af" : "#065f46",
+                        border: `1px solid ${simState.loading ? "#d1d5db" : "#a7f3d0"}`,
+                        borderRadius: 8, cursor: simState.loading ? "not-allowed" : "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {simState.loading ? "블로그 검색 중..." : "유사 이미지 검색"}
+                    </button>
+                    {simState.result && (
+                      <span style={{ fontSize: 10, color: "#6b7280" }}>
+                        {simState.result.processed_path
+                          ? `원본 합성 완료 (${simState.result.method})`
+                          : simState.result.similar_urls.length > 0
+                          ? `유사 이미지 ${simState.result.similar_urls.length}장 — 직접 선택`
+                          : "유사 이미지 없음"}
+                        {simState.result.new_sources.length > 0 && (
+                          <span style={{ marginLeft: 6, color: "#7c3aed" }}>
+                            +{simState.result.new_sources.length} 소스 등록
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 유사 이미지 결과 썸네일 */}
+                  {simState.result && simState.result.similar_urls.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+                      {simState.result.similar_urls.map((rUrl, ri) => (
+                        <div
+                          key={ri}
+                          onClick={() => handleSelectImage(i, rUrl)}
+                          style={{
+                            flexShrink: 0, cursor: "pointer",
+                            borderRadius: 6, overflow: "hidden",
+                            border: "2px solid transparent",
+                            outline: "1px solid #a7f3d0",
+                            transition: "border-color 0.15s",
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.borderColor = "#10b981";
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.borderColor = "transparent";
+                          }}
+                          title={`유사 이미지 ${ri + 1} — 클릭하여 사용`}
+                        >
+                          <img
+                            src={proxyImageUrl(rUrl)}
+                            alt={`유사 ${ri + 1}`}
+                            style={{ width: 80, height: 80, objectFit: "cover", display: "block" }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).parentElement!.style.display = "none";
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {simState.result && simState.result.similar_urls.length === 0 && (
+                    <div style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic" }}>
+                      유사 이미지를 찾지 못했습니다.
+                    </div>
+                  )}
                 </div>
 
                 {/* Custom URL input */}
@@ -524,5 +725,6 @@ export default function ItemsPanel({ items, analyses, onUpdateItem, onRemoveWate
         );
       })}
     </div>
+    </>
   );
 }

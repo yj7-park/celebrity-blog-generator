@@ -16,4 +16,5 @@ Pillow==10.4.0
 imagehash==4.3.1
 python-dotenv==1.0.1
 aiofiles==23.2.1
+opencv-python-headless==4.10.0.84
 # pywin32 and pyautogui are Windows-only; naver_writer.py guards both with try/except

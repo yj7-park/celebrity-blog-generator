@@ -3,6 +3,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY requirements-dev.txt ./requirements.txt
+COPY backend/requirements-dev.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
