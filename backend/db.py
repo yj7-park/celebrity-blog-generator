@@ -117,12 +117,12 @@ def sync_sources_from_file() -> None:
             rss_category = s.get("rss_category", "")
             
             # Upsert logic: insert if not exists, update if exists (preserving last_scraped_at)
+            # Use ON CONFLICT(url) because url is the natural unique identifier in sources.json
             conn.execute(
                 "INSERT INTO blog_sources (id, name, url, image_mapping, active, notes, rss_category, created_at) "
                 "VALUES (?,?,?,?,?,?,?,?) "
-                "ON CONFLICT(id) DO UPDATE SET "
+                "ON CONFLICT(url) DO UPDATE SET "
                 "name=excluded.name, "
-                "url=excluded.url, "
                 "image_mapping=excluded.image_mapping, "
                 "active=excluded.active, "
                 "notes=excluded.notes, "

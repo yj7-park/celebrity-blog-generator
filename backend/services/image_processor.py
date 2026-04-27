@@ -64,17 +64,30 @@ def _get_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
 
 
 def _download(url: str) -> Optional[Image.Image]:
+    """Download with requests, fallback to urllib.request for malformed headers."""
     try:
         warnings.filterwarnings("ignore")
         resp = requests.get(
             url, timeout=DOWNLOAD_TIMEOUT,
-            headers={"User-Agent": "Mozilla/5.0"},
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"},
             verify=False,
         )
         resp.raise_for_status()
         return Image.open(io.BytesIO(resp.content)).convert("RGB")
-    except Exception:
-        return None
+    except Exception as e:
+        # Fallback for malformed headers (HeaderParsingError)
+        try:
+            import urllib.request
+            req = urllib.request.Request(
+                url, 
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            )
+            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as response:
+                return Image.open(io.BytesIO(response.read())).convert("RGB")
+        except Exception as e2:
+            import logging
+            logging.debug(f"Download failed for {url}: requests={e}, urllib={e2}")
+            return None
 
 
 def _safe_filename(url: str) -> str:
@@ -437,7 +450,140 @@ def _add_border(img: Image.Image, px: int = BORDER_PX,
     return bordered
 
 
+# ── Comparative Restoration ───────────────────────────────────────────────────
+
+def comparative_restore(
+    primary_url: str,
+    candidates: List[dict],  # list of {url, watermark_regions: List[WatermarkRegion]}
+    openai_api_key: str = "",
+) -> Optional[Image.Image]:
+    """
+    Attempt to 'restore' the primary image by patching its watermarked regions
+    using clean pixels from other candidate images that are 'the same photo'.
+    """
+    import numpy as np
+    try:
+        import cv2
+    except ImportError:
+        return None
+
+    primary_img = _download(primary_url)
+    if not primary_img:
+        return None
+    
+    # Get primary's watermark regions
+    primary_data = next((c for c in candidates if c["url"] == primary_url), None)
+    if not primary_data or not primary_data.get("watermark_regions"):
+        # No watermarks detected on primary, just return it
+        return primary_img
+
+    regions = primary_data["watermark_regions"]
+    result_img = primary_img.copy()
+    w, h = primary_img.size
+
+    for region in regions:
+        rx1, ry1 = int(region.x * w), int(region.y * h)
+        rw, rh = int(region.w * w), int(region.h * h)
+        rx2, ry2 = min(w, rx1 + rw), min(h, ry1 + rh)
+        
+        # Look for a candidate that DOES NOT have a watermark in this region
+        patch_found = False
+        for cand in candidates:
+            if cand["url"] == primary_url:
+                continue
+            
+            # Check if this candidate has a watermark overlapping this region
+            overlaps = False
+            for c_reg in cand.get("watermark_regions", []):
+                # Simple AABB overlap check
+                if not (c_reg.x > region.x + region.w or
+                        c_reg.x + c_reg.w < region.x or
+                        c_reg.y > region.y + region.h or
+                        c_reg.y + c_reg.h < region.y):
+                    overlaps = True
+                    break
+            
+            if not overlaps:
+                # Try to use this candidate for patching
+                cand_img = _download(cand["url"])
+                if not cand_img:
+                    continue
+                
+                # Resize candidate to match primary for alignment (naive)
+                if cand_img.size != primary_img.size:
+                    cand_img = cand_img.resize(primary_img.size, Image.LANCZOS)
+                
+                patch = cand_img.crop((rx1, ry1, rx2, ry2))
+                result_img.paste(patch, (rx1, ry1))
+                patch_found = True
+                break
+        
+        if not patch_found:
+            # Fallback to standard inpainting for this region
+            inpainted = _remove_watermark_opencv(result_img, {"x": region.x, "y": region.y, "w": region.w, "h": region.h})
+            if inpainted:
+                result_img = inpainted
+            elif openai_api_key:
+                inpainted_dalle = _remove_watermark_dalle(result_img, {"x": region.x, "y": region.y, "w": region.w, "h": region.h}, openai_api_key)
+                if inpainted_dalle:
+                    result_img = inpainted_dalle
+
+    return result_img
+
+
+def generate_clean_product_image(
+    celeb: str,
+    product_name: str,
+    category: str,
+    api_key: str = "",
+) -> Optional[str]:
+    """
+    Generate a brand-new, clean product image using DALL-E 3.
+    Used as a last resort when restoration of scraped images is impossible.
+    """
+    if not api_key:
+        return None
+
+    from openai import OpenAI
+    try:
+        client = OpenAI(api_key=api_key)
+        prompt = (
+            f"A professional studio product photography of {product_name} ({category}), "
+            f"worn by {celeb} or shown as a standalone item. "
+            f"Minimalist background, high resolution, soft lighting, no watermarks, no text, "
+            f"highly detailed and realistic."
+        )
+        
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            size="1024x1024",
+            quality="standard",
+            n=1,
+        )
+        image_url = response.data[0].url
+        if not image_url:
+            return None
+            
+        # Download and add signature
+        img = _download(image_url)
+        if not img:
+            return None
+            
+        img_with_sig = _add_signature(img)
+        filename = "gen_" + re.sub(r"[^a-zA-Z0-9]", "_", product_name[:30]) + ".jpg"
+        out_path = TEMP_DIR / filename
+        img_with_sig.save(str(out_path), "JPEG", quality=88, optimize=True)
+        return str(out_path)
+    except Exception as e:
+        import logging
+        logging.warning(f"DALL-E 3 generation failed: {e}")
+        return None
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
+
+
 
 def process_image(
     url: str,

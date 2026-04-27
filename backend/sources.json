@@ -1,122 +1,200 @@
 [
   {
-    "id": "hsh6566",
+    "id": "35181054bfa6",
+    "name": "[자동발견] Dyana's English",
+    "url": "https://blog.naver.com/rkarbfl",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": ""
+  },
+  {
+    "id": "4d3ef3939d82",
+    "name": "[자동발견] shop-phinf.pstatic.net",
+    "url": "https://shop-phinf.pstatic.net",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "유사 이미지 검색으로 자동 발견",
+    "rss_category": ""
+  },
+  {
+    "id": "0f523f673095",
+    "name": "[자동발견] 응, 쏨은 처음이지?",
+    "url": "https://blog.naver.com/eung_ssom",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": ""
+  },
+  {
+    "id": "54cd5b2d9abb",
+    "name": "[자동발견] 오늘의 추천아이템",
+    "url": "https://blog.naver.com/chesungmin",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": ""
+  },
+  {
+    "id": "604a000d594b",
+    "name": "[자동발견] mblogthumb-phinf.pstatic.net",
+    "url": "https://mblogthumb-phinf.pstatic.net",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "유사 이미지 검색으로 자동 발견",
+    "rss_category": ""
+  },
+  {
+    "id": "640ad21e6a25",
+    "name": "[자동발견] 니냐니뇨",
+    "url": "https://blog.naver.com/powerdddd",
+    "image_mapping": "미괄식",
+    "active": true,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": "일상"
+  },
+  {
+    "id": "8788e2cce058",
+    "name": "[자동발견] 연예 장바구니",
+    "url": "https://blog.naver.com/icis66",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": "방송아이템"
+  },
+  {
+    "id": "2093455e8243",
+    "name": "[자동발견] DJ 펑크의 펑키한 리뷰",
+    "url": "https://blog.naver.com/dblove_suwon",
+    "image_mapping": "미괄식",
+    "active": true,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": "방송제품 정보"
+  },
+  {
+    "id": "a23f4c00d64d",
+    "name": "[자동발견] 유낫띵",
+    "url": "https://blog.naver.com/airuth",
+    "image_mapping": "미괄식",
+    "active": true,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": "패션"
+  },
+  {
+    "id": "fdf35f7eb519",
+    "name": "방송 착장",
+    "url": "https://blog.naver.com/some1it_",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "",
+    "rss_category": "방송 착장"
+  },
+  {
+    "id": "cdfb12e79301",
+    "name": "[자동발견] Celeb Log",
+    "url": "https://blog.naver.com/fine8765",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": "셀럽 패션❤️"
+  },
+  {
+    "id": "1dadc2be968e",
+    "name": "[자동발견] 힐포나의 패션로그(feat.뷰티)",
+    "url": "https://blog.naver.com/eunhye2727",
+    "image_mapping": "미괄식",
+    "active": true,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": "패션/뷰티 정보"
+  },
+  {
+    "id": "f4d844c603b6",
+    "name": "[자동발견] 당신이 놓친 모든 이슈들",
+    "url": "https://blog.naver.com/pravas",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": "방송 이야기"
+  },
+  {
+    "id": "70608c2e54c2",
+    "name": "[자동발견] 띵창고",
+    "url": "https://blog.naver.com/jhy00725",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": "게시판"
+  },
+  {
+    "id": "b3a165dd3109",
+    "name": "[자동발견] 반짝반짝빛나는소식",
+    "url": "https://blog.naver.com/ljhljh_8282",
+    "image_mapping": "미괄식",
+    "active": false,
+    "notes": "블로그 검색 API로 자동 발견",
+    "rss_category": ":: 미주"
+  },
+  {
+    "id": "cba51bb7065b",
     "name": "hsh6566",
     "url": "https://blog.naver.com/hsh6566",
-    "rss_category": "쇼핑",
     "image_mapping": "미괄식",
-    "active": true
+    "active": false,
+    "notes": "",
+    "rss_category": "쇼핑"
   },
   {
-    "id": "hkh443",
+    "id": "7357e6b4255e",
     "name": "hkh443",
     "url": "https://blog.naver.com/hkh443",
-    "rss_category": "코스트코",
     "image_mapping": "미괄식",
-    "active": true
+    "active": false,
+    "notes": "",
+    "rss_category": "코스트코"
   },
   {
-    "id": "hprbel1097",
+    "id": "6f1dab117cfb",
     "name": "hprbel1097",
     "url": "https://blog.naver.com/hprbel1097",
-    "rss_category": "방송아이템",
     "image_mapping": "미괄식",
-    "active": true
+    "active": true,
+    "notes": "",
+    "rss_category": "방송아이템"
   },
   {
-    "id": "jsodnfak",
+    "id": "4dd491538026",
     "name": "jsodnfak",
     "url": "https://blog.naver.com/jsodnfak",
-    "rss_category": "먹거리",
     "image_mapping": "미괄식",
-    "active": true
+    "active": false,
+    "notes": "",
+    "rss_category": "먹거리"
   },
   {
-    "id": "fashionblog",
-    "name": "fashionblog",
-    "url": "https://blog.naver.com/fashionblog",
-    "rss_category": "파트너스활동으로 소정 수익발생",
-    "image_mapping": "미괄식",
-    "active": true
-  },
-  {
-    "id": "bcf5qp11",
+    "id": "4337ac7acf21",
     "name": "bcf5qp11",
     "url": "https://blog.naver.com/bcf5qp11",
-    "rss_category": "쇼핑",
     "image_mapping": "미괄식",
-    "active": true
+    "active": true,
+    "notes": "",
+    "rss_category": "쇼핑"
   },
   {
-    "id": "celubdigging",
+    "id": "73a88249aed9",
     "name": "celubdigging",
     "url": "https://blog.naver.com/celubdigging",
-    "rss_category": "파트너스활동으로 소정 수익발생",
     "image_mapping": "미괄식",
-    "active": true
+    "active": false,
+    "notes": "",
+    "rss_category": "파트너스활동으로 소정 수익발생"
   },
   {
-    "id": "dalcome5",
+    "id": "6e2384d4f41c",
     "name": "dalcome5",
     "url": "https://blog.naver.com/dalcome5",
-    "rss_category": "◇궁금해◇",
     "image_mapping": "미괄식",
-    "active": true
-  },
-  {
-    "id": "greenp77",
-    "name": "greenp77",
-    "url": "https://blog.naver.com/greenp77",
-    "rss_category": "쇼핑",
-    "image_mapping": "미괄식",
-    "active": true
-  },
-  {
-    "id": "jiyeon_style",
-    "name": "jiyeon_style",
-    "url": "https://blog.naver.com/jiyeon_style",
-    "rss_category": "패션",
-    "image_mapping": "미괄식",
-    "active": true
-  },
-  {
-    "id": "beauty_daily",
-    "name": "beauty_daily",
-    "url": "https://blog.naver.com/beauty_daily",
-    "rss_category": "뷰티",
-    "image_mapping": "미괄식",
-    "active": true
-  },
-  {
-    "id": "kdrama_item",
-    "name": "kdrama_item",
-    "url": "https://blog.naver.com/kdrama_item",
-    "rss_category": "방송아이템",
-    "image_mapping": "미괄식",
-    "active": true
-  },
-  {
-    "id": "celeb_pick",
-    "name": "celeb_pick",
-    "url": "https://blog.naver.com/celeb_pick",
-    "rss_category": "셀럽픽",
-    "image_mapping": "미괄식",
-    "active": true
-  },
-  {
-    "id": "stylenote_kr",
-    "name": "stylenote_kr",
-    "url": "https://blog.naver.com/stylenote_kr",
-    "rss_category": "스타일",
-    "image_mapping": "미괄식",
-    "active": true
-  },
-  {
-    "id": "kfashion_lab",
-    "name": "kfashion_lab",
-    "url": "https://blog.naver.com/kfashion_lab",
-    "rss_category": "패션",
-    "image_mapping": "미괄식",
-    "active": true
+    "active": false,
+    "notes": "",
+    "rss_category": "◇궁금해◇"
   }
 ]

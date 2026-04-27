@@ -466,16 +466,12 @@ async def run_pipeline(
 
             yield _sse("progress", f"스크랩 {len(scraped)}개 완료 (아이템 {len(final_items)}개)", 52)
 
-            # ── Phase 3.5: Image matching + processing ────────────────────────
+            # ── Phase 3.5: Image matching ─────────────────────────────────────
             yield _sse("progress", "이미지 매칭 중...", 55)
             _ct.pipeline.check()
             final_items = await _run(cross_match_items, final_items)
 
-            yield _sse("progress", "이미지 가공 중...", 58)
-            _ct.pipeline.check()
-            final_items = await _run(process_items_images, final_items, settings.openai_api_key)
-
-            yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 61,
+            yield _sse("progress", f"아이템 추출 완료: {len(final_items)}개", 60,
                        data={"items": [it.model_dump() for it in final_items]})
 
             # ── Phase 4: AI Image Analysis ────────────────────────────────────
@@ -499,20 +495,67 @@ async def run_pipeline(
                         data={"analysis": analysis.model_dump()},
                     )
 
-                # 분석 결과에서 가장 좋은 이미지 URL을 맨 앞으로 재배치
+                # 분석 결과 반영: 최적 이미지 선택 및 복원 가공 (패치 복원 -> 인페인팅 -> AI 생성)
+                yield _sse("progress", "이미지 최적화 및 복원 중...", 80)
+                from services.image_processor import (
+                    comparative_restore, generate_clean_product_image,
+                    _add_signature, TEMP_DIR, _safe_filename
+                )
+                
                 updated: List[CelebItem] = []
                 for item, analysis in zip(final_items, analyses):
-                    if analysis.best_url:
-                        rest = [u for u in (item.image_urls or []) if u != analysis.best_url]
-                        item = item.model_copy(update={"image_urls": [analysis.best_url] + rest})
-                    updated.append(item)
+                    _ct.pipeline.check()
+                    best_url = analysis.best_url or (item.image_urls[0] if item.image_urls else "")
+                    processed_path: str | None = None
+                    
+                    if best_url:
+                        # 1단계: 여러 이미지를 활용한 비교 복원 (Patching)
+                        restored_img = await _run(
+                            comparative_restore, 
+                            best_url, 
+                            [c.model_dump() for c in analysis.candidates],
+                            settings.openai_api_key
+                        )
+                        
+                        if restored_img:
+                            img_with_sig = _add_signature(restored_img)
+                            filename = "restored_" + _safe_filename(best_url) + ".jpg"
+                            out_path = TEMP_DIR / filename
+                            img_with_sig.save(str(out_path), "JPEG", quality=88, optimize=True)
+                            processed_path = str(out_path)
+                        
+                        if not processed_path:
+                            # 2단계: 복원 실패 시 일반 프로세싱 (OpenCV/DALL-E 2 Inpainting)
+                            regions = [r.model_dump() for r in analysis.candidates[0].watermark_regions] if analysis.candidates else []
+                            # If we have watermarks but cannot patch-restore, try inpainting
+                            processed_path = await _run(process_image, best_url, regions, settings.openai_api_key)
+                    
+                    # 3단계: 여전히 깨끗한 이미지가 없다면 (또는 분석 점수가 너무 낮다면) AI 생성 시도
+                    if not processed_path or analysis.best_score < 0.5:
+                        yield _sse("progress", f"{item.product_name} — AI 이미지 생성 중...", 80)
+                        processed_path = await _run(
+                            generate_clean_product_image,
+                            item.celeb, item.product_name, item.category, settings.openai_api_key
+                        )
+
+                    if processed_path:
+                        updated.append(item.model_copy(update={
+                            "processed_image_path": processed_path,
+                            "image_urls": [best_url] if best_url else []
+                        }))
+                    else:
+                        # 4단계: 모든 시도가 실패하면 해당 아이템은 이번 포스팅에서 제외 (불완전한 이미지 배제)
+                        import logging
+                        logging.info(f"Excluding item {item.product_name} due to lack of clean image")
+
                 final_items = updated
+                total_final = len(final_items)
 
                 review_count = sum(1 for a in analyses if a.needs_review)
                 yield _sse(
                     "progress",
-                    f"이미지 분석 완료: {total_img}개 중 {review_count}개 검토 필요",
-                    79,
+                    f"이미지 분석·가공 완료: {total_img}개 중 {review_count}개 검토 필요",
+                    81,
                     data={
                         "items": [it.model_dump() for it in final_items],
                         "review_count": review_count,

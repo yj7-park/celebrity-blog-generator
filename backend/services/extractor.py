@@ -189,6 +189,107 @@ def extract_from_post(scraped: ScrapedPostData, client: OpenAI,
     return results
 
 
+def _normalize_name(name: str) -> str:
+    """Lowercase + remove non-alphanumeric for product-name grouping."""
+    return re.sub(r"[^a-z0-9가-힣]", "", name.lower())
+
+
+def semantic_deduplicate_items(items: List[CelebItem], client: OpenAI) -> List[CelebItem]:
+    """Use LLM to identify and merge items that are semantically the same product."""
+    if not items:
+        return []
+    
+    # Group by celeb first to reduce prompt size
+    celeb_groups: dict[str, List[CelebItem]] = {}
+    for it in items:
+        celeb_groups.setdefault(it.celeb, []).append(it)
+    
+    final_results: List[CelebItem] = []
+    
+    for celeb, group in celeb_groups.items():
+        if len(group) < 2:
+            final_results.extend(group)
+            continue
+            
+        # Prepare list for LLM
+        item_list = []
+        for i, it in enumerate(group):
+            item_list.append({
+                "id": i,
+                "name": it.product_name,
+                "category": it.category
+            })
+            
+        prompt = f"""다음은 셀럽 '{celeb}'이 착용한 아이템 목록입니다. 
+동일한 제품인 것들을 찾아 그룹화하세요. 브랜드명이 생략되었거나 표현이 약간 달라도 실질적으로 같은 모델이면 하나로 합쳐야 합니다.
+
+아이템 목록:
+{json.dumps(item_list, ensure_ascii=False, indent=2)}
+
+출력 형식 (JSON 배열):
+[
+  [0, 2], // 0번과 2번이 같은 제품인 경우
+  [1],    // 1번이 독자적인 제품인 경우
+  ...
+]
+순수 JSON 배열만 응답하세요."""
+
+        try:
+            resp = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+                response_format={"type": "json_object"} if False else None # older compat
+            )
+            raw = resp.choices[0].message.content or "[]"
+            # Basic cleaning if LLM returned markdown
+            if "```" in raw:
+                raw = re.sub(r"```json\s*", "", raw)
+                raw = re.sub(r"```\s*", "", raw).strip()
+            
+            # Simple check for the list of lists structure
+            groups_indices = json.loads(raw)
+            if not isinstance(groups_indices, list):
+                # Fallback to normalized grouping if LLM fails
+                final_results.extend(group)
+                continue
+                
+            for indices in groups_indices:
+                if not indices: continue
+                # Merge items in this group
+                base_item = group[indices[0]].model_copy()
+                for idx in indices[1:]:
+                    other = group[idx]
+                    # Merge logic
+                    seen_imgs = set(base_item.image_urls)
+                    for u in other.image_urls:
+                        if u and u not in seen_imgs:
+                            base_item.image_urls.append(u)
+                            seen_imgs.add(u)
+                    
+                    seen_cands = set(base_item.candidate_image_urls)
+                    for u in other.candidate_image_urls:
+                        if u and u not in seen_cands:
+                            base_item.candidate_image_urls.append(u)
+                            seen_cands.add(u)
+                            
+                    seen_kws = set(base_item.keywords)
+                    for kw in other.keywords:
+                        if kw and kw not in seen_kws:
+                            base_item.keywords.append(kw)
+                            seen_kws.add(kw)
+                    
+                    if len(other.product_name) > len(base_item.product_name):
+                        base_item.product_name = other.product_name
+                
+                final_results.append(base_item)
+        except Exception:
+            # Fallback
+            final_results.extend(group)
+            
+    return final_results
+
+
 def extract_items_from_posts(
     scraped_posts: List[ScrapedPostData],
     client: OpenAI,
@@ -205,12 +306,32 @@ def extract_items_from_posts(
         if on_progress:
             on_progress(i + 1, len(scraped_posts))
 
-    # Deduplicate by celeb + product_name
-    seen: set[str] = set()
-    deduped: List[CelebItem] = []
+    # 1. First pass: normalization-based grouping (fast)
+    groups: dict[str, CelebItem] = {}
     for item in all_items:
-        key = f"{item.celeb}::{item.product_name}"
-        if key not in seen:
-            seen.add(key)
-            deduped.append(item)
-    return deduped
+        key = f"{item.celeb}::{_normalize_name(item.product_name)}"
+        if key not in groups:
+            groups[key] = item
+        else:
+            existing = groups[key]
+            # Merge logic
+            seen_imgs = set(existing.image_urls)
+            for url in item.image_urls:
+                if url and url not in seen_imgs:
+                    existing.image_urls.append(url)
+                    seen_imgs.add(url)
+            seen_cands = set(existing.candidate_image_urls)
+            for url in item.candidate_image_urls:
+                if url and url not in seen_cands:
+                    existing.candidate_image_urls.append(url)
+                    seen_cands.add(url)
+            seen_kws = set(existing.keywords)
+            for kw in item.keywords:
+                if kw and kw not in seen_kws:
+                    existing.keywords.append(kw)
+                    seen_kws.add(kw)
+            if len(item.product_name) > len(existing.product_name):
+                existing.product_name = item.product_name
+
+    # 2. Second pass: semantic deduplication (smart)
+    return semantic_deduplicate_items(list(groups.values()), client)

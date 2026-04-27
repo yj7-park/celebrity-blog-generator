@@ -63,11 +63,12 @@ def build_search_query(celeb: str, product_name: str, keywords: list[str]) -> st
 # ── Image downloader ──────────────────────────────────────────────────────────
 
 def _dl(url: str) -> Optional[Image.Image]:
+    """Download with requests, fallback to urllib.request for malformed headers."""
     try:
         warnings.filterwarnings("ignore")
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": "https://blog.naver.com/",
             "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
             "Accept-Language": "ko-KR,ko;q=0.9",
@@ -76,7 +77,20 @@ def _dl(url: str) -> Optional[Image.Image]:
         r.raise_for_status()
         return Image.open(io.BytesIO(r.content)).convert("RGB")
     except Exception:
-        return None
+        try:
+            import urllib.request
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": "https://blog.naver.com/"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as response:
+                return Image.open(io.BytesIO(response.read())).convert("RGB")
+        except Exception:
+            return None
 
 
 # ── Naver image search (Selenium) ────────────────────────────────────────────
