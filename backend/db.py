@@ -90,41 +90,69 @@ CREATE INDEX IF NOT EXISTS idx_celeb_key
 """
 
 
-_SEED_BLOGS = [
-    ("hsh6566",      "쇼핑"),
-    ("hkh443",       "코스트코"),
-    ("hprbel1097",   "방송아이템"),
-    ("jsodnfak",     "먹거리"),
-    ("fashionblog",  "파트너스활동으로 소정 수익발생"),
-    ("bcf5qp11",     "쇼핑"),
-    ("celubdigging", "파트너스활동으로 소정 수익발생"),
-    ("dalcome5",     "◇궁금해◇"),
-    ("greenp77",     "쇼핑"),
-    ("jiyeon_style", "패션"),
-    ("beauty_daily", "뷰티"),
-    ("kdrama_item",  "방송아이템"),
-    ("celeb_pick",   "셀럽픽"),
-    ("stylenote_kr", "스타일"),
-    ("kfashion_lab", "패션"),
-]
+SOURCES_FILE = os.path.join(os.path.dirname(__file__), "sources.json")
 
 
-def seed_blog_sources() -> None:
-    """Insert hardcoded blogs if the blog_sources table is empty."""
+def sync_sources_from_file() -> None:
+    """Read sources.json and upsert into blog_sources table."""
+    if not os.path.exists(SOURCES_FILE):
+        return
+    
+    try:
+        with open(SOURCES_FILE, "r", encoding="utf-8") as f:
+            sources = json.load(f)
+    except Exception as e:
+        print(f"Error reading {SOURCES_FILE}: {e}")
+        return
+
+    now = _now()
     with sqlite3.connect(DB_PATH) as conn:
-        count = conn.execute("SELECT COUNT(*) FROM blog_sources").fetchone()[0]
-        if count > 0:
-            return
-        now = _now()
-        for blog_id, rss_category in _SEED_BLOGS:
-            sid = uuid.uuid4().hex[:12]
-            url = f"https://blog.naver.com/{blog_id}"
+        for s in sources:
+            sid = s.get("id") or uuid.uuid4().hex[:12]
+            name = s.get("name", "")
+            url = s.get("url", "")
+            image_mapping = s.get("image_mapping", "미괄식")
+            active = 1 if s.get("active", True) else 0
+            notes = s.get("notes", "")
+            rss_category = s.get("rss_category", "")
+            
+            # Upsert logic: insert if not exists, update if exists (preserving last_scraped_at)
             conn.execute(
-                "INSERT OR IGNORE INTO blog_sources "
-                "(id, name, url, image_mapping, active, notes, rss_category, created_at) "
-                "VALUES (?,?,?,?,?,?,?,?)",
-                (sid, blog_id, url, "미괄식", 1, "", rss_category, now),
+                "INSERT INTO blog_sources (id, name, url, image_mapping, active, notes, rss_category, created_at) "
+                "VALUES (?,?,?,?,?,?,?,?) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "name=excluded.name, "
+                "url=excluded.url, "
+                "image_mapping=excluded.image_mapping, "
+                "active=excluded.active, "
+                "notes=excluded.notes, "
+                "rss_category=excluded.rss_category",
+                (sid, name, url, image_mapping, active, notes, rss_category, now)
             )
+        conn.commit()
+
+
+def save_sources_to_file() -> None:
+    """Export blog_sources table back to sources.json (excluding ephemeral state)."""
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT * FROM blog_sources ORDER BY created_at DESC").fetchall()
+    
+    data = []
+    for r in rows:
+        d = dict(r)
+        # Remove ephemeral/local state before saving to Git-tracked file
+        d.pop("last_scraped_at", None)
+        d.pop("created_at", None)
+        # Ensure active is boolean for JSON
+        d["active"] = bool(d["active"])
+        data.append(d)
+        
+    try:
+        with open(SOURCES_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error writing {SOURCES_FILE}: {e}")
 
 
 def init_db() -> None:
@@ -140,7 +168,7 @@ def init_db() -> None:
                 conn.execute(stmt)
             except Exception:
                 pass
-    seed_blog_sources()
+    sync_sources_from_file()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -201,6 +229,7 @@ def create_source(name: str, url: str, image_mapping: str = "미괄식",
             "VALUES (?,?,?,?,?,?,?,?)",
             (sid, name, url, image_mapping, 1 if active else 0, notes, rss_category, now),
         )
+    save_sources_to_file()
     return {"id": sid, "name": name, "url": url, "image_mapping": image_mapping,
             "active": active, "notes": notes, "rss_category": rss_category,
             "created_at": now, "last_scraped_at": None}
@@ -219,12 +248,16 @@ def update_source(source_id: str, **fields) -> bool:
         cur = conn.execute(
             f"UPDATE blog_sources SET {set_clause} WHERE id=?", values
         )
+    if cur.rowcount > 0:
+        save_sources_to_file()
     return cur.rowcount > 0
 
 
 def delete_source(source_id: str) -> bool:
     with sqlite3.connect(DB_PATH) as conn:
         cur = conn.execute("DELETE FROM blog_sources WHERE id=?", (source_id,))
+    if cur.rowcount > 0:
+        save_sources_to_file()
     return cur.rowcount > 0
 
 

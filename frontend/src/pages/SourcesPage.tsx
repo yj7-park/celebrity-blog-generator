@@ -1,6 +1,9 @@
+
 import { useState, useEffect } from "react";
-import { listSources, createSource, updateSource, deleteSource } from "../lib/api";
+import { listSources, createSource, updateSource, deleteSource, syncSources } from "../lib/api";
 import type { BlogSource } from "../lib/types";
+import { RefreshCcw } from "lucide-react";
+
 
 const cardStyle: React.CSSProperties = {
   background: "#fff",
@@ -61,6 +64,7 @@ export default function SourcesPage() {
   const [sources, setSources] = useState<BlogSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   // Add/Edit form
   const [showForm, setShowForm] = useState(false);
@@ -80,6 +84,19 @@ export default function SourcesPage() {
       setError(String(e));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      await syncSources();
+      await load();
+    } catch (e) {
+      setError(`Git 동기화 실패: ${e}`);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -178,16 +195,31 @@ export default function SourcesPage() {
               스크랩할 네이버 블로그를 등록하고 이미지-아이템 매핑 패턴을 설정합니다.
             </p>
           </div>
-          <button
-            onClick={openAdd}
-            style={{
-              padding: "10px 20px", background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
-              color: "#fff", border: "none", borderRadius: 10,
-              fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
-            }}
-          >
-            + 소스 추가
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "10px 16px", background: "#fff",
+                color: "#6366f1", border: "1.5px solid #e0e7ff", borderRadius: 10,
+                fontSize: 13, fontWeight: 600, cursor: syncing ? "not-allowed" : "pointer",
+              }}
+            >
+              <RefreshCcw size={14} className={syncing ? "animate-spin" : ""} />
+              {syncing ? "동기화 중..." : "Git 동기화"}
+            </button>
+            <button
+              onClick={openAdd}
+              style={{
+                padding: "10px 20px", background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
+                color: "#fff", border: "none", borderRadius: 10,
+                fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+              }}
+            >
+              + 소스 추가
+            </button>
+          </div>
         </div>
       </div>
 

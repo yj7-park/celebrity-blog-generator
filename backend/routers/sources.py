@@ -45,6 +45,15 @@ def update_source(source_id: str, body: BlogSourceUpdate):
     return BlogSource(**{**row, "active": bool(row.get("active", 1))})
 
 
+@router.post("/sync", status_code=204)
+def sync_sources():
+    """Reload sources from sources.json (Git-tracked)."""
+    try:
+        _db.sync_sources_from_file()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.delete("/{source_id}", status_code=204)
 def delete_source(source_id: str):
     ok = _db.delete_source(source_id)

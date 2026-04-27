@@ -328,6 +328,10 @@ export async function deleteSource(id: string): Promise<void> {
   await apiFetch(`/api/sources/${id}`, { method: "DELETE" });
 }
 
+export async function syncSources(): Promise<void> {
+  await apiFetch("/api/sources/sync", { method: "POST" });
+}
+
 // --- SSE Pipeline ---
 export interface RunPipelineParams {
   days: number;
